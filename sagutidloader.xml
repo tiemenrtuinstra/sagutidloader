@@ -1,17 +1,17 @@
 <extension type="plugin" version="4.0" client="site" method="upgrade">
-    <name>PLG_SYSTEM_SAGUTIDLOADER</name>
-    <author>Your Name</author>
-    <version>1.0.0</version>
-    <description>PLG_SYSTEM_SAGUTIDLOADER_DESC</description>
-    <files>
-        <filename plugin="sagutidloader">sagutidloader.php</filename>
-        <folder>assets</folder>
-        <folder>assets/dist</folder>
-        <file>assets/dist/main.bundle.js</file>
-        <file>assets/dist/styles.bundle.css</file>
-    </files>
-    <languages>
-        <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.ini</language>
-        <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.ini</language>
-    </languages>
+  <name>PLG_SYSTEM_SAGUTIDLOADER</name>
+  <author>Your Name</author>
+  <version>1.1.0</version>
+  <description>PLG_SYSTEM_SAGUTIDLOADER_DESC</description>
+  <files>
+    <filename plugin="sagutidloader">sagutidloader.php</filename>
+    <folder>assets</folder>
+    <folder>assets/dist</folder>
+    <file>assets/dist/main.bundle.js</file>
+    <file>assets/dist/styles.bundle.css</file>
+  </files>
+  <languages>
+    <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.ini</language>
+    <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.ini</language>
+  </languages>
 </extension>
