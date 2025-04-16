@@ -1,0 +1,116 @@
+{
+  "name": "Sagu Tid",
+  "short_name": "Sagu Tid",
+  "description": "Welkom op Sagutid.nl, de plek waar verhalen tot leven komen en gedichten fluisteren tussen de regels door.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "natural",
+  "background_color": "#0B9444",
+  "theme_color": "#0B9444",
+  "dir": "ltr",
+  "lang": "nl-NL",
+  "screenshots": [
+    {
+      "src": "/images/Screenshots/sagutidhome.png",
+      "type": "image/png",
+      "sizes": "1893x919",
+      "label": "Screenshot van de homepage desktop",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/images/Screenshots/sagutidhomemobile.png",
+      "type": "image/png",
+      "sizes": "395x829",
+      "label": "Screenshot van de homepage mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Home",
+      "short_name": "Home",
+      "description": "Ga naar home",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/images/Logo/android-chrome-512x512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Open verhalen",
+      "short_name": "Verhalen",
+      "description": "Lees mijn verhalen",
+      "url": "/verhalen",
+      "icons": [
+        {
+          "src": "/images/Logo/Sagutid-verhalen.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Open gedichten",
+      "short_name": "Gedichten",
+      "description": "Lees mijn gedichten",
+      "url": "/gedichten",
+      "icons": [
+        {
+          "src": "/images/Logo/Sagutid-gedichten.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Open overig",
+      "short_name": "Overig",
+      "description": "Lees mijn overige sagu",
+      "url": "/overig",
+      "icons": [
+        {
+          "src": "/images/Logo/Sagutid-overig.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/images/Logo/Sagutid-groot.jpg",
+      "sizes": "2493x1000",
+      "type": "image/jpeg"
+    },
+
+    {
+      "src": "/images/Logo/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/Logo/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/Logo/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/Logo/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/Logo/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,275 @@
+.tm-cookie-banner {
+    z-index: 9999;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6) !important;
+}
+
+#sagu-text.columns {
+    column-count: 1;
+}
+
+@media (min-width: 960px) {
+    #sagu-text.columns {
+        column-count: 2;
+        column-gap: 2rem;
+    }
+}
+
+.uk-panel[class*="uk-card"],
+.uk-panel[class*="uk-tile"] {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6) !important;
+}
+
+.btn,
+.uk-button {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
+    transition: 0.5s ease-in-out !important;
+    transition-property: color, background-color, background, gradient, linear-gradient, background-size, box-shadow, transform, top, border-radius, border-color, filter, border-radius, text-shadow !important;
+}
+
+.btn:hover,
+.btn:active,
+.btn:focus,
+.uk-button:hover,
+.uk-button:active,
+.uk-button:focus {
+    box-shadow: unset !important;
+}
+
+em,
+i {
+    color: #0B9444;
+    font-family: 'McLaren';
+    font-size: 0.9rem;
+}
+
+// Header Styles
+.tm-header .tm-headerbar-default.tm-headerbar.tm-headerbar-top .tm-headerbar-stacked,
+#module-menu-dialog-mobile {
+    display: none;
+}
+
+.tm-headerbar-default,
+.tm-headerbar,
+.tm-headerbar-top,
+.tm-header-mobile .uk-navbar-container {
+    background-color: #0b9444 !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.tm-header-mobile {
+    .uk-navbar-container {
+        border-color: #0B9444;
+    }
+
+    .uk-navbar-toggle {
+        color: #E0AD10;
+        font-size: 2em;
+    }
+}
+
+// Card and Content Styles
+.el-item {
+
+    & .content.uk-card,
+    & .content.uk-card-body img {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        min-width: 355px;
+    }
+
+    &.uk-card .el-content {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+}
+
+// Icon Styles
+.uk-icon.uk-text-primary {
+    color: #E0AD10 !important;
+}
+
+// Image Styles
+.uk-card-body {
+    img {
+        min-width: 285px;
+
+        &.full-img {
+            margin: 0px -15px;
+            min-width: -webkit-fill-available;
+            clear: both;
+            display: block;
+        }
+    }
+}
+
+
+// Footer Styles
+#foooter-sub-title {
+    li.el-item span p {
+        margin: 0px !important;
+
+        &::first-letter {
+            color: #AB0000;
+        }
+    }
+}
+
+// Navigation Image Styles
+.uk-nav img,
+nav img {
+    display: none;
+}
+
+.tm-toolbar,
+.socials {
+
+    ul.uk-grid {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    a[href*="bere.al"] svg,
+    a[href*="komoot"] svg,
+    a[href*="shealth"] svg,
+    a[href*="polarsteps"] svg {
+        display: none !important;
+    }
+
+    a img,
+    [uk-icon],
+    .el-overlay [uk-icon] {
+        padding: 10px;
+        transition: 0.75s ease-in-out;
+        transition-property: color, background-color, background, gradient, linear-gradient, background-size, box-shadow, transform, top, border-radius, border-color, filter, border-radius, text-shadow;
+        border: 2px solid transparent;
+        border-radius: 50%;
+
+        &:hover,
+        &:active,
+        &:focus {
+            color: #ffffff;
+            background-color: #126835;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6) !important;
+            border: 2px solid #fff;
+            animation: hoverAnimation 0.5s ease-in-out;
+
+
+            border-radius: 25px;
+        }
+
+        &[uk-icon*="facebook"]:hover,
+        &[uk-icon*="facebook"]:active,
+        &[uk-icon*="facebook"]:focus {
+            background-color: #1877f2;
+        }
+
+        &[uk-icon*="instagram"]:hover,
+        &[uk-icon*="instagram"]:active,
+        &[uk-icon*="instagram"]:focus {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+
+        &[uk-icon*="linkedin"]:hover,
+        &[uk-icon*="linkedin"]:active,
+        &[uk-icon*="linkedin"]:focus {
+            background-color: #0077b5;
+        }
+
+        &[uk-icon*="whatsapp"]:hover,
+        &[uk-icon*="whatsapp"]:active,
+        &[uk-icon*="whatsapp"]:focus {
+            background-color: #075e54;
+        }
+
+        &[uk-icon*="youtube"]:hover,
+        &[uk-icon*="youtube"]:active,
+        &[uk-icon*="youtube"]:focus {
+            background-color: #ff0000;
+        }
+
+        &[uk-icon*="twitter"]:hover,
+        &[uk-icon*="twitter"]:active,
+        &[uk-icon*="twitter"]:focus {
+            background-color: #000;
+            border-color: #1da1f2;
+        }
+
+        &[uk-icon*="telegram"]:hover,
+        &[uk-icon*="telegram"]:active,
+        &[uk-icon*="telegram"]:focus {
+            background-color: #0088cc;
+        }
+
+        &[uk-icon*="threads"]:hover,
+        &[uk-icon*="threads"]:active,
+        &[uk-icon*="threads"]:focus {
+            background-color: #000;
+        }
+
+        &[uk-icon*="pinterest"]:hover,
+        &[uk-icon*="pinterest"]:active,
+        &[uk-icon*="pinterest"]:focus {
+            background-color: #bd081c;
+        }
+
+        &[uk-icon*="signal"]:hover,
+        &[uk-icon*="signal"]:active,
+        &[uk-icon*="signal"]:focus {
+            background-color: #0032A0;
+            border-color: #FF9332;
+        }
+
+        &[uk-icon*="phone"]:hover,
+        &[uk-icon*="phone"]:active,
+        &[uk-icon*="phone"]:focus {
+            color: #9AD772;
+            background-color: #126835;
+            border-color: #0B9444;
+        }
+
+        &[uk-icon*="envelope"]:hover,
+        &[uk-icon*="envelope"]:active,
+        &[uk-icon*="envelope"]:focus {
+            background-color: #00A3EE;
+        }
+
+        &[uk-icon*="social"]:hover,
+        &[uk-icon*="social"]:active,
+        &[uk-icon*="social"]:focus {
+            background: hsla(145, 86%, 31%, 1);
+            color: #e0ad10;
+            border-color: #e0ad10;
+        }
+
+
+    }
+}
+
+@keyframes hoverAnimation {
+    0% {
+        transform: scale(1);
+        border-radius: 50%;
+    }
+
+    50% {
+        transform: scale(1.3);
+        border-radius: 50%;
+    }
+
+    100% {
+        transform: scale(1);
+        border-radius: 25px;
+    }
+}
+
+.uk-label {
+    border-radius: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6) !important;
+
+    &.uk-label-secondary {
+        background: #E0AD10;
+    }
+}

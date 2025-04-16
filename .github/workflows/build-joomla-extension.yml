@@ -1,0 +1,77 @@
+name: Build Joomla Extension
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags (e.g., v1.0.0)
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js for Webpack build
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16' # Use the Node.js version compatible with your project
+
+      # Step 3: Install dependencies and build assets
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build:prod
+
+      # Step 4: Extract version from XML
+      - name: Extract version from XML
+        id: extract_version
+        run: |
+          VERSION=$(xmllint --xpath "string(//extension/version)" sagutidloader.xml)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      # Step 5: Prepare the Joomla ZIP package
+      - name: Create Joomla ZIP package
+        run: |
+          mkdir -p build
+          zip -r build/sagutidloader.zip . -x "node_modules/*" ".github/*" "build/*"
+
+      # Step 6: Upload the ZIP as an artifact
+      - name: Upload Joomla ZIP
+        uses: actions/upload-artifact@v3
+        with:
+          name: sagutidloader
+          path: build/sagutidloader.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Extract version from XML
+      - name: Extract version from XML
+        id: extract_version
+        run: |
+          VERSION=$(xmllint --xpath "string(//extension/version)" sagutidloader.xml)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      # Step 3: Upload the ZIP to GitHub Release
+      - name: Upload to GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: build/sagutidloader.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ env.VERSION }}
+          name: Joomla Extension v${{ env.VERSION }}
+          body: |
+            Joomla extension package for version v${{ env.VERSION }}.
+          draft: false
+          prerelease: false
