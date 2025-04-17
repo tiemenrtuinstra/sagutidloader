@@ -1,6 +1,6 @@
 class SagutidServiceWorker {
     constructor() {
-        this.CACHE_NAME = 'sagutid-v2.0.0';
+        this.CACHE_NAME = 'sagutid-v2.0.1';
         this.STATIC_ASSETS = [
             '/',
             '/index.php',
@@ -48,7 +48,7 @@ class SagutidServiceWorker {
 
                 // Fetch and cache sitemap URLs
                 try {
-                    const sitemapUrl = '/index.php?option=com_jmap&view=sitemap&format=xml';
+                    const sitemapUrl = 'https://sagutid.nl/index.php?option=com_jmap&view=sitemap&format=xml';
                     const res = await fetchWithTimeout(sitemapUrl);
                     const xml = await res.text();
                     const parser = new DOMParser();
@@ -129,7 +129,7 @@ class SagutidServiceWorker {
                         .catch(() => {
                             // If network fetch fails, return the offline page
                             if (event.request.mode === 'navigate') {
-                                return caches.match('/offline.html');
+                                return caches.match('/plugins/sagutidloader/assets/offline.html');
                             }
                             return null;
                         });
@@ -214,6 +214,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', async (event) => {
     serviceWorker.message(event);
 });
+
 
 
 
