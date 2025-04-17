@@ -1,6 +1,6 @@
 class SagutidServiceWorker {
     constructor() {
-        this.CACHE_NAME = 'sagutid-v1.7.0';
+        this.CACHE_NAME = 'sagutid-v2.0.0';
         this.STATIC_ASSETS = [
             '/',
             '/index.php',
@@ -214,6 +214,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', async (event) => {
     serviceWorker.message(event);
 });
+
 
 
 
