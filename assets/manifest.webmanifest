@@ -1,4 +1,5 @@
 {
+  "id": "nl.sagutid.pwa",
   "name": "Sagu Tid",
   "short_name": "Sagu Tid",
   "description": "Welkom op Sagutid.nl, de plek waar verhalen tot leven komen en gedichten fluisteren tussen de regels door.",
@@ -11,6 +12,7 @@
   "theme_color": "#0B9444",
   "dir": "ltr",
   "lang": "nl-NL",
+  "categories": ["books", "education", "lifestyle"],
   "screenshots": [
     {
       "src": "/images/Screenshots/sagutidhome.png",
@@ -112,5 +114,10 @@
       "sizes": "32x32",
       "type": "image/png"
     }
-  ]
+  ],
+  "prefer_related_applications": false,
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  }
 }

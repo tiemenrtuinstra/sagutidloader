@@ -6,19 +6,24 @@ import { HeaderHandler } from './HeaderHandler.js';
 import { PWAShareHandler } from './PWAShareHandler.js';
 
 function initializeApp() {
-    if (document.querySelector('#installPopup')) {
-        PWAHandler.init();
-    }
+    const handlers = [
+        { condition: !!document.querySelector('#installPopup'), handler: PWAHandler },
+        { condition: 'serviceWorker' in navigator, handler: ServiceWorkerHandler },
+        { condition: true, handler: MetaTagHandler },
+        { condition: true, handler: CCommentHandler },
+        { condition: true, handler: HeaderHandler },
+        { condition: true, handler: PWAShareHandler },
+    ];
 
-    if ('serviceWorker' in navigator) {
-        ServiceWorkerHandler.init();
-    }
-
-    MetaTagHandler.init();
-    CCommentHandler.init();
-    HeaderHandler.init();
-    PWAShareHandler.init();
-
+    handlers.forEach(({ condition, handler }) => {
+        if (condition) {
+            try {
+                handler.init();
+            } catch (error) {
+                console.error(`Error initializing ${handler.name}:`, error);
+            }
+        }
+    });
 }
 
 initializeApp();

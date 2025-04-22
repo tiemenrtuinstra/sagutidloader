@@ -1,18 +1,16 @@
-export class CCommentHandler {
-    static log(message, color = '#1e3799', ...args) {
-        if (debugMode) {
-            console.log(`%c[CCommentHandler] 💬 ${message}`, `color: ${color};`, ...args);
-        }
-    }
+import { Logger } from './Util/Logger.js';
 
+export class CCommentHandler {
     static init() {
-        CCommentHandler.removePoweredByLink();
+        this.removePoweredByLink();
     }
 
     static removePoweredByLink() {
-        if ($(".ccomment-powered").length > 0) {
-            $(".ccomment-powered").remove();
-            CCommentHandler.log('CComment Powered by link verwijderd', 'orange');
+        const poweredByElements = document.querySelectorAll('.ccomment-powered');
+
+        if (poweredByElements.length > 0) {
+            poweredByElements.forEach((element) => element.remove());
+            Logger.log('CComment "Powered by" link removed', 'orange', 'CCommentHandler');
         }
     }
 }

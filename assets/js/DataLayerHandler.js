@@ -1,33 +1,50 @@
+import { Logger } from './Util/Logger.js';
+
 export class DataLayerHandler {
     static hasErrors() {
         return document.querySelectorAll('.rsform-error').length > 0;
     }
 
     static pushEvent(eventData) {
-        dataLayer.push(eventData);
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(eventData);
+
+        if (Logger.debugMode) {
+            if (DataLayerHandler.hasErrors()) {
+                Logger.error('Validation errors present, check your form.', 'DataLayerHandler');
+            }
+            Logger.log('Event pushed to dataLayer:', '#48dbfb', 'DataLayerHandler', eventData);
+        }
     }
 
     static bindTrackEvent(selector, eventType, eventName, step, formId, getData) {
-        const element = $(selector);
+        const elements = document.querySelectorAll(selector);
 
-        if (!element.length) return;
+        if (!elements.length) {
+            Logger.log(`No elements found for selector: ${selector}`, 'orange', 'DataLayerHandler');
+            return;
+        }
 
-        element.on(eventType, (event) => {
-            if (
-                (document.activeElement === element[0] && !DataLayerHandler.hasErrors()) ||
-                eventType === 'change'
-            ) {
-                const stepData = step || {};
-                const enrichedData = getData?.(event.target) || {};
-                const eventPayload = {
-                    event: eventName,
-                    formId,
-                    ...stepData,
-                    ...enrichedData,
-                };
-                DataLayerHandler.pushEvent(eventPayload);
-            }
+        elements.forEach((element) => {
+            element.addEventListener(eventType, (event) => {
+                if (
+                    (document.activeElement === element && !DataLayerHandler.hasErrors()) ||
+                    eventType === 'change'
+                ) {
+                    const stepData = step || {};
+                    const enrichedData = getData?.(event.target) || {};
+                    const eventPayload = {
+                        event: eventName,
+                        formId,
+                        ...stepData,
+                        ...enrichedData,
+                    };
+                    DataLayerHandler.pushEvent(eventPayload);
+                }
+            });
         });
+
+        Logger.log(`Event binding added for selector: ${selector}`, 'green', 'DataLayerHandler');
     }
 
     static createFormFieldEvent(field) {
@@ -36,6 +53,8 @@ export class DataLayerHandler {
         const fieldType = type || tagName.toLowerCase();
         const isSensitive = /(email|name|phone|tel|adres|address)/i.test(fieldName);
         const fieldValue = isSensitive ? '[masked]' : value;
+
+        Logger.log(`Form field event created for field: ${fieldName}`, '#48dbfb', 'DataLayerHandler');
 
         return {
             event: 'formFieldChange',
@@ -48,44 +67,26 @@ export class DataLayerHandler {
     static initializeDataLayer() {
         window.dataLayer = window.dataLayer || [];
         const originalPush = window.dataLayer.push;
-        const debugMode = DataLayerHandler.debug();
 
         window.dataLayer.push = (...args) => {
-            if (debugMode) {
-                args.forEach((arg) => {
-                    if (DataLayerHandler.hasErrors()) {
-                        console.error(
-                            '%c[dataLayer] Validation errors present, check your form.',
-                            'color: red; font-weight: bold;',
-                        );
-                    }
-                    console.log('%c[dataLayer]', 'color: green; font-weight: bold;', arg);
-                });
+            if (Logger.debugMode) {
+                args.forEach((arg) => Logger.log('Pushed to dataLayer:', '#48dbfb', 'DataLayerHandler', arg));
             }
             return originalPush.apply(window.dataLayer, args);
         };
+
+        Logger.log('DataLayer initialized and enhanced with debug logging.', 'green', 'DataLayerHandler');
     }
 
     static attachFormEventListeners(form, formId) {
         DataLayerHandler.bindTrackEvent(form, 'rsform-init', 'formStep', 1, formId);
-        form[0].dispatchEvent(new Event('rsform-init'));
-        DataLayerHandler.bindTrackEvent(
-            '.rsform-button-next',
-            'click',
-            'formStep',
-            2,
-            formId,
-        );
-        DataLayerHandler.bindTrackEvent(
-            '.rsform-submit-button',
-            'click',
-            'formSubmission',
-            'submit',
-            formId,
-        );
+        form.dispatchEvent(new Event('rsform-init'));
 
-        form.find('input, select, textarea').each(function (index, element) {
-            const fieldId = $(element).attr('id');
+        DataLayerHandler.bindTrackEvent('.rsform-button-next', 'click', 'formStep', 2, formId);
+        DataLayerHandler.bindTrackEvent('.rsform-submit-button', 'click', 'formSubmission', 'submit', formId);
+
+        form.querySelectorAll('input, select, textarea').forEach((element) => {
+            const fieldId = element.id;
             if (fieldId) {
                 DataLayerHandler.bindTrackEvent(
                     `#${fieldId}`,
@@ -98,17 +99,17 @@ export class DataLayerHandler {
             }
         });
 
-        form.on('keyup', (event) => {
+        form.addEventListener('keyup', (event) => {
             const target = event.target;
-            const classValue = $(target).attr('class');
-            const formId = $(target).closest('form').attr('id');
+            const classValue = target.className;
+            const formId = target.closest('form')?.id;
 
             if (event.key === 'Enter') {
                 let step = null;
-                if ($(target).hasClass('rsform-submit-button')) {
+                if (target.classList.contains('rsform-submit-button')) {
                     step = 'submit';
                 }
-                if ($(target).hasClass('rsform-button-next')) {
+                if (target.classList.contains('rsform-button-next')) {
                     step = 2;
                 }
 
@@ -123,52 +124,47 @@ export class DataLayerHandler {
                 }
             }
         });
-    }
-    static debug() {
-        const stagingRegex = /^https:\/\/.*\.staging\.financiallease\.nl\/.*/;
-        const isStaging = stagingRegex.test(window.location.href);
-        const urlParams = new URLSearchParams(window.location.search);
-        return isStaging && urlParams.get('debug') === 'datalayer';
-    }
 
-    static log(message, color = '#48dbfb', ...args) {
-        if (debugMode) {
-            console.log(`%c[DataLayerHandler] 📊 ${message}`, `color: ${color};`, ...args);
-        }
+        Logger.log('Form event listeners attached.', 'green', 'DataLayerHandler');
     }
 
     static init() {
         DataLayerHandler.initializeDataLayer();
 
         // Track all button clicks
-        $(document).on('click', 'button, a, input[type="button"], input[type="submit"]', function (event) {
+        document.addEventListener('click', (event) => {
             const target = event.target;
             const tagName = target.tagName.toLowerCase();
-            const elementText = $(target).text().trim();
-            const elementClass = $(target).attr('class');
-            const elementId = $(target).attr('id');
-            const elementHref = $(target).attr('href');
+            const elementText = target.textContent.trim();
+            const elementClass = target.className;
+            const elementId = target.id;
+            const elementHref = target.href;
 
             const eventData = {
                 event: 'interaction',
                 elementType: tagName,
-                elementText: elementText,
-                elementClass: elementClass,
-                elementId: elementId,
-                elementHref: elementHref
+                elementText,
+                elementClass,
+                elementId,
+                elementHref,
             };
 
             DataLayerHandler.pushEvent(eventData);
-            DataLayerHandler.log('Button clicked: ' + JSON.stringify(eventData), 'green');
+            Logger.log('Button clicked:', '#48dbfb', 'DataLayerHandler', eventData);
         });
 
-        $(document).ready(() => {
-            const form = $('.rsform form');
-            if (!form.length) return;
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('.rsform form');
+            if (!form) {
+                Logger.log('No form found on the page.', 'orange', 'DataLayerHandler');
+                return;
+            }
 
-            const formId = form.attr('id');
+            const formId = form.id;
 
             DataLayerHandler.attachFormEventListeners(form, formId);
         });
+
+        Logger.log('DataLayerHandler initialized.', 'green', 'DataLayerHandler');
     }
 }

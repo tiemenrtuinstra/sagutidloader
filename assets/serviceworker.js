@@ -96,38 +96,124 @@
     async fetch(event) {
         if (event.request.method !== 'GET') return;
 
-        event.respondWith(
-            caches.match(event.request)
-                .then(response => {
-                    if (response) {
-                        return response; // Return cached response if found
-                    }
+        const url = new URL(event.request.url);
+        const request = event.request;
+        // Define the paths that expect dynamic content
+        const dynamicPaths = ['/', '/verhalen', '/gedichten', '/overig']; // Add trailing slashes if your URLs use them
 
-                    return fetch(event.request)
-                        .then(fetchResponse => {
-                            if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
-                                return fetchResponse;
+        // --- Strategy 1: Network First for Dynamic HTML Pages ---
+        // Check if it's a navigation request for one of the dynamic paths
+        const isDynamicPath = dynamicPaths.some(path => {
+            // Match exact path or paths starting with it (e.g., /verhalen/some-story)
+            return url.pathname === path || url.pathname.startsWith(path + '/');
+        });
+
+        if (request.mode === 'navigate' && isDynamicPath) {
+            event.respondWith(
+                fetch(request)
+                    .then(networkResponse => {
+                        // If fetch is successful, cache the response and return it
+                        if (networkResponse.ok) {
+                            const responseToCache = networkResponse.clone();
+                            caches.open(this.CACHE_NAME).then(cache => {
+                                cache.put(request, responseToCache);
+                                console.log(`?? Cached dynamic page (Network First): ${request.url}`);
+                            });
+                        }
+                        return networkResponse;
+                    })
+                    .catch(async () => {
+                        // If network fails, try to get from cache
+                        console.warn(`?? Network failed for dynamic page: ${request.url}. Trying cache...`);
+                        const cachedResponse = await caches.match(request);
+                        if (cachedResponse) {
+                            return cachedResponse;
+                        }
+                        // If not in cache either, return offline page
+                        console.warn(`?? Not found in cache either: ${request.url}. Serving offline page.`);
+                        // Ensure '/offline.html' is pre-cached during install
+                        return caches.match('/offline.html');
+                    })
+            );
+            return; // Request handled
+        }
+
+        // --- Strategy 2: Cache First for Logo Images ---
+        // Use the CONFIG object passed from the main thread
+        const logoPathPrefix = CONFIG && CONFIG.joomlaLogoPath ? new URL(CONFIG.joomlaLogoPath, self.location.origin).pathname : '/images/Logo/';
+        if (url.pathname.startsWith(logoPathPrefix)) {
+             event.respondWith(
+                caches.match(request)
+                    .then(cachedResponse => {
+                        // Return cached response if found
+                        if (cachedResponse) {
+                            return cachedResponse;
+                        }
+                        // Otherwise, fetch from network
+                        return fetch(request).then(networkResponse => {
+                            // If fetch is successful, cache the response and return it
+                            if (networkResponse.ok) {
+                                const responseToCache = networkResponse.clone();
+                                caches.open(this.CACHE_NAME).then(cache => {
+                                    cache.put(request, responseToCache);
+                                    console.log(`?? Cached logo image (Cache First): ${request.url}`);
+                                });
                             }
-
-                            const responseToCache = fetchResponse.clone();
-
-                            // Use CONFIG.assetPath if needed
-                            if (!event.request.url.startsWith(CONFIG.assetPath)) {
-                                caches.open(CONFIG.CACHE_NAME)
-                                    .then(cache => {
-                                        cache.put(event.request, responseToCache);
-                                    });
-                            }
-
-                            return fetchResponse;
-                        })
-                        .catch(() => {
-                            if (event.request.mode === 'navigate') {
-                                return caches.match('/offline.html');
-                            }
-                            return null;
+                            return networkResponse;
+                        }).catch(() => {
+                             console.warn(`?? Failed to fetch logo image: ${request.url}`);
+                             // Optionally return a placeholder image from cache here
+                             return null; // Or return a placeholder response
                         });
-                })
+                    })
+            );
+            return; // Request handled
+        }
+
+        // --- Strategy 3: Cache First for Other Static Assets ---
+        // You might refine this check based on file extensions or if they are in STATIC_ASSETS
+        const isStaticAssetRequest = /\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$/.test(url.pathname) || this.STATIC_ASSETS.includes(url.pathname);
+        if (isStaticAssetRequest) {
+             event.respondWith(
+                caches.match(request)
+                    .then(cachedResponse => {
+                        // Return cached response if found
+                        if (cachedResponse) {
+                            return cachedResponse;
+                        }
+                        // Otherwise, fetch from network
+                        return fetch(request).then(networkResponse => {
+                            // If fetch is successful, cache the response and return it
+                            if (networkResponse.ok) {
+                                const responseToCache = networkResponse.clone();
+                                caches.open(this.CACHE_NAME).then(cache => {
+                                    cache.put(request, responseToCache);
+                                    console.log(`?? Cached static asset (Cache First): ${request.url}`);
+                                });
+                            }
+                            return networkResponse;
+                        }).catch(() => {
+                             console.warn(`?? Failed to fetch static asset: ${request.url}`);
+                             // Optionally return a fallback response or null
+                             return null;
+                        });
+                    })
+            );
+            return; // Request handled
+        }
+
+        // --- Fallback Strategy (Optional - e.g., Cache falling back to Network) ---
+        // For any other GET request not handled above
+        event.respondWith(
+            caches.match(request).then(cachedResponse => {
+                return cachedResponse || fetch(request).catch(() => {
+                    // Only return offline page for navigation requests if network fails
+                    if (request.mode === 'navigate') {
+                        return caches.match('/offline.html');
+                    }
+                    return null;
+                });
+            })
         );
     }
 

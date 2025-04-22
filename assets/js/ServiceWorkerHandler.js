@@ -1,46 +1,50 @@
-export class ServiceWorkerHandler {
-    static log(message, color = '#f9ca24', ...args) {
-        if (debugMode) {
-            console.log(`%c[ServiceWorkerHandler] ⚙️ ${message}`, `color: ${color};`, ...args);
-        }
-    }
+import { Logger } from './Util/Logger.js';
 
+export class ServiceWorkerHandler {
     static init() {
-        ServiceWorkerHandler.registerServiceWorker();
-        ServiceWorkerHandler.listenForUpdate();
-        ServiceWorkerHandler.updateDynamicContent();
+        if ('serviceWorker' in navigator) {
+            this.registerServiceWorker();
+            this.listenForUpdate();
+            this.updateDynamicContent();
+        } else {
+            Logger.log('Service workers are not supported in this browser.', 'orange', 'ServiceWorkerHandler');
+        }
     }
 
     static registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then((reg) => {
-                    ServiceWorkerHandler.log('Service worker geregistreerd bij:' + reg.scope, 'green');
-                })
-                .catch((err) => {
-                    ServiceWorkerHandler.log('SW registratie mislukt: ' + err, 'red');
-                });
+        if (typeof serviceWorkerPath === 'undefined') {
+            Logger.error('Service worker path is not defined.', 'ServiceWorkerHandler');
+            return;
         }
+
+        navigator.serviceWorker.register(serviceWorkerPath)
+            .then((reg) => {
+                Logger.log(`Service worker registered at: ${reg.scope}`, 'green', 'ServiceWorkerHandler');
+            })
+            .catch((err) => {
+                Logger.error(`Service worker registration failed: ${err}`, 'ServiceWorkerHandler');
+            });
     }
 
     static listenForUpdate() {
         navigator.serviceWorker.addEventListener('message', (event) => {
             if (event.data === 'updateAvailable') {
-                if (confirm('Nieuwe versie beschikbaar. Nu updaten?')) {
+                if (confirm('A new version is available. Update now?')) {
                     location.reload();
                 }
             }
         });
+
+        Logger.log('Listening for service worker updates.', 'blue', 'ServiceWorkerHandler');
     }
 
     static updateDynamicContent() {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'UPDATE_DYNAMIC_CONTENT'
-            });
-            ServiceWorkerHandler.log('Bericht verzonden naar service worker om dynamische inhoud bij te werken.', 'blue');
+        const controller = navigator.serviceWorker.controller;
+        if (controller) {
+            controller.postMessage({ type: 'UPDATE_DYNAMIC_CONTENT' });
+            Logger.log('Message sent to service worker to update dynamic content.', 'blue', 'ServiceWorkerHandler');
         } else {
-            ServiceWorkerHandler.log('Service worker controller niet beschikbaar.', 'red');
+            Logger.error('Service worker controller is not available.', 'ServiceWorkerHandler');
         }
     }
 }

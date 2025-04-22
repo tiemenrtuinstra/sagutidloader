@@ -1,23 +1,14 @@
-export class HeaderHandler {
-    static log(message, color = '#ee5253', ...args) {
-        if (debugMode) {
-            console.log(`%c[HeaderHandler] 🖼️ ${message}`, `color: ${color};`, ...args);
-        }
-    }
-
+export class CCommentHandler {
     static init() {
-        HeaderHandler.removeHeaderOnPages();
+        this.removePoweredByLink();
     }
 
-    static removeHeaderOnPages() {
-        var pathsToRemoveHeader = ["/sagu-overzicht", "/verhalen/", "/gedichten/", "/overig/"];
-        var shouldRemoveHeader = pathsToRemoveHeader.some(function (path) {
-            return window.location.pathname.includes(path);
-        });
+    static removePoweredByLink() {
+        const poweredByElements = document.querySelectorAll('.ccomment-powered');
 
-        if (shouldRemoveHeader) {
-            $(".tm-header-mobile, .tm-header, .tm-toolbar, #mobile-tab-menu, #footer-copyright").remove();
-            HeaderHandler.log('Header verwijderd van pagina', 'orange');
+        if (poweredByElements.length > 0) {
+            poweredByElements.forEach((element) => element.remove());
+            Logger.log('CComment "Powered by" link removed', 'orange', 'CCommentHandler');
         }
     }
 }
