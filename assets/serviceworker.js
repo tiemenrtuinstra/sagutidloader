@@ -1,6 +1,6 @@
 ﻿class SagutidServiceWorker {
     constructor() {
-        this.CACHE_NAME = 'sagutid-v11.0.0';
+        this.CACHE_NAME = 'sagutid-v13.0.0';
         this.STATIC_ASSETS = [
             '/',
             '/index.php',
@@ -71,7 +71,7 @@
                         })
                     );
                 } catch (err) {
-                    console.warn('?? Fout bij ophalen of verwerken sitemap of paginaâ€™s:', err);
+                    console.warn('?? Fout bij ophalen of verwerken sitemap of paginaÃ¢â‚¬â„¢s:', err);
                 }
             })()
         );
@@ -303,6 +303,8 @@ self.addEventListener('message', (event) => {
         console.log('Service Worker configuration initialized:', CONFIG);
     }
 });
+
+
 
 
 
