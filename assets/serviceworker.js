@@ -99,26 +99,21 @@
         event.respondWith(
             caches.match(event.request)
                 .then(response => {
-                    // Cache-first strategy:
                     if (response) {
                         return response; // Return cached response if found
                     }
 
-                    // If not cached, fetch from network
                     return fetch(event.request)
                         .then(fetchResponse => {
-                            // Check if response is valid
                             if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
                                 return fetchResponse;
                             }
 
-                            // Clone the response for caching
                             const responseToCache = fetchResponse.clone();
 
-                            // Check if the request URL is a chrome-extension URL
-                            if (!event.request.url.startsWith('chrome-extension://')) {
-                                // Cache the response for future use
-                                caches.open(this.CACHE_NAME)
+                            // Use CONFIG.assetPath if needed
+                            if (!event.request.url.startsWith(CONFIG.assetPath)) {
+                                caches.open(CONFIG.CACHE_NAME)
                                     .then(cache => {
                                         cache.put(event.request, responseToCache);
                                     });
@@ -127,9 +122,8 @@
                             return fetchResponse;
                         })
                         .catch(() => {
-                            // If network fetch fails, return the offline page
                             if (event.request.mode === 'navigate') {
-                                return caches.match('/plugins/sagutidloader/assets/offline.html');
+                                return caches.match('/offline.html');
                             }
                             return null;
                         });
@@ -214,6 +208,16 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', async (event) => {
     serviceWorker.message(event);
 });
+
+let CONFIG = {};
+
+self.addEventListener('message', (event) => {
+    if (event.data.type === 'INIT_CONFIG') {
+        CONFIG = event.data.config;
+        console.log('Service Worker configuration initialized:', CONFIG);
+    }
+});
+
 
 
 
