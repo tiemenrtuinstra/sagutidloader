@@ -1,6 +1,6 @@
-﻿class SagutidServiceWorker {
+class SagutidServiceWorker {
     constructor() {
-        this.CACHE_NAME = 'sagutid-v14.0.0';
+        this.CACHE_NAME = 'sagutid-v13.1.0';
         this.STATIC_ASSETS = [
             '/',
             '/index.php',
@@ -140,7 +140,7 @@
 
         // --- Strategy 2: Cache First for Logo Images ---
         // Use the CONFIG object passed from the main thread
-        const logoPathPrefix = CONFIG && CONFIG.joomlaLogoPath ? new URL(CONFIG.joomlaLogoPath, self.location.origin).pathname : '/images/Logo/';
+        const logoPathPrefix = SAGUTID_CONFIG && SAGUTID_CONFIG.joomlaLogoPath ? new URL(SAGUTID_CONFIG.joomlaLogoPath, self.location.origin).pathname : '/images/Logo/';
         if (url.pathname.startsWith(logoPathPrefix)) {
              event.respondWith(
                 caches.match(request)
@@ -303,6 +303,7 @@ self.addEventListener('message', (event) => {
         console.log('Service Worker configuration initialized:', CONFIG);
     }
 });
+
 
 
 
