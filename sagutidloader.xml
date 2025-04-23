@@ -1,7 +1,7 @@
 <extension type="plugin" group="system" version="4.0" client="site" method="upgrade">
   <name>PLG_SYSTEM_SAGUTIDLOADER</name>
   <author>Tiemen R Tuinstra</author>
-  <version>13.1.0</version>
+  <version>13.1.1</version>
   <description>PLG_SYSTEM_SAGUTIDLOADER_DESC</description>
   <files>
     <filename plugin="sagutidloader">sagutidloader.php</filename>
