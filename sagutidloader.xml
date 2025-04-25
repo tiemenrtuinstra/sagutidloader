@@ -1,7 +1,8 @@
-<extension type="plugin" group="system" version="4.0" client="site" method="upgrade">
+<extension type="plugin" group="system" version="4.0" method="upgrade">
+  <!-- Removed client="site" -->
   <name>PLG_SYSTEM_SAGUTIDLOADER</name>
   <author>Tiemen R Tuinstra</author>
-  <version>14.0.0</version>
+  <version>14.0.1</version>
   <description>PLG_SYSTEM_SAGUTIDLOADER_DESC</description>
   <files>
     <filename plugin="sagutidloader">sagutidloader.php</filename>
@@ -9,6 +10,7 @@
     <folder>assets/dist</folder>
     <file>assets/dist/main.bundle.js</file>
     <file>assets/dist/styles.bundle.css</file>
+    <folder>language</folder>
   </files>
   <languages>
     <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.ini</language>
