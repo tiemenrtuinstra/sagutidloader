@@ -1,6 +1,6 @@
 class SagutidServiceWorker {
     constructor() {
-        this.CACHE_NAME = 'sagutid-v14.0.1';
+        this.CACHE_NAME = 'sagutid-v14.0.2';
         this.STATIC_ASSETS = [
             '/',
             '/index.php',
@@ -303,6 +303,7 @@ self.addEventListener('message', (event) => {
         console.log('Service Worker configuration initialized:', CONFIG);
     }
 });
+
 
 
 
