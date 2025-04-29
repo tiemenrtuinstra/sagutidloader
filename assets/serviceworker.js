@@ -1,6 +1,6 @@
 
-const CACHE_NAME = 'sagutid-v14.0.3';
-
+const CACHE_NAME = 'sagutid-v14.1.0';
+const pluginPath = '/plugins/system/sagutidloader/';
 self.addEventListener('install', event => {
   self.skipWaiting(); // immediately move to activation
   event.waitUntil(
@@ -9,10 +9,10 @@ self.addEventListener('install', event => {
         // pre‑cache your assets...
         return cache.addAll([
           '/index.php',
-          '/offline.html',
-          '/dist/main.bundle.js',
-          '/dist/styles.bundle.css',
-          '/manifest.webmanifest'
+          pluginPath + 'assets/offline.html',
+          pluginPath + 'assets/dist/main.bundle.js',
+          pluginPath + 'assets/dist/styles.bundle.css',
+          pluginPath + 'assets/manifest.webmanifest'
         ]);
       })
   );
@@ -38,6 +38,7 @@ self.addEventListener('message', event => {
 });
 
 // ... your fetch handlers here ...
+
 
 
 
