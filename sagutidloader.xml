@@ -2,7 +2,7 @@
   <!-- Removed client="site" -->
   <name>PLG_SYSTEM_SAGUTIDLOADER</name>
   <author>Tiemen R Tuinstra</author>
-  <version>14.0.2</version>
+  <version>14.1.0</version>
   <description>PLG_SYSTEM_SAGUTIDLOADER_DESC</description>
   <files>
     <filename plugin="sagutidloader">sagutidloader.php</filename>
@@ -16,4 +16,11 @@
     <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.ini</language>
     <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.ini</language>
   </languages>
+  <config>
+    <fields name="params">
+      <fieldset name="basic" label="PLG_SYSTEM_SAGUTIDLOADER_FIELDSET_BASIC" class="sagutidloader">
+        <field name="debug" type="checkbox" default="0" label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_SAGUTIDLOADER_LABEL_DEBUG" description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_SAGUTIDLOADER_DESC_DEBUG" />
+      </fieldset>
+    </fields>
+  </config>
 </extension>
