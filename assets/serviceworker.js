@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'sagutid-v14.1.0';
+const CACHE_NAME = 'sagutid-v14.3.2';
 const pluginPath = '/plugins/system/sagutidloader/';
 self.addEventListener('install', event => {
   self.skipWaiting(); // immediately move to activation
