@@ -1,5 +1,4 @@
-const VERSION    = 'v14.3.2';
-const CACHE_NAME = `sagutid-${VERSION}`;
+const CACHE_NAME = `sagutid-v16.1.1`;
 
 // Helper: fetch with timeout
 async function fetchWithTimeout(resource, options = {}, timeout = 10000) {
@@ -240,6 +239,7 @@ self.addEventListener('install',  e => sagutidSW.install(e));
 self.addEventListener('activate', e => sagutidSW.activate(e));
 self.addEventListener('fetch',    e => sagutidSW.fetch(e));
 self.addEventListener('message',  e => sagutidSW.message(e));
+
 
 
 
