@@ -1,4 +1,40 @@
-const CACHE_NAME = `sagutid-v16.1.1`;
+const CACHE_NAME = `sagutid-v17.0.0`;
+
+// Import Logger functionality for service worker
+// Since we can't import ES modules in SW, we'll replicate the Logger logic
+class ServiceWorkerLogger {
+  static get debugMode() {
+    // Check if debug is enabled via URL param or config
+    try {
+      const urlParams = new URLSearchParams(self.location.search);
+      const urlDebug = urlParams.get('debug') === 'true' || urlParams.get('debug') === '1';
+      const configDebug = !!(self.SAGUTID_CONFIG && self.SAGUTID_CONFIG.debugMode === true);
+      return configDebug || urlDebug;
+    } catch {
+      return false;
+    }
+  }
+
+  static log(message, color = '#48dbfb', context = 'ServiceWorker', ...args) {
+    if (ServiceWorkerLogger.debugMode) {
+      console.log(
+        `%c[${context}] ${message}`,
+        `color: ${color};`,
+        ...args
+      );
+    }
+  }
+
+  static error(message, context = 'ServiceWorker', ...args) {
+    if (ServiceWorkerLogger.debugMode) {
+      console.error(
+        `%c[${context}] ${message}`,
+        'color: red; font-weight: bold;',
+        ...args
+      );
+    }
+  }
+}
 
 // Helper: fetch with timeout
 async function fetchWithTimeout(resource, options = {}, timeout = 10000) {
@@ -44,7 +80,7 @@ class SagutidServiceWorker {
   }
 
   async install(event) {
-    console.log('⏳ Installing Sagutid SW…');
+    ServiceWorkerLogger.log('Installing Sagutid SW…', '#00ff00');
     self.skipWaiting();
 
     event.waitUntil((async () => {
@@ -52,21 +88,19 @@ class SagutidServiceWorker {
 
       // 1) Preload critical assets
       for (const asset of this.CRITICAL_ASSETS) {
-        // Skip if asset is already cached
         const cached = await cache.match(asset);
         if (cached) {
-          console.log(`✅ Asset already cached: ${asset}`);
+          ServiceWorkerLogger.log(`Asset already cached: ${asset}`, '#48dbfb');
           continue;
         }
-        // Fetch and cache the asset
         try {
           const res = await fetchWithTimeout(asset);
           if (res.ok) {
             await cache.put(asset, res.clone());
-            console.log(`✅ Cached critical asset: ${asset}`);
+            ServiceWorkerLogger.log(`Cached critical asset: ${asset}`, '#00ff00');
           }
         } catch (err) {
-          console.warn(`⚠️ Failed to cache critical asset ${asset}:`, err);
+          ServiceWorkerLogger.error(`Failed to cache critical asset ${asset}: ${err.message}`);
         }
       }
 
@@ -76,47 +110,54 @@ class SagutidServiceWorker {
           const res = await fetchWithTimeout(asset);
           if (res.ok) {
             await cache.put(asset, res.clone());
-            console.log(`✅ Cached static asset: ${asset}`);
+            ServiceWorkerLogger.log(`Cached static asset: ${asset}`, '#00ff00');
           }
         } catch (err) {
-          console.warn(`⚠️ Failed to cache static asset ${asset}:`, err);
+          ServiceWorkerLogger.error(`Failed to cache static asset ${asset}: ${err.message}`);
         }
       }
 
       // 3) Fetch & cache sitemap URLs
       try {
         const sitemapRes = await fetchWithTimeout('/index.php?option=com_jmap&view=sitemap&format=xml');
-        const xml       = await sitemapRes.text();
-        const doc       = new DOMParser().parseFromString(xml, 'application/xml');
-        const urls      = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
+        const xml = await sitemapRes.text();
+        const doc = new DOMParser().parseFromString(xml, 'application/xml');
+        const urls = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
 
-        console.log(`🔍 Found ${urls.length} pages in sitemap.`);
+        ServiceWorkerLogger.log(`Found ${urls.length} pages in sitemap.`, '#ffa500');
         for (const url of urls) {
           try {
             const res = await fetchWithTimeout(url);
             if (res.ok) {
               await cache.put(url, res.clone());
-              console.log(`✅ Cached sitemap URL: ${url}`);
+              ServiceWorkerLogger.log(`Cached sitemap URL: ${url}`, '#00ff00');
             }
           } catch (err) {
-            console.warn(`⚠️ Failed to cache sitemap URL ${url}:`, err);
+            ServiceWorkerLogger.error(`Failed to cache sitemap URL ${url}: ${err.message}`);
           }
         }
       } catch (err) {
-        console.warn('⚠️ Error fetching or parsing sitemap:', err);
+        ServiceWorkerLogger.error(`Error fetching or parsing sitemap: ${err.message}`);
       }
     })());
   }
 
   async activate(event) {
-    console.log('🚀 Activating Sagutid SW…');
+    ServiceWorkerLogger.log('Activating Sagutid SW…', '#00ff00');
+    const currentCaches = [CACHE_NAME];
     event.waitUntil(
-      caches.keys()
-        .then(keys => Promise.all(
-          keys.filter(key => key !== this.CACHE_NAME)
-            .map(old => caches.delete(old))
-        ))
-        .then(() => self.clients.claim())
+      caches.keys().then(cacheNames =>
+        Promise.all(
+          cacheNames.filter(name => !currentCaches.includes(name))
+            .map(name => {
+              ServiceWorkerLogger.log(`Deleting old cache: ${name}`, '#ffa500');
+              return caches.delete(name);
+            })
+        )
+      ).then(() => {
+        ServiceWorkerLogger.log('Service worker activated and claiming clients', '#00ff00');
+        return self.clients.claim();
+      })
     );
   }
 
@@ -132,13 +173,19 @@ class SagutidServiceWorker {
       event.respondWith(
         fetch(req).then(networkRes => {
           if (networkRes.ok) {
+            ServiceWorkerLogger.log(`Network success for dynamic page: ${req.url}`, '#00ff00');
             caches.open(this.CACHE_NAME)
               .then(cache => cache.put(req, networkRes.clone()));
           }
           return networkRes;
         }).catch(async () => {
-          console.warn(`🌐 Network fail, falling back to cache: ${req.url}`);
+          ServiceWorkerLogger.error(`Network fail, falling back to cache: ${req.url}`);
           const cached = await caches.match(req);
+          if (cached) {
+            ServiceWorkerLogger.log(`Serving from cache: ${req.url}`, '#ffa500');
+          } else {
+            ServiceWorkerLogger.error(`No cache found, serving offline page for: ${req.url}`);
+          }
           return cached || caches.match('/offline.html');
         })
       );
@@ -146,17 +193,24 @@ class SagutidServiceWorker {
     }
 
     // Strategy B: Cache-first for logo images (using SAGUTID_CONFIG)
-    if (typeof SAGUTID_CONFIG?.joomlaLogoPath === 'string') {
-      const prefix = new URL(SAGUTID_CONFIG.joomlaLogoPath, self.location.origin).pathname;
+    if (typeof self.SAGUTID_CONFIG?.joomlaLogoPath === 'string') {
+      const prefix = new URL(self.SAGUTID_CONFIG.joomlaLogoPath, self.location.origin).pathname;
       if (url.pathname.startsWith(prefix)) {
         event.respondWith(
-          caches.match(req).then(cached => cached || fetch(req).then(networkRes => {
-            if (networkRes.ok) {
-              caches.open(this.CACHE_NAME)
-                .then(cache => cache.put(req, networkRes.clone()));
+          caches.match(req).then(cached => {
+            if (cached) {
+              ServiceWorkerLogger.log(`Serving logo from cache: ${req.url}`, '#48dbfb');
+            } else {
+              ServiceWorkerLogger.log(`Fetching logo from network: ${req.url}`, '#ffa500');
             }
-            return networkRes;
-          }).catch(() => null))
+            return cached || fetch(req).then(networkRes => {
+              if (networkRes.ok) {
+                caches.open(this.CACHE_NAME)
+                  .then(cache => cache.put(req, networkRes.clone()));
+              }
+              return networkRes;
+            }).catch(() => null);
+          })
         );
         return;
       }
@@ -166,67 +220,78 @@ class SagutidServiceWorker {
     if (/\.(css|js|png|jpg|jpeg|gif|svg|woff2?|ttf|eot)$/.test(url.pathname) ||
         this.STATIC_ASSETS.includes(url.pathname)) {
       event.respondWith(
-        caches.match(req).then(cached => cached || fetch(req).then(networkRes => {
-          if (networkRes.ok) {
-            caches.open(this.CACHE_NAME)
-              .then(cache => cache.put(req, networkRes.clone()));
+        caches.match(req).then(cached => {
+          if (cached) {
+            ServiceWorkerLogger.log(`Serving static asset from cache: ${req.url}`, '#48dbfb');
+          } else {
+            ServiceWorkerLogger.log(`Fetching static asset from network: ${req.url}`, '#ffa500');
           }
-          return networkRes;
-        }).catch(() => null))
+          return cached || fetch(req).then(networkRes => {
+            if (networkRes.ok) {
+              caches.open(this.CACHE_NAME)
+                .then(cache => cache.put(req, networkRes.clone()));
+            }
+            return networkRes;
+          }).catch(() => null);
+        })
       );
       return;
     }
 
-    // Fallback: cache-first, then network, then offline page
-    event.respondWith(
-      caches.match(req).then(cached => {
-        return cached ||
-          fetch(req).catch(() => {
-            if (req.mode === 'navigate') {
-              return caches.match('/offline.html');
-            }
-            return null;
-          });
-      })
-    );
+    // Fallback for navigation requests (offline)
+    if (req.mode === 'navigate') {
+      event.respondWith(
+        fetch(req).catch(async () => {
+          ServiceWorkerLogger.error(`Navigation request failed: ${req.url}`);
+          const cached = await caches.match(req);
+          return cached || caches.match('/offline.html');
+        })
+      );
+      return;
+    }
   }
 
   async message(event) {
     // Skip waiting on demand
     if (event.data === 'SKIP_WAITING') {
+      ServiceWorkerLogger.log('Skip waiting message received', '#ffa500');
       return self.skipWaiting();
     }
 
     // Initialize config from page
     if (event.data?.type === 'INIT_CONFIG') {
       self.SAGUTID_CONFIG = event.data.config;
-      console.log('ℹ️ SW config initialized:', event.data.config);
+      ServiceWorkerLogger.log('SW config initialized', '#00ff00', 'ServiceWorker', event.data.config);
       return;
     }
 
     // Update dynamic content on demand
     if (event.data?.type === 'UPDATE_DYNAMIC_CONTENT') {
+      ServiceWorkerLogger.log('Dynamic content update requested', '#ffa500');
       try {
         const cache = await caches.open(this.CACHE_NAME);
         const sitemapRes = await fetchWithTimeout('/index.php?option=com_jmap&view=sitemap&format=xml');
-        const xml       = await sitemapRes.text();
-        const doc       = new DOMParser().parseFromString(xml, 'application/xml');
-        const urls      = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
+        const xml = await sitemapRes.text();
+        const doc = new DOMParser().parseFromString(xml, 'application/xml');
+        const urls = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
 
+        ServiceWorkerLogger.log(`Updating ${urls.length} URLs from sitemap`, '#ffa500');
         for (const url of urls) {
           try {
             const res = await fetchWithTimeout(url);
             if (res.ok) {
               await cache.put(url, res.clone());
+              ServiceWorkerLogger.log(`Updated cache for: ${url}`, '#00ff00');
             }
           } catch (err) {
-            console.warn(`⚠️ Failed dynamic update cache ${url}:`, err);
+            ServiceWorkerLogger.error(`Failed dynamic update cache ${url}: ${err.message}`);
           }
         }
 
+        ServiceWorkerLogger.log('Dynamic content update completed successfully', '#00ff00');
         event.ports[0]?.postMessage({ success: true });
       } catch (err) {
-        console.error('❌ UPDATE_DYNAMIC_CONTENT failed:', err);
+        ServiceWorkerLogger.error(`UPDATE_DYNAMIC_CONTENT failed: ${err.message}`);
         event.ports[0]?.postMessage({ success: false });
       }
     }
@@ -235,10 +300,30 @@ class SagutidServiceWorker {
 
 const sagutidSW = new SagutidServiceWorker();
 
-self.addEventListener('install',  e => sagutidSW.install(e));
+// --- Service Worker: Robust Cache Management and Offline Support ---
+
+// Message event: Allow page to trigger cache update or skip waiting
+self.addEventListener('message', event => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+  if (event.data?.type === 'UPDATE_DYNAMIC_CONTENT') {
+    // Optionally, update dynamic content here (already present in your message handler)
+    // ... (existing dynamic content update code) ...
+  }
+});
+
+// On install: Call skipWaiting for immediate activation
+self.addEventListener('install', event => {
+  ServiceWorkerLogger.log('Install event triggered', '#00ff00');
+  sagutidSW.install(event);
+});
+
 self.addEventListener('activate', e => sagutidSW.activate(e));
 self.addEventListener('fetch',    e => sagutidSW.fetch(e));
 self.addEventListener('message',  e => sagutidSW.message(e));
+
 
 
 
