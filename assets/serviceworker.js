@@ -4,7 +4,6 @@ const CACHE_NAME = `sagutid-v17.0.0`;
 // Since we can't import ES modules in SW, we'll replicate the Logger logic
 class ServiceWorkerLogger {
   static get debugMode() {
-    // Check if debug is enabled via URL param or config
     try {
       const urlParams = new URLSearchParams(self.location.search);
       const urlDebug = urlParams.get('debug') === 'true' || urlParams.get('debug') === '1';
@@ -295,6 +294,14 @@ class SagutidServiceWorker {
         event.ports[0]?.postMessage({ success: false });
       }
     }
+
+    // Set debug mode
+    if (event.data?.type === 'SET_DEBUG_MODE') {
+      ServiceWorkerLogger.log(`Debug mode set to: ${event.data.debugMode}`, '#00ff00');
+      // Update local debug mode state
+      Logger.debugMode = event.data.debugMode;
+      return;
+    }
   }
 }
 
@@ -323,6 +330,15 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', e => sagutidSW.activate(e));
 self.addEventListener('fetch',    e => sagutidSW.fetch(e));
 self.addEventListener('message',  e => sagutidSW.message(e));
+
+// In main thread
+navigator.serviceWorker.ready.then(registration => {
+  registration.active.postMessage({
+    type: 'SET_DEBUG_MODE',
+    debugMode: Logger.debugMode
+  });
+});
+
 
 
 
