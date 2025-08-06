@@ -1,4 +1,4 @@
-const CACHE_NAME = `sagutid-v18.5.0`;
+const CACHE_NAME = `sagutid-v18.6.0`;
 
 async function fetchWithTimeout(resource, options = {}, timeout = 10000) {
   const controller = new AbortController();
@@ -43,13 +43,12 @@ class SagutidServiceWorker {
   }
 
   async install(event) {
-    // ServiceWorkerLogger..log('Installing Sagutid SW…', '#00ff00');
     self.skipWaiting();
 
     event.waitUntil((async () => {
       const cache = await caches.open(this.CACHE_NAME);
 
-      // 1) Preload critical assets
+      // 1) Preload critical assets - don't fail on individual errors
       for (const asset of this.CRITICAL_ASSETS) {
         const cached = await cache.match(asset);
         if (cached) {
@@ -59,43 +58,53 @@ class SagutidServiceWorker {
           const res = await fetchWithTimeout(asset);
           if (res.ok) {
             await cache.put(asset, res.clone());
+          } else {
+            console.warn(`Failed to cache critical asset ${asset}: ${res.status} ${res.statusText}`);
           }
         } catch (err) {
-          throw new Error(`Failed to cache critical asset ${asset}: ${err.message}`);
+          // Don't throw - just log and continue
+          console.warn(`Failed to cache critical asset ${asset}: ${err.message}`);
         }
       }
 
-      // 2) Cache static assets
+      // 2) Cache static assets - don't fail on individual errors
       for (const asset of this.STATIC_ASSETS) {
         try {
           const res = await fetchWithTimeout(asset);
           if (res.ok) {
             await cache.put(asset, res.clone());
+          } else {
+            console.warn(`Failed to cache static asset ${asset}: ${res.status} ${res.statusText}`);
           }
         } catch (err) {
-          throw new Error(`Failed to cache static asset ${asset}: ${err.message}`);
+          // Don't throw - just log and continue
+          console.warn(`Failed to cache static asset ${asset}: ${err.message}`);
         }
       }
 
-      // 3) Fetch & cache sitemap URLs
+      // 3) Fetch & cache sitemap URLs - don't fail on errors
       try {
         const sitemapRes = await fetchWithTimeout('/index.php?option=com_jmap&view=sitemap&format=xml');
-        const xml = await sitemapRes.text();
-        const doc = new DOMParser().parseFromString(xml, 'application/xml');
-        const urls = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
+        if (sitemapRes.ok) {
+          const xml = await sitemapRes.text();
+          const doc = new DOMParser().parseFromString(xml, 'application/xml');
+          const urls = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
 
-        for (const url of urls) {
-          try {
-            const res = await fetchWithTimeout(url);
-            if (res.ok) {
-              await cache.put(url, res.clone());
+          for (const url of urls) {
+            try {
+              const res = await fetchWithTimeout(url);
+              if (res.ok) {
+                await cache.put(url, res.clone());
+              }
+            } catch (err) {
+              // Don't throw - just log and continue
+              console.warn(`Failed to cache sitemap URL ${url}: ${err.message}`);
             }
-          } catch (err) {
-            throw new Error(`Failed to cache sitemap URL ${url}: ${err.message}`);
           }
         }
       } catch (err) {
-        throw new Error(`Error fetching or parsing sitemap: ${err.message}`);
+        // Don't throw - just log and continue
+        console.warn(`Error fetching or parsing sitemap: ${err.message}`);
       }
     })());
   }
@@ -106,13 +115,9 @@ class SagutidServiceWorker {
       caches.keys().then(cacheNames =>
         Promise.all(
           cacheNames.filter(name => !currentCaches.includes(name))
-            .map(name => {
-              return caches.delete(name);
-            })
+            .map(name => caches.delete(name))
         )
-      ).then(() => {
-        return self.clients.claim();
-      })
+      ).then(() => self.clients.claim())
     );
   }
 
@@ -134,20 +139,18 @@ class SagutidServiceWorker {
           return networkRes;
         }).catch(async () => {
           const cached = await caches.match(req);
-        
           return cached || caches.match('/offline.html');
         })
       );
       return;
     }
 
-    // Strategy B: Cache-first for logo images (using SAGUTID_CONFIG)
+    // Strategy B: Cache-first for logo images
     if (typeof self.SAGUTID_CONFIG?.joomlaLogoPath === 'string') {
       const prefix = new URL(self.SAGUTID_CONFIG.joomlaLogoPath, self.location.origin).pathname;
       if (url.pathname.startsWith(prefix)) {
         event.respondWith(
           caches.match(req).then(cached => {
-  
             return cached || fetch(req).then(networkRes => {
               if (networkRes.ok) {
                 caches.open(this.CACHE_NAME)
@@ -166,7 +169,6 @@ class SagutidServiceWorker {
         this.STATIC_ASSETS.includes(url.pathname)) {
       event.respondWith(
         caches.match(req).then(cached => {
-
           return cached || fetch(req).then(networkRes => {
             if (networkRes.ok) {
               caches.open(this.CACHE_NAME)
@@ -179,7 +181,7 @@ class SagutidServiceWorker {
       return;
     }
 
-    // Fallback for navigation requests (offline)
+    // Fallback for navigation requests
     if (req.mode === 'navigate') {
       event.respondWith(
         fetch(req).catch(async () => {
@@ -192,18 +194,15 @@ class SagutidServiceWorker {
   }
 
   async message(event) {
-    // Skip waiting on demand
     if (event.data === 'SKIP_WAITING') {
       return self.skipWaiting();
     }
 
-    // Initialize config from page
     if (event.data?.type === 'INIT_CONFIG') {
       self.SAGUTID_CONFIG = event.data.config;
       return;
     }
 
-    // Update dynamic content on demand
     if (event.data?.type === 'UPDATE_DYNAMIC_CONTENT') {
       try {
         const cache = await caches.open(this.CACHE_NAME);
@@ -219,7 +218,7 @@ class SagutidServiceWorker {
               await cache.put(url, res.clone());
             }
           } catch (err) {
-            throw new Error(`Failed to update ${url}: ${err.message}`);
+            console.warn(`Failed to update ${url}: ${err.message}`);
           }
         }
         event.ports[0]?.postMessage({ success: true });
@@ -233,50 +232,7 @@ class SagutidServiceWorker {
 
 const sagutidSW = new SagutidServiceWorker();
 
-// Event listeners - only one set needed
-self.addEventListener('install', event => {
-  sagutidSW.install(event);
-});
-
+self.addEventListener('install', event => sagutidSW.install(event));
 self.addEventListener('activate', e => sagutidSW.activate(e));
 self.addEventListener('fetch', e => sagutidSW.fetch(e));
 self.addEventListener('message', e => sagutidSW.message(e));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
