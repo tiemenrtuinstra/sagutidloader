@@ -1,4 +1,4 @@
-const CACHE_NAME = `sagutid-v18.2.0`;
+const CACHE_NAME = `sagutid-v18.5.0`;
 
 async function fetchWithTimeout(resource, options = {}, timeout = 10000) {
   const controller = new AbortController();
@@ -241,6 +241,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', e => sagutidSW.activate(e));
 self.addEventListener('fetch', e => sagutidSW.fetch(e));
 self.addEventListener('message', e => sagutidSW.message(e));
+
 
 
 
