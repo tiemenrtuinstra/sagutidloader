@@ -1,5 +1,18 @@
 const CACHE_NAME = `sagutid-v18.2.0`;
 
+async function fetchWithTimeout(resource, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(resource, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
+
 class SagutidServiceWorker {
   constructor() {
     this.CACHE_NAME    = CACHE_NAME;
@@ -228,6 +241,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', e => sagutidSW.activate(e));
 self.addEventListener('fetch', e => sagutidSW.fetch(e));
 self.addEventListener('message', e => sagutidSW.message(e));
+
 
 
 
