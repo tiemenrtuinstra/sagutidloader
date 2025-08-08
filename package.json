@@ -1,11 +1,14 @@
 {
   "name": "sagutidloader",
-  "version": "1.0.0",
+  "version": "18.7.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build:prod": "webpack --mode production",
-    "build:dev": "webpack serve --mode development"
+    "build:dev": "webpack serve --mode development",
+    "release:patch": "pwsh ./release.ps1 patch",
+    "release:minor": "pwsh ./release.ps1 minor",
+    "release:major": "pwsh ./release.ps1 major"
   },
   "keywords": [],
   "author": "",
@@ -21,9 +24,12 @@
     "style-loader": "^3.3.4",
     "webpack": "^5.99.5",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.2.1"
+    "webpack-dev-server": "^5.2.1",
+    "webpack-remove-empty-scripts": "^1.0.4"
   },
   "dependencies": {
-    "i": "^0.3.7"
+    "@material/web": "^2.3.0",
+    "i": "^0.3.7",
+    "module": "^1.1.0"
   }
 }

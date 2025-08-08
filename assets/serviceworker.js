@@ -257,3 +257,4 @@ self.addEventListener('install', event => sagutidSW.install(event));
 self.addEventListener('activate', event => sagutidSW.activate(event));
 self.addEventListener('fetch', event => sagutidSW.fetch(event));
 self.addEventListener('message', event => sagutidSW.message(event));
+
