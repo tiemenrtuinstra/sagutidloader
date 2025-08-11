@@ -1,4 +1,4 @@
-const CACHE_NAME = `sagutid-v18.10.0`;
+const CACHE_NAME = `sagutid-v18.11.0`;
 
 // Helper: fetch with timeout and better error handling
 async function fetchWithTimeout(resource, options = {}, timeout = 8000) {
@@ -33,7 +33,7 @@ class SagutidServiceWorker {
       '/images/Logo/android-chrome-512x512.png'
     ];
     
-    this.dynamicPaths = ['/', '/verhalen', '/gedichten', '/overig'];
+    this.dynamicPaths = ['/', '/verhalen', '/gedichten', '/overig','tegeltjes-wijsheden'];
     
     // Only critical assets that definitely exist
     this.CRITICAL_ASSETS = [
@@ -257,6 +257,7 @@ self.addEventListener('install', event => sagutidSW.install(event));
 self.addEventListener('activate', event => sagutidSW.activate(event));
 self.addEventListener('fetch', event => sagutidSW.fetch(event));
 self.addEventListener('message', event => sagutidSW.message(event));
+
 
 
 
