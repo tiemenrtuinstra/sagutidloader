@@ -106,21 +106,33 @@ if (Test-Path $ServiceWorkerFile) {
 $DidBuild = $false
 if (Test-Path $PackageJsonFile) {
     if (-not $SkipBuild) {
-        if (Test-Path "package-lock.json" -or Test-Path "node_modules") {
+
+        # Compute conditions separately (avoids parser treating -or as a param)
+        $hasLock  = Test-Path -LiteralPath "package-lock.json"
+        $hasMods  = Test-Path -LiteralPath "node_modules"
+        if ($hasLock -or $hasMods) {
             Write-Host "Running npm install (ensuring dependencies)..."
-            npm install --no-fund --no-audit | Out-Null
         } else {
             Write-Host "Running initial npm install..."
-            npm install --no-fund --no-audit | Out-Null
         }
-        if ($LASTEXITCODE -ne 0) { Write-Host "npm install failed." -ForegroundColor Red; exit 1 }
+
+        npm install --no-fund --no-audit | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "npm install failed." -ForegroundColor Red
+            exit 1
+        }
 
         Write-Host "Running build..."
         if (Get-Command npm -ErrorAction SilentlyContinue) {
             npm run build
-            if ($LASTEXITCODE -ne 0) { Write-Host "Build failed." -ForegroundColor Red; exit 1 }
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "Build failed." -ForegroundColor Red
+                exit 1
+            }
             $DidBuild = $true
             Write-Host "Build completed."
+        } else {
+            Write-Warning "npm command not found; skipping build."
         }
     }
 }
