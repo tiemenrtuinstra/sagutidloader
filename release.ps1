@@ -124,7 +124,7 @@ if (Test-Path $PackageJsonFile) {
 
         Write-Host "Running build..."
         if (Get-Command npm -ErrorAction SilentlyContinue) {
-            npm run build
+            npm run build:prod
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "Build failed." -ForegroundColor Red
                 exit 1
