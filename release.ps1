@@ -104,22 +104,24 @@ if (Test-Path $ServiceWorkerFile) {
 
 # --- 7. (Optional) Build step ---
 $DidBuild = $false
-if (Test-Path $PackageJsonFile -and -not $SkipBuild) {
-    if (Test-Path "package-lock.json" -or Test-Path "node_modules") {
-        Write-Host "Running npm install (ensuring dependencies)..."
-        npm install --no-fund --no-audit | Out-Null
-    } else {
-        Write-Host "Running initial npm install..."
-        npm install --no-fund --no-audit | Out-Null
-    }
-    if ($LASTEXITCODE -ne 0) { Write-Host "npm install failed." -ForegroundColor Red; exit 1 }
+if (Test-Path $PackageJsonFile) {
+    if (-not $SkipBuild) {
+        if (Test-Path "package-lock.json" -or Test-Path "node_modules") {
+            Write-Host "Running npm install (ensuring dependencies)..."
+            npm install --no-fund --no-audit | Out-Null
+        } else {
+            Write-Host "Running initial npm install..."
+            npm install --no-fund --no-audit | Out-Null
+        }
+        if ($LASTEXITCODE -ne 0) { Write-Host "npm install failed." -ForegroundColor Red; exit 1 }
 
-    Write-Host "Running build..."
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
-        npm run build
-        if ($LASTEXITCODE -ne 0) { Write-Host "Build failed." -ForegroundColor Red; exit 1 }
-        $DidBuild = $true
-        Write-Host "Build completed."
+        Write-Host "Running build..."
+        if (Get-Command npm -ErrorAction SilentlyContinue) {
+            npm run build
+            if ($LASTEXITCODE -ne 0) { Write-Host "Build failed." -ForegroundColor Red; exit 1 }
+            $DidBuild = $true
+            Write-Host "Build completed."
+        }
     }
 }
 
