@@ -18,10 +18,13 @@ foreach ($tool in @("git","gh")) {
 
 # --- 2. Git cleanliness ---
 $gitStatus = git status --porcelain
-if ($gitStatus -and -not $Force) {
-    Write-Warning "Working tree not clean. Commit / stash changes or re-run with -Force."
-    exit 1
+if ($gitStatus) {
+    if (-not $Force) {
+        Write-Warning "Working tree not clean. Commit / stash changes or re-run with -Force."
+        exit 1
+    }
 }
+Write-Host "Working tree is clean, proceeding with release."
 
 # --- 3. Version bump logic (XML) ---
 $XmlFile = "sagutidloader.xml"
