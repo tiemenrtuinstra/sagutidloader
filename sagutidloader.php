@@ -1,95 +1,265 @@
 <?php
-// filepath: /plugins/system/sagutidloader/sagutidloader.php
-
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Document\HtmlDocument;
 
+/**
+ * System plugin to load Sagutid PWA assets and configuration.
+ *
+ * Injects JS configuration, service worker registration and plugin assets
+ * into the HTML head section on the frontend.
+ *
+ * @since  1.0.0
+ */
 class PlgSystemSagutidloader extends CMSPlugin
 {
+    /**
+     * Joomla application instance.
+     *
+     * @var    CMSApplication
+     * @since  1.0.0
+     */
     private static $app;
+
+    /**
+     * Joomla document instance.
+     *
+     * @var    HtmlDocument
+     * @since  1.0.0
+     */
     private static $document;
+
+    /**
+     * Base URL to this plugin's assets directory.
+     *
+     * @var    string
+     * @since  1.0.0
+     */
     private static $assetPath;
 
+    /**
+     * Constructor.
+     *
+     * @param   object  $subject  The object to observe
+     * @param   array   $config   Plugin configuration array
+     *
+     * @since   1.0.0
+     */
     public function __construct(&$subject, $config)
     {
         parent::__construct($subject, $config);
-        self::$app = Factory::getApplication();
+        self::$app      = Factory::getApplication();
         self::$document = self::$app->getDocument();
-        self::$assetPath = Uri::root() . 'plugins/system/sagutidloader/assets/';
+        self::setAssetPath();
     }
 
-    public function onBeforeCompileHead()
+    /**
+     * Joomla event: before compiling the HTML head.
+     * This event is triggered before the document head is compiled.
+     *
+     * - Checks client is site and document is HTML
+     * - Injects a global JavaScript config object
+     * - Calls addAssets() to enqueue JS/CSS/manifest
+     *
+     * @return  void
+     * @since   1.0.0
+     * @throws  \Exception
+     */
+    public function onBeforeCompileHead(): void
     {
-        // Only load on the frontend
-        if (!self::$app->isClient('site')) {
-            return;
+        try {
+            // Only run on the site front-end
+            if (!self::$app->isClient('site')) {
+                return;
+            }
+
+            // Ensure the document is HTML
+            if (!self::$document instanceof HtmlDocument) {
+                self::$app->enqueueMessage('Document is not an HTML document.', 'error');
+                return;
+            }
+
+            // Build JS configuration object for front-end
+            $serviceWorkerPath = self::getJoomlaImagePath('serviceworker.js');
+            $joomlaLogoPath    = self::getJoomlaImagePath('Logo');
+            $assetPath         = self::$assetPath;
+
+            self::$document->addScriptDeclaration(
+                "window.SAGUTID_CONFIG = {
+                    serviceWorkerPath: '{$serviceWorkerPath}',
+                    joomlaLogoPath:    '{$joomlaLogoPath}',
+                    assetPath:         '{$assetPath}',
+                    serviceWorker:     '{$serviceWorkerPath}',
+                    script:           '{$assetPath}dist/main.bundle.js',
+                    style:            '{$assetPath}dist/styles.bundle.css',
+                    manifest:         '{$assetPath}manifest.webmanifest',
+                    debugMode:        false
+                };"
+            );
+
+            // Enqueue plugin assets
+            self::addAssets();
+        } catch (\Exception $e) {
+            self::$app->enqueueMessage('Error in Sagutid loader: ' . $e->getMessage(), 'error');
         }
-
-        if (!self::$document instanceof \Joomla\CMS\Document\HtmlDocument) {
-            self::$app->enqueueMessage('Document is not an HTML document.', 'error');
-            return;
-        }
-
-        // Debugging
-        self::$app->enqueueMessage('onBeforeCompileHead executed', 'info');
-
-        // Inject paths into a global JavaScript variable
-        $serviceWorkerPath = self::getJoomlaImagePath('serviceworker.js');
-        $joomlaLogoPath = self::getJoomlaImagePath('Logo');
-        $assetPath = self::$assetPath;
-
-        self::$document->addScriptDeclaration("
-            const SAGUTID_CONFIG = {
-                serviceWorkerPath: '{$serviceWorkerPath}',
-                joomlaLogoPath: '{$joomlaLogoPath}',
-                assetPath: '{$assetPath}'
-            };
-        ");
-
-        // Add assets
-        self::addAssets();
     }
 
-    private static function addAssets()
+    /**
+     * Enqueue the plugin's main JS, CSS and manifest.
+     *
+     * @return  void
+     * @since   1.0.0
+     */
+    private static function addAssets(): void
     {
-        self::addScript('main.bundle.js', ['type' => 'text/javascript', 'defer' => true]);
-        self::addStyleSheet('styles.css', ['type' => 'text/css']);
+        self::addScript('main.bundle.js',   ['type' => 'text/javascript', 'defer' => true]);
+        self::addStyleSheet('styles.bundle.css',   ['type' => 'text/css']);
         self::addHeadLink('manifest.webmanifest', 'manifest');
     }
 
-    private static function addScript($fileName, $args = [])
+    /**
+     * Add a <script> tag for a file in assets/dist.
+     *
+     * @param   string  $fileName  Filename under assets/dist
+     * @param   array   $args      HTML attributes for the <script> tag
+     *
+     * @return  void
+     * @since   1.0.0
+     */
+    private static function addScript(string $fileName, array $args = []): void
     {
-        self::$document->addScript(self::getDistPath($fileName), $args);
-        self::$app->enqueueMessage('Script added: ' . $fileName, 'info');
+        $url = self::getDistPath($fileName);
+        self::$document->addScript($url, $args);
+        self::$app->enqueueMessage('Script added: ' . $url, 'info');
     }
 
-    private static function addStyleSheet($fileName, $args = [])
+    /**
+     * Add a <link rel="stylesheet"> tag for a file in assets/dist.
+     *
+     * @param   string  $fileName  Filename under assets/dist
+     * @param   array   $args      HTML attributes for the <link> tag
+     *
+     * @return  void
+     * @since   1.0.0
+     */
+    private static function addStyleSheet(string $fileName, array $args = []): void
     {
-        self::$document->addStyleSheet(self::getDistPath($fileName), $args);
-        self::$app->enqueueMessage('Stylesheet added: ' . $fileName, 'info');
+        $url = self::getDistPath($fileName);
+        self::$document->addStyleSheet($url, $args);
+        self::$app->enqueueMessage('Stylesheet added: ' . $url, 'info');
     }
 
-    private static function addHeadLink($fileName, $rel = 'stylesheet', $type = 'text/css')
+    /**
+     * Add a generic <link> tag (e.g., manifest).
+     *
+     * @param   string  $fileName  Filename under assets/
+     * @param   string  $rel       The rel attribute for the link
+     * @param   string  $type      The type attribute (default text/css)
+     *
+     * @return  void
+     * @since   1.0.0
+     */
+    private static function addHeadLink(string $fileName, string $rel = 'stylesheet', string $type = 'text/css'): void
     {
-        self::$document->addHeadLink(self::getAssetPath($fileName), $rel, 'stylesheet', ['type' => $type]);
-        self::$app->enqueueMessage('Head link added: ' . $fileName, 'info');
+        $url = self::getAssetPath($fileName);
+        self::$document->addHeadLink($url, $rel, 'stylesheet', ['type' => $type]);
+        self::$app->enqueueMessage('Head link added: ' . $url, 'info');
     }
 
-    private static function getAssetPath($fileName)
+    /**
+     * Get full URL to a file in assets/.
+     *
+     * @param   string  $fileName  Filename relative to assets/
+     *
+     * @return  string
+     * @since   1.0.0
+     */
+    private static function getAssetPath(string $fileName): string
     {
         return self::$assetPath . $fileName;
     }
 
-    private static function getDistPath($fileName)
+    /**
+     * Get full URL to a file in assets/dist/.
+     *
+     * @param   string  $fileName  Filename relative to assets/dist/
+     *
+     * @return  string
+     * @since   1.0.0
+     */
+    private static function getDistPath(string $fileName): string
     {
         return self::getAssetPath('dist/' . $fileName);
     }
 
-    private static function getJoomlaImagePath(string $fileName = '')
+    /**
+     * Get full URL to a file in Joomla's images/ directory.
+     *
+     * @param   string  $fileName  Optional filename
+     *
+     * @return  string
+     * @since   1.0.0
+     */
+    private static function getJoomlaImagePath(string $fileName = ''): string
     {
-        return Uri::root() . 'images/' . ($fileName ? $fileName : '');
+        return Uri::root() . 'images/' . $fileName;
+    }
+
+    /**
+     * Determine and store the base URL to the plugin's assets directory.
+     *
+     * @return  string  The asset folder URL or empty on failure
+     * @since   1.0.0
+     */
+    private static function setAssetPath(): string
+    {
+        $plugin = PluginHelper::getPlugin('system', 'sagutidloader');
+
+        if (!$plugin) {
+            self::$app->enqueueMessage('Could not load plugin data.', 'error');
+            return '';
+        }
+
+        $path = Uri::root(true)
+            . '/plugins/system/'
+            . $plugin->name
+            . '/assets/';
+
+        self::$assetPath = $path;
+
+        return $path;
+    }
+
+    /**
+     * Diagnostics: Check if assets are loaded (for admin panel display)
+     *
+     * @return string HTML with asset status
+     */
+    public function getDiagnosticsStatus()
+    {
+        // Only show in admin
+        if (!self::$app->isClient('administrator')) {
+            return '';
+        }
+        $doc = self::$document;
+        $headHtml = $doc->getBuffer('head');
+        $assets = [
+            'main.bundle.js',
+            'styles.bundle.css',
+            'manifest.webmanifest',
+        ];
+        $output = '<ul style="list-style:none;padding:0;">';
+        foreach ($assets as $asset) {
+            $ok = strpos($headHtml, $asset) !== false;
+            $icon = $ok ? '✅' : '❌';
+            $output .= "<li>$icon $asset</li>";
+        }
+        $output .= '</ul>';
+        return $output;
     }
 }

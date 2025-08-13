@@ -12,22 +12,23 @@ export class ServiceWorkerHandler {
     }
 
     static registerServiceWorker() {
-        if (typeof serviceWorkerPath === 'undefined') {
+        const serviceWorkerPath = SAGUTID_CONFIG.serviceWorkerPath;
+        if (!serviceWorkerPath) {
             Logger.error('Service worker path is not defined.', 'ServiceWorkerHandler');
             return;
         }
 
         navigator.serviceWorker.register(serviceWorkerPath)
-            .then((reg) => {
+            .then(reg => {
                 Logger.log(`Service worker registered at: ${reg.scope}`, 'green', 'ServiceWorkerHandler');
             })
-            .catch((err) => {
+            .catch(err => {
                 Logger.error(`Service worker registration failed: ${err}`, 'ServiceWorkerHandler');
             });
     }
 
     static listenForUpdate() {
-        navigator.serviceWorker.addEventListener('message', (event) => {
+        navigator.serviceWorker.addEventListener('message', event => {
             if (event.data === 'updateAvailable') {
                 if (confirm('A new version is available. Update now?')) {
                     location.reload();

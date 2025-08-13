@@ -1,0 +1,24 @@
+.uk-icon {
+  .uk-text-primary {
+    color: $color-secondary !important;
+  }
+}
+.uk-card-body img {
+  min-width: 285px;
+  &.full-img {
+    margin: 0 -15px;
+    width: -webkit-fill-available;
+    display: block;
+    clear: both;
+  }
+}
+#foooter-sub-title li.el-item span p {
+  margin: 0 !important;
+  &::first-letter {
+    color: $color-warning;
+  }
+}
+.uk-nav img,
+nav img {
+  display: none;
+}

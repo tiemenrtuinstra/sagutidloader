@@ -1,63 +1,77 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts');
 
 module.exports = {
-    mode: 'production', // Use 'development' for debugging
+    mode: 'production',
     entry: {
-        main: './assets/js/sagutid.js', // Entry point for JavaScript
-        styles: './assets/scss/sagutid.scss', // Entry point for SCSS
+        main: './assets/js/sagutid.js',
+        styles: './assets/scss/sagutid.scss'
     },
+
+    devtool: 'source-map',
+
     output: {
         path: path.resolve(__dirname, 'assets/dist'),
-        filename: (pathData) => {
-            // Only generate JS for the 'main' entry
-            return pathData.chunk.name === 'main' ? '[name].bundle.js' : '[name].js';
-        },
+        filename: pathData =>
+            pathData.chunk.name === 'main' ? '[name].bundle.js' : '[name].js'
     },
+
     module: {
         rules: [
             {
-                test: /\.js$/, // Process JavaScript files
+                test: /\.js$/,
                 exclude: /node_modules/,
                 use: {
-                    loader: 'babel-loader', // Optional: Use Babel for compatibility
+                    loader: 'babel-loader',
                     options: {
                         presets: ['@babel/preset-env'],
-                    },
-                },
+                        sourceMaps: true
+                    }
+                }
             },
             {
-                test: /\.scss$/, // Process SCSS files
+                test: /\.scss$/,
                 use: [
-                    MiniCssExtractPlugin.loader, // Extract CSS into separate files
-                    'css-loader', // Translates CSS into CommonJS
-                    'sass-loader', // Compiles Sass to CSS
-                ],
-            },
-        ],
+                    MiniCssExtractPlugin.loader,
+                    "css-loader",
+                    {
+                        loader: "sass-loader",
+                        options: {
+                            sourceMap: true,
+                            implementation: require("sass") // Use Dart Sass
+                        }
+                    }
+                ]
+            }
+        ]
     },
+
     resolve: {
-        extensions: ['.js', '.json', '.scss'], // Add extensions you use
+        extensions: ['.js', '.json', '.scss']
     },
+
     optimization: {
-        minimize: true, // Minify output
-        minimizer: [
-            new TerserPlugin({
-                extractComments: false, // Prevent LICENSE file generation
-            }),
-        ],
+        minimize: false,
+        // minimizer: [
+        //     new TerserPlugin({
+        //         extractComments: false,
+        //         terserOptions: { sourceMap: true }
+        //     })
+        // ]
     },
+
     plugins: [
+        new RemoveEmptyScriptsPlugin(),
         new MiniCssExtractPlugin({
-            filename: '[name].bundle.css', // Output CSS file
-        }),
+            filename: '[name].bundle.css'
+        })
     ],
+
     devServer: {
-        static: {
-            directory: path.join(__dirname, 'assets/dist'),
-        },
+        static: { directory: path.join(__dirname, 'assets/dist') },
         compress: true,
-        port: 9000, // Development server port
-    },
+        port: 9000
+    }
 };

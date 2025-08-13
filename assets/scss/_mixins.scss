@@ -1,0 +1,83 @@
+@use "sass:list";
+
+// ---------- Generic Helpers ----------
+@mixin box-shadow($args...) { box-shadow: $args; }
+
+@mixin transition($props...) {
+  // fallback helper (explicit prop list)
+  transition: 0.4s ease;
+  transition-property: list.join($props, ", ");
+}
+
+// ---------- Transition System (Global) ----------
+$transition-duration-fast:  .2s  !default;
+$transition-duration-base:  .4s  !default;
+$transition-duration-slow:  .65s !default;
+$transition-ease:           ease !default;
+
+$transition-safe-props: (
+  color,
+  background-color,
+  border-color,
+  box-shadow,
+  text-shadow,
+  transform,
+  opacity,
+  filter
+) !default;
+
+// Build a combined transition string for safe props
+@function build-transition($props: $transition-safe-props, $dur: $transition-duration-base, $ease: $transition-ease) {
+  $out: ();
+  @each $p in $props {
+    $out: list.append($out, "#{$p} #{$dur} #{$ease}", comma);
+  }
+  @return $out;
+}
+
+@mixin transition-props(
+  $props: $transition-safe-props,
+  $duration: $transition-duration-base,
+  $ease: $transition-ease
+) {
+  transition: build-transition($props, $duration, $ease);
+}
+
+@mixin transition-all($duration: $transition-duration-base, $ease: $transition-ease) {
+  transition: all $duration $ease;
+}
+
+// Specific nav link mixin
+@mixin nav-link-transition(
+  $duration: $transition-duration-base,
+  $ease: $transition-ease
+) {
+  transition:
+    color        $duration $ease,
+    transform    $transition-duration-fast $ease,
+    border-color $duration $ease,
+    box-shadow   $duration $ease,
+    text-shadow  $duration $ease,
+    font-size    $duration $ease;
+}
+
+// Placeholder for extend
+%smooth-transition { @include transition-props(); }
+
+// ---------- GLOBAL APPLICATION (Everything) ----------
+*,
+*::before,
+*::after {
+  @include transition-props();
+  // Optional: will-change hints (commented out to avoid perf cost)
+  // will-change: color, background-color, border-color, box-shadow, transform, opacity, filter;
+}
+
+// Reduced motion: strip transitions
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}

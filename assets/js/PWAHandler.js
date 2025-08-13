@@ -24,7 +24,7 @@ export class PWAHandler {
     }
 
     static listenForInstallPrompt(installPopup) {
-        window.addEventListener('beforeinstallprompt', (e) => {
+        window.addEventListener('beforeinstallprompt', e => {
             e.preventDefault();
             this.deferredPrompt = e;
 
@@ -34,7 +34,7 @@ export class PWAHandler {
     }
 
     static handleInstallButtonClick(installPopup) {
-        document.addEventListener('click', async (e) => {
+        document.addEventListener('click', async e => {
             if (e.target.matches('[aria-label="install-app"]')) {
                 e.preventDefault();
                 if (this.deferredPrompt) {
@@ -53,7 +53,7 @@ export class PWAHandler {
     }
 
     static handleDismissButtonClick(installPopup) {
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', e => {
             if (e.target.matches('[aria-label="dismiss-install-popup"]')) {
                 e.preventDefault();
                 installPopup.style.display = 'none';
@@ -71,7 +71,7 @@ export class PWAHandler {
     static registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register(SAGUTID_CONFIG.serviceWorkerPath)
-                .then((registration) => {
+                .then(registration => {
                     console.log('Service Worker registered with scope:', registration.scope);
 
                     // Pass additional configuration to the service worker
@@ -82,7 +82,7 @@ export class PWAHandler {
                         });
                     }
                 })
-                .catch((error) => {
+                .catch(error => {
                     console.error('Service Worker registration failed:', error);
                 });
         }

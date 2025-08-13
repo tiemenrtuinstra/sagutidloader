@@ -1,0 +1,6 @@
+.tm-cookie-banner {
+  z-index: 9999;
+  @include box-shadow($shadow);
+  border-radius: $border-radius-main;
+  overflow: hidden;
+}

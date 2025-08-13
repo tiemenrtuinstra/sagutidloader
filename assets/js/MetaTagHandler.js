@@ -45,7 +45,7 @@ export class MetaTagHandler {
             { rel: 'icon', href: 'favicon-32x32.png', sizes: '32x32', type: 'image/png', media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)' },
         ];
 
-        icons.forEach((icon) => this.addLink(icon));
+        icons.forEach(icon => this.addLink(icon));
         Logger.log('Icons added to the document.', 'green', 'MetaTagHandler');
     }
 
@@ -60,7 +60,7 @@ export class MetaTagHandler {
             { name: 'facebook-domain-verification', content: 'yt99npcp5if48m2yx2m0kmm434ponl' },
         ];
 
-        metaTags.forEach((tag) => this.addMeta(tag));
+        metaTags.forEach(tag => this.addMeta(tag));
         Logger.log('Meta tags added to the document.', 'green', 'MetaTagHandler');
     }
 
@@ -73,7 +73,7 @@ export class MetaTagHandler {
             { property: 'og:type', content: 'website' },
         ];
 
-        openGraphTags.forEach((tag) => this.addMeta(tag, 'property'));
+        openGraphTags.forEach(tag => this.addMeta(tag, 'property'));
         Logger.log('OpenGraph tags added to the document.', 'green', 'MetaTagHandler');
     }
 

@@ -1,111 +1,170 @@
-# Exit on error
+param(
+    [Parameter(Position=0,Mandatory=$true)]
+    [ValidateSet("major","minor","patch")]
+    [string]$ReleaseType,
+    [switch]$Force,
+    [switch]$SkipBuild
+)
+
 $ErrorActionPreference = "Stop"
 
-# Check for arguments
-if ($args.Count -ne 1) {
-    Write-Host "Usage: .\release.ps1 [major|minor|patch]"
-    exit 1
-}
-
-# Get the release type
-$ReleaseType = $args[0]
-
-# Filepath to the XML file
-$XmlFile = "sagutidloader.xml"
-
-# Check if the XML file exists
-if (-Not (Test-Path $XmlFile)) {
-    Write-Host "Error: $XmlFile not found."
-    exit 1
-}
-
-# Load the XML file
-[xml]$XmlContent = Get-Content $XmlFile
-
-# Extract the current version
-$CurrentVersion = $XmlContent.SelectSingleNode("//extension/version").InnerText
-if (-Not $CurrentVersion) {
-    Write-Host "Error: Could not extract the current version from $XmlFile."
-    exit 1
-}
-
-# Split the version into major, minor, and patch
-$VersionParts = $CurrentVersion -split '\.'
-$Major = [int]$VersionParts[0]
-$Minor = [int]$VersionParts[1]
-$Patch = [int]$VersionParts[2]
-
-# Increment the version based on the release type
-switch ($ReleaseType) {
-    "major" {
-        $Major++
-        $Minor = 0
-        $Patch = 0
-    }
-    "minor" {
-        $Minor++
-        $Patch = 0
-    }
-    "patch" {
-        $Patch++
-    }
-    default {
-        Write-Host "Error: Invalid release type. Use 'major', 'minor', or 'patch'."
+# --- 1. Tool checks ---
+foreach ($tool in @("git","gh")) {
+    if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
+        Write-Host "Error: Required tool '$tool' not found in PATH." -ForegroundColor Red
         exit 1
     }
 }
 
-# Construct the new version
-$NewVersion = "$Major.$Minor.$Patch"
+# --- 2. Git cleanliness ---
+$gitStatus = git status --porcelain
+if ($gitStatus -and -not $Force) {
+    Write-Warning "Working tree not clean. Commit / stash changes or re-run with -Force."
+    exit 1
+}
+
+# --- 3. Version bump logic (XML) ---
+$XmlFile = "sagutidloader.xml"
+if (-not (Test-Path $XmlFile)) { Write-Host "Error: $XmlFile not found." -ForegroundColor Red; exit 1 }
+
+[xml]$XmlContent = Get-Content $XmlFile
+$CurrentVersion = $XmlContent.SelectSingleNode("//extension/version").InnerText
+if (-not $CurrentVersion) { Write-Host "Error: Could not read version from XML." -ForegroundColor Red; exit 1 }
+
+$VersionParts = $CurrentVersion -split '\.'
+if ($VersionParts.Count -lt 3) { Write-Host "Error: Version format must be MAJOR.MINOR.PATCH" -ForegroundColor Red; exit 1 }
+
+[int]$Major = $VersionParts[0]
+[int]$Minor = $VersionParts[1]
+[int]$Patch = $VersionParts[2]
+
+switch ($ReleaseType) {
+    "major" { $Major++; $Minor = 0; $Patch = 0 }
+    "minor" { $Minor++; $Patch = 0 }
+    "patch" { $Patch++ }
+}
+
+$NewVersion   = "$Major.$Minor.$Patch"
 $NewCacheName = "sagutid-v$NewVersion"
 
-# Confirm the new version
-Write-Host "Current version: $CurrentVersion"
-Write-Host "New version: $NewVersion"
-Write-Host "New cache name: $NewCacheName" 
-$Confirmation = Read-Host "Do you want to proceed with this version? (yes/no)"
-if ($Confirmation -ne "yes") {
-    Write-Host "Release process aborted."
-    exit 0
-}
+Write-Host "Current version : $CurrentVersion"
+Write-Host "New version     : $NewVersion"
+Write-Host "New cache name  : $NewCacheName"
 
-# Update the version in the XML file
-Write-Host "Updating version in $XmlFile from $CurrentVersion to $NewVersion..."
+$confirm = Read-Host "Proceed? (yes/no)"
+if ($confirm -ne "yes") { Write-Host "Aborted."; exit 0 }
+
+# --- 4. Update XML ---
 $XmlContent.SelectSingleNode("//extension/version").InnerText = $NewVersion
 $XmlContent.Save($XmlFile)
+Write-Host "Updated $XmlFile"
 
-# --- Update serviceworker.js ---
-$ServiceWorkerFile = "assets\serviceworker.js" # Path to your service worker file
-if (Test-Path $ServiceWorkerFile) {
-    Write-Host "Updating cache name in $ServiceWorkerFile to $NewCacheName..."
-    # Read the file content
-    $swContent = Get-Content $ServiceWorkerFile -Raw
-    # Use regex to replace the CACHE_NAME value
-    $newSwContent = $swContent -replace "(this\.CACHE_NAME\s*=\s*['""])sagutid-v[^'""]+(['""])", "`$1$NewCacheName`$2"
-    # Write the updated content back to the file
-    Set-Content -Path $ServiceWorkerFile -Value $newSwContent -Encoding UTF8
-} else {
-    Write-Warning "$ServiceWorkerFile not found. Skipping cache name update."
+# --- 5. Update package.json (if present) ---
+$PackageJsonFile = "package.json"
+if (Test-Path $PackageJsonFile) {
+    $pkg = Get-Content $PackageJsonFile -Raw | ConvertFrom-Json
+    $pkg.version = $NewVersion
+    $pkg | ConvertTo-Json -Depth 32 | Set-Content $PackageJsonFile -Encoding UTF8
+    Write-Host "Updated $PackageJsonFile"
 }
 
-# Commit the change
-Write-Host "Committing the version update..."
+# --- 6. Update serviceworker.js cache name ---
+$ServiceWorkerFile = Join-Path "assets" "serviceworker.js"
+if (Test-Path $ServiceWorkerFile) {
+    $swContent = Get-Content $ServiceWorkerFile -Raw
+
+    # Patterns (template literal, single, double)
+    $patterns = @(
+        '(const\s+CACHE_NAME\s*=\s*`)sagutid-v[^`]+(`;?)',
+        '(const\s+CACHE_NAME\s*=\s*'')sagutid-v[^'']+('';?)',
+        '(const\s+CACHE_NAME\s*=\s*")sagutid-v[^"]+(";?)'
+    )
+
+    $matched = $false
+    foreach ($p in $patterns) {
+        if ($swContent -match $p) {
+            $swContent = [regex]::Replace($swContent, $p, "`$1$NewCacheName`$2")
+            $matched = $true
+            break
+        }
+    }
+
+    if (-not $matched) {
+        Write-Warning "CACHE_NAME pattern not found in $ServiceWorkerFile"
+    } else {
+        Set-Content -Path $ServiceWorkerFile -Value $swContent -Encoding UTF8
+        Write-Host "Updated cache name in $ServiceWorkerFile"
+    }
+} else {
+    Write-Warning "$ServiceWorkerFile not found (skipping)."
+}
+
+# --- 7. (Optional) Build step ---
+$DidBuild = $false
+if (Test-Path $PackageJsonFile -and -not $SkipBuild) {
+    if (Test-Path "package-lock.json" -or Test-Path "node_modules") {
+        Write-Host "Running npm install (ensuring dependencies)..."
+        npm install --no-fund --no-audit | Out-Null
+    } else {
+        Write-Host "Running initial npm install..."
+        npm install --no-fund --no-audit | Out-Null
+    }
+    if ($LASTEXITCODE -ne 0) { Write-Host "npm install failed." -ForegroundColor Red; exit 1 }
+
+    Write-Host "Running build..."
+    if (Get-Command npm -ErrorAction SilentlyContinue) {
+        npm run build
+        if ($LASTEXITCODE -ne 0) { Write-Host "Build failed." -ForegroundColor Red; exit 1 }
+        $DidBuild = $true
+        Write-Host "Build completed."
+    }
+}
+
+# --- 8. Git commit (normal) ---
 git add $XmlFile
-git add $ServiceWorkerFile
-git commit -m "Release version $NewVersion"
+if (Test-Path $PackageJsonFile) { git add $PackageJsonFile }
+if (Test-Path $ServiceWorkerFile) { git add $ServiceWorkerFile }
+if ($DidBuild -and (Test-Path "assets/dist")) { git add assets/dist }
 
-# Create a new Git tag
-$Tag = "v$NewVersion"
-Write-Host "Creating Git tag $Tag..."
-git tag $Tag
+# Guard: ensure there is something to commit
+$pending = git diff --cached --name-only
+if (-not $pending) {
+    Write-Warning "No staged changes; nothing to commit."
+} else {
+    $commitMsg = "chore(release): bump version to $NewVersion"
+    git commit -m $commitMsg
+    Write-Host "Created commit for version $NewVersion"
+}
 
-# Push the changes and the tag
-Write-Host "Pushing changes and tag $Tag to the repository..."
+# --- 9. Push commit first ---
 git push origin main
+
+# --- 10. Create annotated tag from current HEAD ---
+$Tag = "v$NewVersion"
+git tag -a $Tag -m "Release $NewVersion"
+Write-Host "Created tag $Tag"
 git push origin $Tag
 
-# Create a GitHub release
-Write-Host "Creating GitHub release for tag $Tag..."
-gh release create $Tag --title "Release $NewVersion" --notes "This is the release for version $NewVersion."
+# --- 11. GitHub release ---
+Write-Host "Creating GitHub release..."
+gh release create $Tag --title "Release $NewVersion" --notes "Automated release for $NewVersion."
+Write-Host "GitHub release created."
 
-Write-Host "Release $NewVersion completed successfully!"
+# --- 12. Show latest asset URL (optional) ---
+$repo = (git remote get-url origin) -replace '.*github.com[:/](.+?)(\.git)?$','$1'
+$assetName = "sagutidloader.zip"
+$apiUrl = "https://api.github.com/repos/$repo/releases/latest"
+try {
+    $response = Invoke-RestMethod -Uri $apiUrl -Headers @{"User-Agent"="PowerShell"}
+    $asset = $response.assets | Where-Object { $_.name -eq $assetName }
+    if ($asset) {
+        Write-Host "Latest release asset URL:"
+        Write-Host $asset.browser_download_url
+    } else {
+        Write-Host "Release done. Asset '$assetName' not found (may not be uploaded)." -ForegroundColor Yellow
+    }
+} catch {
+    Write-Warning "Failed to query latest release info."
+}
+
+Write-Host "Release pipeline finished."

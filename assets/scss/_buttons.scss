@@ -1,0 +1,21 @@
+.btn,
+.uk-button {
+  @include box-shadow($shadow-light);
+  @include transition(
+    color,
+    background-color,
+    background,
+    box-shadow,
+    transform,
+    top,
+    border-radius,
+    border-color,
+    filter,
+    text-shadow
+  );
+  &:hover,
+  &:active,
+  &:focus {
+    box-shadow: none;
+  }
+}

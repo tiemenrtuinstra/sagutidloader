@@ -1,0 +1,19 @@
+.el-item {
+  .content.uk-card,
+  .content.uk-card-body img {
+    @include box-shadow($shadow-light);
+    min-width: 355px;
+    &.full-img {
+      margin: 0 -15px;
+      width: -webkit-fill-available;
+      display: block;
+      clear: both;
+    }
+  }
+  &.uk-card .el-content {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+}

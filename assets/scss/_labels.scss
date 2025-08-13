@@ -1,0 +1,5 @@
+.uk-label {
+  border-radius: $border-radius-main;
+  @include box-shadow($shadow);
+  &.uk-label-secondary { background: $color-secondary; }
+}

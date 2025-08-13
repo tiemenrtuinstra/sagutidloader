@@ -1,14 +1,18 @@
-export class CCommentHandler {
+import { Logger } from './Util/Logger.js';
+
+export class HeaderHandler {
+
     static init() {
-        this.removePoweredByLink();
+        HeaderHandler.removeHeaderOnPages();
     }
 
-    static removePoweredByLink() {
-        const poweredByElements = document.querySelectorAll('.ccomment-powered');
+    static removeHeaderOnPages() {
+        const pathsToRemoveHeader = ["/sagu-overzicht", "/verhalen/", "/gedichten/", "/overig/"];
+        const shouldRemoveHeader = pathsToRemoveHeader.some(path => window.location.pathname.includes(path));
 
-        if (poweredByElements.length > 0) {
-            poweredByElements.forEach((element) => element.remove());
-            Logger.log('CComment "Powered by" link removed', 'orange', 'CCommentHandler');
+        if (shouldRemoveHeader) {
+            $(".tm-header-mobile, .tm-header, .tm-toolbar, #mobile-tab-menu, #footer-copyright").remove();
+            Logger.log('Header verwijderd van pagina', 'orange');
         }
     }
 }
