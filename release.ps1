@@ -124,7 +124,11 @@ if (Test-Path $PackageJsonFile -and -not $SkipBuild) {
 git add $XmlFile
 if (Test-Path $PackageJsonFile) { git add $PackageJsonFile }
 if (Test-Path $ServiceWorkerFile) { git add $ServiceWorkerFile }
-if ($DidBuild -and (Test-Path "assets/dist")) { git add assets/dist }
+if ($DidBuild -eq $true) {
+    if (Test-Path -LiteralPath "assets/dist") {
+        git add -- "assets/dist"
+    }
+}
 
 # Guard: ensure there is something to commit
 $pending = git diff --cached --name-only
