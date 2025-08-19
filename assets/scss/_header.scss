@@ -6,6 +6,8 @@
 
   header {
     &.tm-header-mobile {
+      position: relative;
+      top: 12.5px;
       .uk-navbar-container {
         border-radius: 25px;
         overflow: hidden;

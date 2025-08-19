@@ -13,66 +13,28 @@
   }
 }
 
-.uk-panel[class*="uk-card"],
-.uk-panel[class*="uk-tile"] {
-  @include box-shadow($shadow);
-}
 
-.btn,
-.uk-button {
-  @include box-shadow($shadow-light);
-  @include transition(
-    color,
-    background-color,
-    background,
-    box-shadow,
-    transform,
-    top,
-    border-radius,
-    border-color,
-    filter,
-    text-shadow
-  );
-  &:hover,
-  &:active,
-  &:focus {
-    box-shadow: none;
-  }
-}
-
-em,
-i {
-  color: $color-primary;
-  font-family: "McLaren", sans-serif;
-  font-size: 0.9rem;
-}
 
 #sagu-overview-grid {
-  top: 638px !important;
+  top: 100vh !important;
   position: relative;
   padding-bottom: 655px;
 }
 
 @media (max-width: 479px) {
   #sagu-overview-grid {
-    top: 560px !important;
-    position: relative;
     padding-bottom: 575px;
   }
 }
 
 @media (min-width: 480px) and (max-width: 767px) {
   #sagu-overview-grid {
-    top: 280px !important;
-    position: relative;
     padding-bottom: 295px;
   }
 }
 
 @media (min-width: 768px) and (max-width: 959px) {
   #sagu-overview-grid {
-    top: 944px !important;
-    position: relative;
     padding-bottom: 965px;
   }
 }

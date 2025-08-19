@@ -14,14 +14,6 @@
 @import "panels";
 @import "footer";
 
-#sagu-text.columns {
-  column-count: 1;
-  @media (min-width: 960px) {
-    column-count: 2;
-    column-gap: 2rem;
-  }
-}
-
 em,
 i {
   color: $color-primary;
@@ -29,12 +21,6 @@ i {
   font-size: 0.9rem;
 }
 
-#foooter-sub-title li.el-item span p {
-  margin: 0 !important;
-  &::first-letter {
-    color: $color-warning;
-  }
-}
 .uk-nav img,
 nav img {
   display: none;
