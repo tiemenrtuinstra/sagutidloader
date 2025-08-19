@@ -85,6 +85,15 @@
         }
       }
     }
+    & .sagu-header {
+      background-color: $header-img center top / cover no-repeat;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 1.6) !important;
+      z-index: 9999;
+      border-radius: 50px;
+      overflow: hidden;
+      position: relative;
+      bottom: 60px;
+    }
   }
 }
 
@@ -93,4 +102,41 @@
   position: absolute;
   top: 0;
   z-index: 0;
+}
+
+@media (max-width: 479px) {
+  header {
+    & .sagu-header {
+      padding: 10px 15px;
+      margin: 15px;
+      bottom: 45px;
+      & .uk-tile-xsmall {
+        padding: 5px;
+      }
+    }
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  header {
+    & .sagu-header {
+      padding: 10px 5px;
+
+      & .uk-tile-xsmall {
+        padding: 5px;
+      }
+    }
+  }
+}
+
+@media (min-width: 768px) and (max-width: 959px) {
+  header {
+    & .sagu-header {
+      padding: 10px 5px;
+
+      & .uk-tile-xsmall {
+        padding: 5px;
+      }
+    }
+  }
 }

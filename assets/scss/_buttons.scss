@@ -1,5 +1,6 @@
 .btn,
 .uk-button {
+  border: 0px;
   @include box-shadow($shadow-light);
   @include transition(
     color,
@@ -13,6 +14,12 @@
     filter,
     text-shadow
   );
+
+  &.uk-button-default {
+    background: $button-img center center / cover no-repeat;
+    color: #fff;
+  }
+
   &:hover,
   &:active,
   &:focus {
