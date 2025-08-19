@@ -1,51 +1,44 @@
 import { Logger } from './Util/Logger.js';
 
-export class ServiceWorkerHandler {
-    static init() {
-        if ('serviceWorker' in navigator) {
-            this.registerServiceWorker();
-            this.listenForUpdate();
-            this.updateDynamicContent();
-        } else {
-            Logger.log('Service workers are not supported in this browser.', 'orange', 'ServiceWorkerHandler');
-        }
-    }
+export const ServiceWorkerHandler = {
+  init() {
+    if (!('serviceWorker' in navigator)) return;
 
-    static registerServiceWorker() {
-        const serviceWorkerPath = SAGUTID_CONFIG.serviceWorkerPath;
-        if (!serviceWorkerPath) {
-            Logger.error('Service worker path is not defined.', 'ServiceWorkerHandler');
-            return;
-        }
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/assets/serviceworker.js', { updateViaCache: 'none' });
 
-        navigator.serviceWorker.register(serviceWorkerPath)
-            .then(reg => {
-                Logger.log(`Service worker registered at: ${reg.scope}`, 'green', 'ServiceWorkerHandler');
-            })
-            .catch(err => {
-                Logger.error(`Service worker registration failed: ${err}`, 'ServiceWorkerHandler');
-            });
-    }
+        // Force a check now and on window focus
+        reg.update();
+        window.addEventListener('focus', () => reg.update());
 
-    static listenForUpdate() {
-        navigator.serviceWorker.addEventListener('message', event => {
-            if (event.data === 'updateAvailable') {
-                if (confirm('A new version is available. Update now?')) {
-                    location.reload();
-                }
+        // Handle an already waiting worker on page load
+        if (reg.waiting) this._activate(reg.waiting);
+
+        // Detect new update arrivals
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version ready – activate it (or show a prompt first)
+              this._activate(sw);
             }
+          });
         });
 
-        Logger.log('Listening for service worker updates.', 'blue', 'ServiceWorkerHandler');
-    }
+        // When the new SW takes control, reload to get fresh assets
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      } catch (e) {
+        console.error('SW registration failed:', e);
+      }
+    });
+  },
 
-    static updateDynamicContent() {
-        const controller = navigator.serviceWorker.controller;
-        if (controller) {
-            controller.postMessage({ type: 'UPDATE_DYNAMIC_CONTENT' });
-            Logger.log('Message sent to service worker to update dynamic content.', 'blue', 'ServiceWorkerHandler');
-        } else {
-            Logger.error('Service worker controller is not available.', 'ServiceWorkerHandler');
-        }
-    }
-}
+  _activate(sw) {
+    // Auto-activate. If you want a prompt, show UI then call this.
+    sw.postMessage('SKIP_WAITING');
+  }
+};
