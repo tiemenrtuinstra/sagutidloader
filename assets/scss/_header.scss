@@ -95,6 +95,9 @@
       overflow: hidden;
       position: relative;
       bottom: 60px;
+      & .uk-tile-primary{
+        background:transparent;
+      }
     }
   }
 }
