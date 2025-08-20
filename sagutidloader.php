@@ -89,6 +89,9 @@ class PlgSystemSagutidloader extends CMSPlugin
             $joomlaLogoPath    = self::getJoomlaImagePath('Logo');
             $assetPath         = self::$assetPath;
 
+            // Mark start of injected configuration in the <head>
+            self::$document->addCustomTag("\n<!-- Sagutid Loader -->\n");
+
             self::$document->addScriptDeclaration(
                 "window.SAGUTID_CONFIG = {
                     serviceWorkerPath: '{$serviceWorkerPath}',
@@ -102,10 +105,23 @@ class PlgSystemSagutidloader extends CMSPlugin
                 };"
             );
 
+            // Mark end of injected configuration in the <head>
+            self::$document->addCustomTag("<!-- END Sagutid Loader -->\n");
+
             // Enqueue plugin assets
             self::addAssets();
         } catch (\Exception $e) {
-            self::$app->enqueueMessage('Error in Sagutid loader: ' . $e->getMessage(), 'error');
+            $msg = 'Error in Sagutid loader: ' . $e->getMessage();
+            // Joomla message (backend/admin notifications)
+            self::$app->enqueueMessage($msg, 'error');
+            // Also surface the error in the browser console for developers
+            if (self::$document instanceof HtmlDocument) {  
+                self::$document->addScriptDeclaration(
+                    '(function(){try{console.error("[Sagutid Loader] " + ' .
+                    json_encode($msg, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) .
+                    ');}catch(e){}})();'
+                );
+            }
         }
     }
 
