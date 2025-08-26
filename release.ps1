@@ -148,7 +148,7 @@ function Package-Plugin([string]$ManifestPath) {
     $ZipPath = Join-Path (Get-Location) $ZipName
     if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
     Push-Location $stageDir
-    try { Compress-Archive -Path * -DestinationPath $ZipPath }
+    try { Compress-Archive -Path * -DestinationPath $ZipPath | Out-Null }
     finally { Pop-Location }
     Write-Host "Created package: $ZipPath" -ForegroundColor Green
 
@@ -156,25 +156,25 @@ function Package-Plugin([string]$ManifestPath) {
 }
 
 function Git-Commit-Push-Tag([string]$NewVersion,[bool]$DidBuild,[string]$XmlFile,[string]$PackageJsonFile,[string]$ServiceWorkerFile) {
-    git add $XmlFile
-    if (Test-Path $PackageJsonFile) { git add $PackageJsonFile }
-    if (Test-Path $ServiceWorkerFile) { git add $ServiceWorkerFile }
-    if ($DidBuild -eq $true -and (Test-Path -LiteralPath 'assets/dist')) { git add -- 'assets/dist' }
+    $null = git add $XmlFile
+    if (Test-Path $PackageJsonFile) { $null = git add $PackageJsonFile }
+    if (Test-Path $ServiceWorkerFile) { $null = git add $ServiceWorkerFile }
+    if ($DidBuild -eq $true -and (Test-Path -LiteralPath 'assets/dist')) { $null = git add -- 'assets/dist' }
 
     $pending = git diff --cached --name-only
     if (-not $pending) { Write-Warning 'No staged changes; nothing to commit.' }
     else {
         $commitMsg = "chore(release): bump version to $NewVersion"
-        git commit -m $commitMsg
+        $null = git commit -m $commitMsg
         Write-Host "Created commit for version $NewVersion"
     }
 
-    git push origin main
+    $null = git push origin main
 
     $Tag = ("v$NewVersion").Trim()
-    git tag -a $Tag -m "Release $NewVersion"
+    $null = git tag -a $Tag -m "Release $NewVersion"
     Write-Host "Created tag $Tag"
-    git push origin $Tag
+    $null = git push origin $Tag
     return $Tag
 }
 
