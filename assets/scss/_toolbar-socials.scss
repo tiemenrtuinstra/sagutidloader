@@ -22,6 +22,47 @@
 // ---------- 1. Root Containers ----------
 .tm-toolbar,
 .tm-socials {
+  // ---------- 3. Theming Per Social Variant ----------
+  @if length($social-style) > 0 {
+    @each $key, $style in $social-style {
+      $bg: map-get($style, bg);
+      $color: map-get($style, color);
+      $border: map-get($style, border);
+      $bg-hover: if(
+        map-has-key($style, bg-hover),
+        map-get($style, bg-hover),
+        $bg
+      );
+
+      // Match by icon name fragments
+      [uk-icon*="#{$key}"],
+      a img[alt*="#{$key}"],
+      a img[src*="#{$key}"] {
+        @if $border {
+          border-color: transparent;
+        }
+
+        // Explicit distinct hover variant
+        @if map-has-key($style, bg-hover) {
+          &:hover {
+            background: $bg-hover;
+          }
+        }
+
+        &:hover,
+        &:focus,
+        &:active {
+          @if $border {
+            border-color: $border;
+          }
+
+          background: $bg;
+          color: $color;
+        }
+      }
+    }
+  }
+
   // List layout
   ul.uk-grid {
     display: flex;
@@ -47,6 +88,7 @@
   [uk-icon],
   a img {
     @extend %icon-base;
+
     position: relative;
     padding: 0.95rem;
     border: 2px solid transparent;
@@ -54,9 +96,14 @@
     background: transparent;
     color: #fff;
     line-height: 1;
-    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.85));
-    transition: background 0.4s ease, color 0.4s ease, transform 0.35s ease,
-      border-color 0.4s ease, box-shadow 0.4s ease;
+    filter: drop-shadow(0 3px 5px rgb(0 0 0 / 85%));
+    transition:
+      background 0.4s ease,
+      color 0.4s ease,
+      transform 0.35s ease,
+      border-color 0.4s ease,
+      box-shadow 0.4s ease;
+
     &:focus,
     &:hover,
     &:active {
@@ -64,48 +111,8 @@
     }
 
     &:focus-visible {
-      outline: 2px solid currentColor;
+      outline: 2px solid currentcolor;
       outline-offset: 3px;
-    }
-  }
-
-  // ---------- 3. Theming Per Social Variant ----------
-  @if length($social-style) > 0 {
-    @each $key, $style in $social-style {
-      $bg: map-get($style, bg);
-      $color: map-get($style, color);
-      $border: map-get($style, border);
-      $bg-hover: if(
-        map-has-key($style, bg-hover),
-        map-get($style, bg-hover),
-        $bg
-      );
-
-      // Match by icon name fragments
-      [uk-icon*="#{$key}"],
-      a img[alt*="#{$key}"],
-      a img[src*="#{$key}"] {
-        @if $border {
-          border-color: transparent;
-        }
-
-        &:hover,
-        &:focus,
-        &:active {
-          background: $bg;
-          color: $color;
-          @if $border {
-            border-color: $border;
-          }
-        }
-
-        // Explicit distinct hover variant
-        @if map-has-key($style, bg-hover) {
-          &:hover {
-            background: $bg-hover;
-          }
-        }
-      }
     }
   }
 
@@ -131,6 +138,7 @@ body.homepage {
 .tm-toolbar .uk-container {
   margin: 0 -12.5px;
 }
+
 .tm-toolbar-default {
   background: transparent;
   z-index: 999;
@@ -144,6 +152,7 @@ body.homepage {
     [uk-icon],
     a img {
       transition: none;
+
       &:hover,
       &:active {
         transform: none;
