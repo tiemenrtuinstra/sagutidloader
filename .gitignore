@@ -1,3 +1,6 @@
 /node_modules
 package-lock.json
 build
+assets/dist/
+assets/dist/*.map
+/*.zip
