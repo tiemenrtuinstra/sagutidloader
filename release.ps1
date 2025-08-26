@@ -101,8 +101,9 @@ function Run-Build([switch]$SkipBuild) {
     if ($LASTEXITCODE -ne 0) { Write-Host 'npm install failed.' -ForegroundColor Red; exit 1 }
 
     Write-Host 'Running build...'
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
-        npm run build:prod
+    $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+    if ($npmCmd) {
+        npm run build:prod | Out-Null
         if ($LASTEXITCODE -ne 0) { Write-Host 'Build failed.' -ForegroundColor Red; exit 1 }
         $did = $true
         Write-Host 'Build completed.'
@@ -234,7 +235,7 @@ $DidBuild = Run-Build -SkipBuild:$SkipBuild
 
 $pkg = Package-Plugin -ManifestPath $manifestRef.Path
 
-$Tag = Git-Commit-Push-Tag -NewVersion $nv.NewVersion -DidBuild:$DidBuild -XmlFile $XmlFile -PackageJsonFile $PackageJsonFile -ServiceWorkerFile $ServiceWorkerFile
+$Tag = Git-Commit-Push-Tag -NewVersion $nv.NewVersion -DidBuild:([bool]$DidBuild) -XmlFile $XmlFile -PackageJsonFile $PackageJsonFile -ServiceWorkerFile $ServiceWorkerFile
 
 Create-GitHubRelease -Tag $Tag -NewVersion $nv.NewVersion
 Upload-ReleaseAsset -Tag $Tag -ZipPath $pkg.ZipPath
