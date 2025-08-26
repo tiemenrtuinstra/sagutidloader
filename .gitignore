@@ -4,3 +4,4 @@ build
 assets/dist/
 assets/dist/*.map
 /*.zip
+*.zip
