@@ -6,7 +6,10 @@ export const ServiceWorkerHandler = {
 
     window.addEventListener('load', async () => {
       try {
-        const reg = await navigator.serviceWorker.register('/assets/serviceworker.js', { updateViaCache: 'none' });
+  const cfg = (typeof window !== 'undefined' && window.SAGUTID_CONFIG) ? window.SAGUTID_CONFIG : {};
+  const swPath = cfg.serviceWorker || cfg.serviceWorkerPath || '/plugins/system/sagutidloader/assets/serviceworker.js';
+
+  const reg = await navigator.serviceWorker.register(swPath, { updateViaCache: 'none' });
 
         // Force a check now and on window focus
         reg.update();

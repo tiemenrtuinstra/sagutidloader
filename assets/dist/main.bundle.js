@@ -198,16 +198,18 @@ var ServiceWorkerHandler = {
     var _this = this;
     if (!('serviceWorker' in navigator)) return;
     window.addEventListener('load', /*#__PURE__*/ServiceWorkerHandler_asyncToGenerator(/*#__PURE__*/ServiceWorkerHandler_regeneratorRuntime().mark(function _callee() {
-      var reg;
+      var cfg, swPath, reg;
       return ServiceWorkerHandler_regeneratorRuntime().wrap(function _callee$(_context) {
         while (1) switch (_context.prev = _context.next) {
           case 0:
             _context.prev = 0;
-            _context.next = 3;
-            return navigator.serviceWorker.register('/assets/serviceworker.js', {
+            cfg = typeof window !== 'undefined' && window.SAGUTID_CONFIG ? window.SAGUTID_CONFIG : {};
+            swPath = cfg.serviceWorker || cfg.serviceWorkerPath || '/plugins/system/sagutidloader/assets/serviceworker.js';
+            _context.next = 5;
+            return navigator.serviceWorker.register(swPath, {
               updateViaCache: 'none'
             });
-          case 3:
+          case 5:
             reg = _context.sent;
             // Force a check now and on window focus
             reg.update();
@@ -234,17 +236,17 @@ var ServiceWorkerHandler = {
             navigator.serviceWorker.addEventListener('controllerchange', function () {
               window.location.reload();
             });
-            _context.next = 14;
+            _context.next = 16;
             break;
-          case 11:
-            _context.prev = 11;
+          case 13:
+            _context.prev = 13;
             _context.t0 = _context["catch"](0);
             console.error('SW registration failed:', _context.t0);
-          case 14:
+          case 16:
           case "end":
             return _context.stop();
         }
-      }, _callee, null, [[0, 11]]);
+      }, _callee, null, [[0, 13]]);
     })));
   },
   _activate: function _activate(sw) {
