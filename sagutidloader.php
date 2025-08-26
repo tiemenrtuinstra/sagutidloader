@@ -19,43 +19,30 @@ use Joomla\CMS\Document\HtmlDocument;
 class PlgSystemSagutidloader extends CMSPlugin
 {
     /**
-     * Joomla application instance.
+     * Auto-load language files.
      *
-     * @var    CMSApplication
-     * @since  1.0.0
+     * @var bool
      */
-    private static $app;
+    protected $autoloadLanguage = true;
 
     /**
-     * Joomla document instance.
+     * Base URL (absolute) to this plugin's assets directory.
+     * Example: https://example.com/plugins/system/sagutidloader/assets/
      *
-     * @var    HtmlDocument
-     * @since  1.0.0
+     * @var string
      */
-    private static $document;
-
-    /**
-     * Base URL to this plugin's assets directory.
-     *
-     * @var    string
-     * @since  1.0.0
-     */
-    private static $assetPath;
+    private $assetUrl = '';
 
     /**
      * Constructor.
      *
      * @param   object  $subject  The object to observe
      * @param   array   $config   Plugin configuration array
-     *
-     * @since   1.0.0
      */
     public function __construct(&$subject, $config)
     {
         parent::__construct($subject, $config);
-        self::$app      = Factory::getApplication();
-        self::$document = self::$app->getDocument();
-        self::setAssetPath();
+        $this->computeAssetUrl();
     }
 
     /**
@@ -74,181 +61,77 @@ class PlgSystemSagutidloader extends CMSPlugin
     {
         try {
             // Only run on the site front-end
-            if (!self::$app->isClient('site')) {
+            $app = Factory::getApplication();
+            if (!$app->isClient('site')) {
                 return;
             }
 
-            // Ensure the document is HTML
-            if (!self::$document instanceof HtmlDocument) {
-                self::$app->enqueueMessage('Document is not an HTML document.', 'error');
+            $document = $app->getDocument();
+            if (!($document instanceof HtmlDocument) || $document->getType() !== 'html') {
                 return;
             }
 
             // Build JS configuration object for front-end
-            $serviceWorkerPath = self::getJoomlaImagePath('serviceworker.js');
-            $joomlaLogoPath    = self::getJoomlaImagePath('Logo');
-            $assetPath         = self::$assetPath;
+            $assetBase   = $this->assetUrl; // .../plugins/system/sagutidloader/assets/
+            $distBase    = $assetBase . 'dist/';
+            $scriptUrl   = $distBase . 'main.bundle.js';
+            $styleUrl    = $distBase . 'styles.bundle.css';
+            $manifestUrl = $assetBase . 'manifest.webmanifest';
+            $swUrl       = $assetBase . 'serviceworker.js';
+            $imagesBase  = Uri::root() . 'images/';
 
-            // Mark start of injected configuration in the <head>
-            self::$document->addCustomTag("\n<!-- Sagutid Loader -->\n");
+            $config = [
+                'serviceWorkerPath' => $swUrl,
+                'joomlaLogoPath'    => $imagesBase . 'Logo',
+                'assetPath'         => $assetBase,
+                'serviceWorker'     => $swUrl,
+                'script'            => $scriptUrl,
+                'style'             => $styleUrl,
+                'manifest'          => $manifestUrl,
+                'debugMode'         => false,
+            ];
+            $configJson = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 
-            self::$document->addScriptDeclaration(
-                "window.SAGUTID_CONFIG = {
-                    serviceWorkerPath: '{$serviceWorkerPath}',
-                    joomlaLogoPath:    '{$joomlaLogoPath}',
-                    assetPath:         '{$assetPath}',
-                    serviceWorker:     '{$serviceWorkerPath}',
-                    script:           '{$assetPath}dist/main.bundle.js',
-                    style:            '{$assetPath}dist/styles.bundle.css',
-                    manifest:         '{$assetPath}manifest.webmanifest',
-                    debugMode:        false
-                };"
-            );
+            $block  = "\n<!-- Sagutid Loader -->\n";
+            $block .= '<script type="text/javascript">window.SAGUTID_CONFIG = ' . $configJson . ';</script>' . "\n";
+            $block .= '<link rel="manifest" href="' . htmlspecialchars($manifestUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
+            $block .= '<link rel="stylesheet" type="text/css" href="' . htmlspecialchars($styleUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
+            // Properly close the external script tag without escaping the slash
+            $block .= '<script defer type="text/javascript" src="' . htmlspecialchars($scriptUrl, ENT_QUOTES, 'UTF-8') . '"></script>' . "\n";
+            $block .= "<!-- END Sagutid Loader -->\n";
 
-            // Mark end of injected configuration in the <head>
-            self::$document->addCustomTag("<!-- END Sagutid Loader -->\n");
-
-            // Enqueue plugin assets
-            self::addAssets();
+            $document->addCustomTag($block);
         } catch (\Exception $e) {
             $msg = 'Error in Sagutid loader: ' . $e->getMessage();
-            // Joomla message (backend/admin notifications)
-            self::$app->enqueueMessage($msg, 'error');
-            // Also surface the error in the browser console for developers
-            if (self::$document instanceof HtmlDocument) {  
-                self::$document->addScriptDeclaration(
-                    '(function(){try{console.error("[Sagutid Loader] " + ' .
-                    json_encode($msg, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) .
-                    ');}catch(e){}})();'
+            $doc = Factory::getApplication()->getDocument();
+            if ($doc instanceof HtmlDocument) {
+                // Keep error reporting minimal and avoid stray IIFE remnants in the markup
+                $doc->addScriptDeclaration(
+                    'try{console.error("[Sagutid Loader] " + ' .
+                        json_encode($msg, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) .
+                        ');}catch(e){}'
                 );
             }
         }
     }
 
     /**
-     * Enqueue the plugin's main JS, CSS and manifest.
-     *
-     * @return  void
-     * @since   1.0.0
+     * Compute the absolute URL to the plugin assets folder.
      */
-    private static function addAssets(): void
+    private function computeAssetUrl(): void
     {
-        self::addScript('main.bundle.js',   ['type' => 'text/javascript', 'defer' => true]);
-        self::addStyleSheet('styles.bundle.css',   ['type' => 'text/css']);
-        self::addHeadLink('manifest.webmanifest', 'manifest');
-    }
-
-    /**
-     * Add a <script> tag for a file in assets/dist.
-     *
-     * @param   string  $fileName  Filename under assets/dist
-     * @param   array   $args      HTML attributes for the <script> tag
-     *
-     * @return  void
-     * @since   1.0.0
-     */
-    private static function addScript(string $fileName, array $args = []): void
-    {
-        $url = self::getDistPath($fileName);
-        self::$document->addScript($url, $args);
-        self::$app->enqueueMessage('Script added: ' . $url, 'info');
-    }
-
-    /**
-     * Add a <link rel="stylesheet"> tag for a file in assets/dist.
-     *
-     * @param   string  $fileName  Filename under assets/dist
-     * @param   array   $args      HTML attributes for the <link> tag
-     *
-     * @return  void
-     * @since   1.0.0
-     */
-    private static function addStyleSheet(string $fileName, array $args = []): void
-    {
-        $url = self::getDistPath($fileName);
-        self::$document->addStyleSheet($url, $args);
-        self::$app->enqueueMessage('Stylesheet added: ' . $url, 'info');
-    }
-
-    /**
-     * Add a generic <link> tag (e.g., manifest).
-     *
-     * @param   string  $fileName  Filename under assets/
-     * @param   string  $rel       The rel attribute for the link
-     * @param   string  $type      The type attribute (default text/css)
-     *
-     * @return  void
-     * @since   1.0.0
-     */
-    private static function addHeadLink(string $fileName, string $rel = 'stylesheet', string $type = 'text/css'): void
-    {
-        $url = self::getAssetPath($fileName);
-        self::$document->addHeadLink($url, $rel, 'stylesheet', ['type' => $type]);
-        self::$app->enqueueMessage('Head link added: ' . $url, 'info');
-    }
-
-    /**
-     * Get full URL to a file in assets/.
-     *
-     * @param   string  $fileName  Filename relative to assets/
-     *
-     * @return  string
-     * @since   1.0.0
-     */
-    private static function getAssetPath(string $fileName): string
-    {
-        return self::$assetPath . $fileName;
-    }
-
-    /**
-     * Get full URL to a file in assets/dist/.
-     *
-     * @param   string  $fileName  Filename relative to assets/dist/
-     *
-     * @return  string
-     * @since   1.0.0
-     */
-    private static function getDistPath(string $fileName): string
-    {
-        return self::getAssetPath('dist/' . $fileName);
-    }
-
-    /**
-     * Get full URL to a file in Joomla's images/ directory.
-     *
-     * @param   string  $fileName  Optional filename
-     *
-     * @return  string
-     * @since   1.0.0
-     */
-    private static function getJoomlaImagePath(string $fileName = ''): string
-    {
-        return Uri::root() . 'images/' . $fileName;
-    }
-
-    /**
-     * Determine and store the base URL to the plugin's assets directory.
-     *
-     * @return  string  The asset folder URL or empty on failure
-     * @since   1.0.0
-     */
-    private static function setAssetPath(): string
-    {
-        $plugin = PluginHelper::getPlugin('system', 'sagutidloader');
-
-        if (!$plugin) {
-            self::$app->enqueueMessage('Could not load plugin data.', 'error');
-            return '';
+        // Resolve plugin group/element reliably
+        $group = 'system';
+        $element = 'sagutidloader';
+        try {
+            $plugin = PluginHelper::getPlugin($group, $element);
+            if ($plugin && isset($plugin->name) && is_string($plugin->name)) {
+                $element = $plugin->name;
+            }
+        } catch (\Throwable $e) {
+            // Fallback keeps defaults
         }
-
-        $path = Uri::root(true)
-            . '/plugins/system/'
-            . $plugin->name
-            . '/assets/';
-
-        self::$assetPath = $path;
-
-        return $path;
+        $this->assetUrl = Uri::root() . 'plugins/' . $group . '/' . $element . '/assets/';
     }
 
     /**
@@ -259,10 +142,11 @@ class PlgSystemSagutidloader extends CMSPlugin
     public function getDiagnosticsStatus()
     {
         // Only show in admin
-        if (!self::$app->isClient('administrator')) {
+        $app = Factory::getApplication();
+        if (!$app->isClient('administrator')) {
             return '';
         }
-        $doc = self::$document;
+        $doc = $app->getDocument();
         $headHtml = $doc->getBuffer('head');
         $assets = [
             'main.bundle.js',

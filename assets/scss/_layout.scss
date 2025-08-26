@@ -6,12 +6,14 @@ body {
     background-size: contain;
     background-position: center;
     background-repeat: repeat;
+    background-attachment: fixed !important;
   }
   &.wijsheden {
     background: url(https://sagutid.nl/images/yootheme/photo-1487147264018-f937fba0c817.jpg);
     background-size: cover;
     background-position: bottom center;
     background-repeat: no-repeat;
+    background-attachment: unset !important;
 
     & .uk-section-default {
       background: transparent !important;
