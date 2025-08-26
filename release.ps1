@@ -249,23 +249,23 @@ function Write-UpdateServerXml([string]$ManifestPath,[string]$NewVersion) {
     if (-not (Test-Path $updatesDir)) { New-Item -ItemType Directory -Path $updatesDir | Out-Null }
     $updatesFile = Join-Path $updatesDir 'sagutidloader_updates.xml'
 
-    $xml = @(
-        '<?xml version="1.0" encoding="utf-8"?>',
-        '<updates>',
-        '  <update>',
-        '    <name>plg_' + $group + '_' + $pluginName + '</name>',
-        '    <description>Sagutid Loader</description>',
-        '    <element>' + $pluginName + '</element>',
-        '    <type>plugin</type>',
-        '    <folder>' + $group + '</folder>',
-        '    <version>' + $NewVersion + '</version>',
-        '    <downloads>',
-        '      <downloadurl type="full" format="zip">' + $downloadUrl + '</downloadurl>',
-        '    </downloads>',
-        '    <targetplatform name="joomla" version=">=4.0.0" />',
-        '  </update>',
-        '</updates>'
-    ) -join "`n"
+        $xml = @"
+<?xml version="1.0" encoding="utf-8"?>
+<updates>
+    <update>
+        <name>plg_${group}_${pluginName}</name>
+        <description>Sagutid Loader</description>
+        <element>${pluginName}</element>
+        <type>plugin</type>
+        <folder>${group}</folder>
+        <version>${NewVersion}</version>
+        <downloads>
+            <downloadurl type="full" format="zip">${downloadUrl}</downloadurl>
+        </downloads>
+        <targetplatform name="joomla" version=">=4.0.0" />
+    </update>
+</updates>
+"@
     Set-Content -Path $updatesFile -Value $xml -Encoding UTF8
     return $updatesFile
 }
