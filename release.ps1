@@ -161,6 +161,10 @@ function Git-Commit-Push-Tag([string]$NewVersion,[bool]$DidBuild,[string]$XmlFil
     if (Test-Path $ServiceWorkerFile) { $null = git add $ServiceWorkerFile }
     if ($DidBuild -eq $true -and (Test-Path -LiteralPath 'assets/dist')) { $null = git add -- 'assets/dist' }
 
+    # Stage update server XML if present
+    $updatesFile = Join-Path 'updates' 'sagutidloader_updates.xml'
+    if (Test-Path $updatesFile) { $null = git add $updatesFile }
+
     $pending = git diff --cached --name-only
     if (-not $pending) { Write-Warning 'No staged changes; nothing to commit.' }
     else {
@@ -225,6 +229,47 @@ function Show-LatestReleaseAssetUrl([string]$AssetName) {
     } catch { Write-Warning 'Failed to query latest release info.' }
 }
 
+function Write-UpdateServerXml([string]$ManifestPath,[string]$NewVersion) {
+    [xml]$manifest = Get-Content $ManifestPath
+    $group = $manifest.extension.group
+    if (-not $group) { $group = 'system' }
+    $pluginName = $null
+    $fileNodes = $manifest.extension.files.filename
+    if ($fileNodes) {
+        foreach ($node in $fileNodes) { if ($node.plugin) { $pluginName = [string]$node.plugin; break } }
+    }
+    if (-not $pluginName) { $pluginName = [IO.Path]::GetFileNameWithoutExtension($ManifestPath) }
+
+    $repo = (git remote get-url origin) -replace '.*github.com[:/](.+?)(\.git)?$','$1'
+    $tag  = "v$NewVersion"
+    $zip  = "$pluginName.zip"
+    $downloadUrl = "https://github.com/$repo/releases/download/$tag/$zip"
+
+    $updatesDir = Join-Path (Get-Location) 'updates'
+    if (-not (Test-Path $updatesDir)) { New-Item -ItemType Directory -Path $updatesDir | Out-Null }
+    $updatesFile = Join-Path $updatesDir 'sagutidloader_updates.xml'
+
+    $xml = @(
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<updates>',
+        '  <update>',
+        '    <name>plg_' + $group + '_' + $pluginName + '</name>',
+        '    <description>Sagutid Loader</description>',
+        '    <element>' + $pluginName + '</element>',
+        '    <type>plugin</type>',
+        '    <folder>' + $group + '</folder>',
+        '    <version>' + $NewVersion + '</version>',
+        '    <downloads>',
+        '      <downloadurl type="full" format="zip">' + $downloadUrl + '</downloadurl>',
+        '    </downloads>',
+        '    <targetplatform name="joomla" version=">=4.0.0" />',
+        '  </update>',
+        '</updates>'
+    ) -join "`n"
+    Set-Content -Path $updatesFile -Value $xml -Encoding UTF8
+    return $updatesFile
+}
+
 # ---------------- Main ----------------
 Assert-Tools @('git','gh')
 Ensure-CleanGit -Force:$Force
@@ -252,6 +297,9 @@ $ServiceWorkerFile = Join-Path 'assets' 'serviceworker.js'
 Update-ServiceWorkerCacheName -ServiceWorkerFile $ServiceWorkerFile -NewCacheName $nv.CacheName
 
 $DidBuild = Run-Build -SkipBuild:$SkipBuild
+
+# Generate/update update server XML now (referencing the soon-to-exist release asset)
+$null = Write-UpdateServerXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion
 
 $pkg = Package-Plugin -ManifestPath $manifestRef.Path
 

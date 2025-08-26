@@ -18,6 +18,9 @@
     <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.ini</language>
     <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.sys.ini</language>
   </languages>
+  <updateservers>
+    <server type="extension" name="Sagutid Loader Update Server" priority="1">https://raw.githubusercontent.com/tiemenrtuinstra/sagutidloader/main/updates/sagutidloader_updates.xml</server>
+  </updateservers>
   <config>
     <fields name="params">
       <fieldset name="basic" label="PLG_SYSTEM_SAGUTIDLOADER_FIELDSET_BASIC" class="sagutidloader">
