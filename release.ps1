@@ -171,7 +171,7 @@ function Git-Commit-Push-Tag([string]$NewVersion,[bool]$DidBuild,[string]$XmlFil
 
     git push origin main
 
-    $Tag = "v$NewVersion"
+    $Tag = ("v$NewVersion").Trim()
     git tag -a $Tag -m "Release $NewVersion"
     Write-Host "Created tag $Tag"
     git push origin $Tag
@@ -180,8 +180,28 @@ function Git-Commit-Push-Tag([string]$NewVersion,[bool]$DidBuild,[string]$XmlFil
 
 function Create-GitHubRelease([string]$Tag,[string]$NewVersion) {
     Write-Host 'Creating GitHub release...'
+    # Ensure tag exists locally (and presumably remote, since we pushed it)
+    $ref = git rev-parse -q --verify "refs/tags/$Tag" 2>$null
+    if (-not $ref) {
+        Write-Host "Error: Tag '$Tag' does not exist locally." -ForegroundColor Red
+        exit 1
+    }
+
     gh release create $Tag --title "Release $NewVersion" --notes "Automated release for $NewVersion."
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: Failed to create GitHub release for tag '$Tag'." -ForegroundColor Red
+        exit 1
+    }
     Write-Host 'GitHub release created.'
+}
+
+function Ensure-TagNotReleased([string]$Tag) {
+    # Check if a release already exists for this tag on GitHub; if yes, abort to avoid 422s
+    gh release view $Tag --json tagName 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Error: A GitHub release for tag '$Tag' already exists. Bump version or delete the release first." -ForegroundColor Red
+        exit 1
+    }
 }
 
 function Upload-ReleaseAsset([string]$Tag,[string]$ZipPath) {
@@ -237,6 +257,7 @@ $pkg = Package-Plugin -ManifestPath $manifestRef.Path
 
 $Tag = Git-Commit-Push-Tag -NewVersion $nv.NewVersion -DidBuild:([bool]$DidBuild) -XmlFile $XmlFile -PackageJsonFile $PackageJsonFile -ServiceWorkerFile $ServiceWorkerFile
 
+Ensure-TagNotReleased -Tag $Tag
 Create-GitHubRelease -Tag $Tag -NewVersion $nv.NewVersion
 Upload-ReleaseAsset -Tag $Tag -ZipPath $pkg.ZipPath
 Show-LatestReleaseAssetUrl -AssetName $pkg.ZipName
