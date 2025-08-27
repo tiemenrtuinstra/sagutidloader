@@ -236,7 +236,9 @@ function Show-LatestReleaseAssetUrl([string]$AssetName) {
 
 function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion) {
     [xml]$manifest = Get-Content $ManifestPath
-    $group = $manifest.extension.group
+    # Read group from the manifest's extension element attribute (fallback to 'system')
+    $group = $null
+    try { $group = $manifest.extension.GetAttribute('group') } catch { $group = $null }
     if (-not $group) { $group = 'system' }
     $pluginName = $null
     $fileNodes = $manifest.extension.files.filename
@@ -273,6 +275,19 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion) {
 "@
     Set-Content -Path $updatesFile -Value $xml -Encoding UTF8
     return $updatesFile
+}
+
+function Commit-UpdateXml([string]$ManifestPath, [string]$NewVersion) {
+    # Regenerate update XML and commit/push if it changed
+    $updatesFile = Write-UpdateServerXml -ManifestPath $ManifestPath -NewVersion $NewVersion
+    if (-not (Test-Path $updatesFile)) { return }
+    $null = git add -- $updatesFile
+    $pending = git diff --cached --name-only -- $updatesFile
+    if ($pending) {
+        $null = git commit -m "chore(update-site): update update XML for v$NewVersion"
+        $null = git push origin main
+        Write-Host "Pushed updated update-server XML for v$NewVersion"
+    }
 }
 
 # ---------------- Main ----------------
@@ -313,6 +328,7 @@ $Tag = Git-Commit-Push-Tag -NewVersion $nv.NewVersion -DidBuild:([bool]$DidBuild
 Ensure-TagNotReleased -Tag $Tag
 Create-GitHubRelease -Tag $Tag -NewVersion $nv.NewVersion
 Upload-ReleaseAsset -Tag $Tag -ZipPath $pkg.ZipPath
+Commit-UpdateXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion
 Show-LatestReleaseAssetUrl -AssetName $pkg.ZipName
 
 Write-Host 'Release pipeline finished.'
