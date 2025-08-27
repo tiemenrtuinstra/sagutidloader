@@ -1,3 +1,5 @@
+@use "variables" as *;
+@use "mixins" as *;
 .uk-panel[class*="uk-card"],
 .uk-panel[class*="uk-tile"] {
   @include box-shadow($shadow);

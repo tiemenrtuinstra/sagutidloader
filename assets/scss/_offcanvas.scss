@@ -1,3 +1,5 @@
+@use "variables" as *;
+@use "mixins" as *;
 .uk-offcanvas-bar {
     @include box-shadow($shadow-dark);
     left: 0;

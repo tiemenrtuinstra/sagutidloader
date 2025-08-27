@@ -15,7 +15,8 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'assets/dist'),
         filename: pathData =>
-            pathData.chunk.name === 'main' ? '[name].bundle.js' : '[name].js'
+            pathData.chunk.name === 'main' ? '[name].bundle.js' : '[name].js',
+        chunkFilename: '[name].js'
     },
 
     module: {
@@ -53,6 +54,24 @@ module.exports = {
     },
 
     optimization: {
+        splitChunks: {
+            chunks: 'all',
+            cacheGroups: {
+                vendors: {
+                    test: /[\\/]node_modules[\\/](lit|@lit|@material|tslib|lit-html|lit-element)[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all',
+                    priority: 20,
+                    enforce: true
+                },
+                commons: {
+                    name: 'commons',
+                    minChunks: 2,
+                    priority: 10,
+                    reuseExistingChunk: true
+                }
+            }
+        },
         minimize: false,
         // minimizer: [
         //     new TerserPlugin({

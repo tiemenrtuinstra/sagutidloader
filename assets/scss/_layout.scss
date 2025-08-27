@@ -1,3 +1,5 @@
+@use "variables" as *;
+@use "mixins" as *;
 body {
     background: url(https://sagutid.nl/images/yootheme/photo-1531685250784-7569952593d2.jpg);
     background-size: contain;
@@ -14,7 +16,7 @@ body {
     background-repeat: no-repeat;
     background-attachment: unset !important;
 
-    & .uk-section-default.uk-section {
+    & .uk-section-default{
       background: transparent !important;
     }
   }
@@ -26,9 +28,9 @@ body {
     overflow: hidden;
     .uk-button{
       .uk-button-default{
-        background:transparent;
-        background-color:#fff;
-        color:$color-primary;
+        background:transparent !important;
+        background-color:#fff !important;
+        color:$color-primary !important;
       }
     }
   }

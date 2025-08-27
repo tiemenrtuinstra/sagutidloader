@@ -1,3 +1,5 @@
+@use "variables" as *;
+@use "mixins" as *;
 .uk-label {
   border-radius: $border-radius-main;
   @include box-shadow($shadow);

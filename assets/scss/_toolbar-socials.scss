@@ -4,9 +4,14 @@
 // Depends on: $social-style map, $color-primary, %icon-base (optional)
 // This file supplies safe fallbacks, structured layers & accessible focus.
 // =============================================================================
+@use "sass:meta";
+@use "sass:map";
+@use "sass:list";
+@use "variables" as *;
+@use "icon-base" as *;
 
 // ---------- 0. Fallbacks (only if not defined elsewhere) ----------
-@if not variable-exists(social-style) {
+@if not meta.variable-exists("social-style") {
   $social-style: () !default;
 }
 
@@ -23,14 +28,14 @@
 .tm-toolbar,
 .tm-socials {
   // ---------- 3. Theming Per Social Variant ----------
-  @if length($social-style) > 0 {
+  @if list.length(map.keys($social-style)) > 0 {
     @each $key, $style in $social-style {
-      $bg: map-get($style, bg);
-      $color: map-get($style, color);
-      $border: map-get($style, border);
+      $bg: map.get($style, bg);
+      $color: map.get($style, color);
+      $border: map.get($style, border);
       $bg-hover: if(
-        map-has-key($style, bg-hover),
-        map-get($style, bg-hover),
+        map.has-key($style, bg-hover),
+        map.get($style, bg-hover),
         $bg
       );
 
@@ -43,7 +48,7 @@
         }
 
         // Explicit distinct hover variant
-        @if map-has-key($style, bg-hover) {
+  @if map.has-key($style, bg-hover) {
           &:hover {
             background: $bg-hover;
           }
@@ -117,9 +122,7 @@
   }
 
   // ---------- 4. Overlay Specific (reserved hook) ----------
-  .el-overlay [uk-icon] {
-    /* custom overrides if needed */
-  }
+  // .el-overlay [uk-icon] { /* overrides if needed */ }
 }
 
 // ---------- 5. Homepage Context Variant ----------

@@ -6,18 +6,37 @@ import { HeaderHandler } from './HeaderHandler.js';
 import { PWAShareHandler } from './PWAShareHandler.js';
 import { DataLayerHandler } from './DataLayerHandler.js';
 import { Logger } from './Util/Logger.js';
-import '@material/web/all.js';
-import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
-
-function initializeApp() {
-  // Adopt Material typography styles, if supported
+// Lazy-load Material Web only when needed to keep initial bundle small
+async function loadMaterialIfNeeded() {
   try {
-    if (typeof document !== 'undefined' && 'adoptedStyleSheets' in document && typescaleStyles?.styleSheet) {
+    if (typeof document === 'undefined') return;
+    // Detect any Material Web custom element tags (md-*) present in DOM
+    const hasMaterialElements = Array.from(document.getElementsByTagName('*')).some(
+      (el) => el.tagName.startsWith('MD-')
+    );
+    if (!hasMaterialElements) return;
+
+    // Load the full Material library and typography styles as a single async chunk
+    await import(/* webpackChunkName: "material" */ '@material/web/all.js');
+    const { styles: typescaleStyles } = await import(
+      /* webpackChunkName: "material" */ '@material/web/typography/md-typescale-styles.js'
+    );
+
+    if ('adoptedStyleSheets' in document && typescaleStyles?.styleSheet) {
       document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
     }
   } catch (e) {
-    // Non-fatal: continue without adoptedStyleSheets on unsupported browsers
-    Logger.log('adoptedStyleSheets not applied: ' + e, '#ffaa00', 'sagutid.js');
+    Logger?.log?.('Material load skipped: ' + e, '#ffaa00', 'sagutid.js');
+  }
+}
+
+function initializeApp() {
+  // Optionally load Material bundle and typography if the page uses md-* elements
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => loadMaterialIfNeeded(), { once: true });
+  } else {
+    // DOM is ready enough to scan
+    loadMaterialIfNeeded();
   }
 
   // Log the debug mode status

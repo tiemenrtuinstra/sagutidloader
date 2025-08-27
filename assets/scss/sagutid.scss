@@ -1,19 +1,20 @@
+// Switch to the Sass module system to avoid @import deprecations
 @use "sass:list";
-@import "variables";
-@import "mixins";
-@import "icon-base";
-@import "keyframes";
-@import "layout";
-@import "header";
-@import "card";
-@import "icon";
-@import "toolbar-socials";
-@import "labels";
-@import "buttons";
-@import "offcanvas";
-@import "banners";
-@import "panels";
-@import "footer";
+@use "variables" as *;
+@use "mixins" as *;
+@use "icon-base" as *;
+@use "keyframes" as *;
+@use "layout" as *;
+@use "header" as *;
+@use "card" as *;
+@use "icon" as *;
+@use "toolbar-socials" as *;
+@use "labels" as *;
+@use "buttons" as *;
+@use "offcanvas" as *;
+@use "banners" as *;
+@use "panels" as *;
+@use "footer" as *;
 
 em,
 i {

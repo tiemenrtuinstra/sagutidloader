@@ -1,3 +1,5 @@
+@use "variables" as *;
+@use "mixins" as *;
 .tm-page {
   .tm-headerbar-top .tm-headerbar-stacked,
   #module-menu-dialog-mobile {
