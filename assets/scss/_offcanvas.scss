@@ -1,16 +1,14 @@
-.uk-open{
-    &>.uk-offcanvas-bar {
-        @include box-shadow($shadow-dark);
-        left: 0;
-        right: 0;
-        top: 120px;
-        height: 408px;
-        position: fixed;
-        border-radius: 25px;
-        width: calc(100vw - 39px);
-        margin: 0px 12.5px;
-        overflow: hidden;
-    }
+.uk-offcanvas-bar {
+    @include box-shadow($shadow-dark);
+    left: 0;
+    right: 0;
+    top: 120px;
+    height: 408px;
+    position: fixed;
+    border-radius: 25px;
+    width: calc(100vw - 39px);
+    margin: 0px 12.5px;
+    overflow: hidden;
 }
 a{
     .uk-navbar-toggle[aria-expanded="true"]{
