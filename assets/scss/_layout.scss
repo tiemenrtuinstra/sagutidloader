@@ -1,13 +1,10 @@
 body {
-  &.verhalen,
-  &.gedichten,
-  &.overig {
     background: url(https://sagutid.nl/images/yootheme/photo-1531685250784-7569952593d2.jpg);
     background-size: contain;
     background-position: center;
     background-repeat: repeat;
     background-attachment: fixed !important;
-  }
+  
   &.wijsheden {
     background: url(https://sagutid.nl/images/yootheme/photo-1487147264018-f937fba0c817.jpg);
     background-size: cover;
@@ -25,6 +22,13 @@ body {
     @include box-shadow($shadow);
     border-radius: $border-radius-main;
     overflow: hidden;
+    .uk-button{
+      .uk-button-default{
+        background:transparent;
+        background-color:#fff;
+        color:$primary-color;
+      }
+    }
   }
 
   #sagu-text.columns {
