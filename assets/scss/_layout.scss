@@ -6,19 +6,20 @@ body {
     background-position: center;
     background-repeat: repeat;
     background-attachment: fixed !important;
-      margin: 0px;
+    margin: 0px;
     padding: 0px;
     margin-top: -13px;
+
   &.wijsheden {
     background: url(https://sagutid.nl/images/yootheme/photo-1487147264018-f937fba0c817.jpg);
     background-size: cover;
     background-position: bottom center;
     background-repeat: no-repeat;
     background-attachment: unset !important;
+  }
 
-    & .uk-section-default{
-      background: transparent !important;
-    }
+  & .uk-section-default{
+    background: transparent !important;
   }
 
   .tm-cookie-banner {
@@ -27,7 +28,7 @@ body {
     border-radius: $border-radius-main;
     overflow: hidden;
     .uk-button{
-      .uk-button-default{
+      &.uk-button-default{
         background:transparent !important;
         background-color:#fff !important;
         color:$color-primary !important;
