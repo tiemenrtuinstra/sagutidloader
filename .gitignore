@@ -2,7 +2,7 @@
 package-lock.json
 build
 assets/dist/
-assets/dist/*.map
+assets/dist/**/*
 /*.zip
 *.zip
 sagutidloader.zip
