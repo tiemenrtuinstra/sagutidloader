@@ -7,8 +7,19 @@ import { PWAShareHandler } from './PWAShareHandler.js';
 import { DataLayerHandler } from './DataLayerHandler.js';
 import { Logger } from './Util/Logger.js';
 import '@material/web/all.js';
+import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
 
 function initializeApp() {
+  // Adopt Material typography styles, if supported
+  try {
+    if (typeof document !== 'undefined' && 'adoptedStyleSheets' in document && typescaleStyles?.styleSheet) {
+      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    }
+  } catch (e) {
+    // Non-fatal: continue without adoptedStyleSheets on unsupported browsers
+    Logger.log('adoptedStyleSheets not applied: ' + e, '#ffaa00', 'sagutid.js');
+  }
+
   // Log the debug mode status
   Logger.log(`Debug mode: ${Logger.debugMode}`, '#00ff00', 'sagutid.js');
     

@@ -1,13 +1,13 @@
-const CACHE_NAME = `sagutid-v26.0.3`;
+const CACHE_NAME = `sagutid-v26.0.4`;
 
 // Helper: fetch with timeout and better error handling
 async function fetchWithTimeout(resource, options = {}, timeout = 8000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
-  
+
   try {
-    const response = await fetch(resource, { 
-      ...options, 
+    const response = await fetch(resource, {
+      ...options,
       signal: controller.signal,
       cache: 'no-store' // Prevent cache conflicts during SW install
     });
@@ -22,7 +22,7 @@ async function fetchWithTimeout(resource, options = {}, timeout = 8000) {
 class SagutidServiceWorker {
   constructor() {
     this.CACHE_NAME = CACHE_NAME;
-    
+
     // Simplified asset lists - only cache what's guaranteed to exist
     this.STATIC_ASSETS = [
       '/',
@@ -32,9 +32,9 @@ class SagutidServiceWorker {
       '/images/Logo/android-chrome-192x192.png',
       '/images/Logo/android-chrome-512x512.png'
     ];
-    
-    this.dynamicPaths = ['/', '/verhalen', '/gedichten', '/overig','tegeltjes-wijsheden'];
-    
+
+    this.dynamicPaths = ['/', '/verhalen', '/gedichten', '/overig', 'tegeltjes-wijsheden'];
+
     // Only critical assets that definitely exist
     this.CRITICAL_ASSETS = [
       '/index.php',
@@ -101,13 +101,13 @@ class SagutidServiceWorker {
 
   async activate(event) {
     console.log('SW: Activating...');
-    
+
     event.waitUntil((async () => {
       try {
         // Clean up old caches
         const cacheNames = await caches.keys();
         const oldCaches = cacheNames.filter(name => name !== this.CACHE_NAME);
-        
+
         await Promise.all(
           oldCaches.map(name => {
             console.log(`SW: Deleting old cache: ${name}`);
@@ -118,7 +118,7 @@ class SagutidServiceWorker {
         // Take control of all clients
         await self.clients.claim();
         console.log('SW: Activated and claimed clients');
-        
+
       } catch (err) {
         console.error('SW: Activation failed:', err);
       }
@@ -127,7 +127,7 @@ class SagutidServiceWorker {
 
   fetch(event) {
     const req = event.request;
-    
+
     // Only handle GET requests
     if (req.method !== 'GET') return;
 
@@ -156,10 +156,10 @@ class SagutidServiceWorker {
               console.log(`SW: Serving cached navigation: ${req.url}`);
               return cached;
             }
-            
+
             // Try to serve offline page
-            const offlinePage = await caches.match('/offline.html') || 
-                               await caches.match('/index.php');
+            const offlinePage = await caches.match('/offline.html') ||
+              await caches.match('/index.php');
             return offlinePage || new Response('Offline', { status: 503 });
           })
       );
@@ -174,7 +174,7 @@ class SagutidServiceWorker {
             if (cached) {
               return cached;
             }
-            
+
             return fetch(req)
               .then(response => {
                 if (response.ok) {
@@ -196,7 +196,7 @@ class SagutidServiceWorker {
 
   async message(event) {
     const { data } = event;
-    
+
     if (data === 'SKIP_WAITING') {
       console.log('SW: Skip waiting requested');
       return self.skipWaiting();
@@ -210,18 +210,18 @@ class SagutidServiceWorker {
 
     if (data?.type === 'UPDATE_DYNAMIC_CONTENT') {
       console.log('SW: Dynamic content update requested');
-      
+
       try {
         const cache = await caches.open(this.CACHE_NAME);
-        
+
         // Try to update sitemap-based content
         const sitemapRes = await fetchWithTimeout('/index.php?option=com_jmap&view=sitemap&format=xml');
-        
+
         if (sitemapRes.ok) {
           const xml = await sitemapRes.text();
           const doc = new DOMParser().parseFromString(xml, 'application/xml');
           const urls = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
-          
+
           let updateCount = 0;
           for (const url of urls.slice(0, 50)) { // Limit to first 50 URLs
             try {
@@ -234,13 +234,13 @@ class SagutidServiceWorker {
               console.warn(`SW: Failed to update ${url}:`, err.message);
             }
           }
-          
+
           console.log(`SW: Updated ${updateCount} URLs`);
           event.ports[0]?.postMessage({ success: true, count: updateCount });
         } else {
           throw new Error(`Sitemap request failed: ${sitemapRes.status}`);
         }
-        
+
       } catch (err) {
         console.error('SW: Update failed:', err);
         event.ports[0]?.postMessage({ success: false, error: err.message });
@@ -257,6 +257,7 @@ self.addEventListener('install', event => sagutidSW.install(event));
 self.addEventListener('activate', event => sagutidSW.activate(event));
 self.addEventListener('fetch', event => sagutidSW.fetch(event));
 self.addEventListener('message', event => sagutidSW.message(event));
+
 
 
 

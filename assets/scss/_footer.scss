@@ -2,7 +2,7 @@ footer {
   padding-bottom: 25px;
   .uk-section-primary {
     background: $footer-img center bottom / cover no-repeat !important;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6) !important;
+        @include box-shadow($shadow);
     border-radius: 25px;
     overflow: hidden;
     margin: 0px 25px;

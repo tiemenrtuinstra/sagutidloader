@@ -1,7 +1,7 @@
 @use "sass:list";
 
 // ---------- Generic Helpers ----------
-@mixin box-shadow($args...) { box-shadow: $args; }
+@mixin box-shadow($args...) { box-shadow: $args !important; }
 
 @mixin transition($props...) {
   // fallback helper (explicit prop list)
