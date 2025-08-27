@@ -164,9 +164,9 @@ function Git-Commit-Push-Tag([string]$NewVersion, [bool]$DidBuild, [string]$XmlF
     if (Test-Path $ServiceWorkerFile) { $null = git add $ServiceWorkerFile }
     if ($DidBuild -eq $true -and (Test-Path -LiteralPath 'assets/dist')) { $null = git add -- 'assets/dist' }
 
-    # Stage update server XML if present
+    # Stage update server XML if present (force add in case folder is ignored)
     $updatesFile = Join-Path 'updates' 'sagutidloader_updates.xml'
-    if (Test-Path $updatesFile) { $null = git add $updatesFile }
+    if (Test-Path $updatesFile) { $null = git add -f -- $updatesFile }
 
     $pending = git diff --cached --name-only
     if (-not $pending) { Write-Warning 'No staged changes; nothing to commit.' }
@@ -281,7 +281,8 @@ function Commit-UpdateXml([string]$ManifestPath, [string]$NewVersion) {
     # Regenerate update XML and commit/push if it changed
     $updatesFile = Write-UpdateServerXml -ManifestPath $ManifestPath -NewVersion $NewVersion
     if (-not (Test-Path $updatesFile)) { return }
-    $null = git add -- $updatesFile
+    # Force-add in case updates/ is ignored
+    $null = git add -f -- $updatesFile
     $pending = git diff --cached --name-only -- $updatesFile
     if ($pending) {
         $null = git commit -m "chore(update-site): update update XML for v$NewVersion"
