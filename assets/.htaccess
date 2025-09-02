@@ -1,0 +1,8 @@
+<IfModule mod_headers.c>
+  <Files "serviceworker.js">
+    # Allow this service worker to control the entire origin
+    Header set Service-Worker-Allowed "/"
+    # Avoid caching the SW file aggressively so updates roll out
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </Files>
+</IfModule>

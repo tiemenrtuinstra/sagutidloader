@@ -69,22 +69,7 @@ export class PWAHandler {
     }
 
     static registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(SAGUTID_CONFIG.serviceWorkerPath)
-                .then(registration => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-
-                    // Pass additional configuration to the service worker
-                    if (navigator.serviceWorker.controller) {
-                        navigator.serviceWorker.controller.postMessage({
-                            type: 'INIT_CONFIG',
-                            config: SAGUTID_CONFIG
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Service Worker registration failed:', error);
-                });
-        }
+        // Registration is handled centrally in ServiceWorkerHandler to manage scope and updates
+        return;
     }
 }

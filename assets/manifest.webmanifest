@@ -6,28 +6,66 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["fullscreen", "standalone"],
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
   "orientation": "natural",
   "background_color": "#0B9444",
   "theme_color": "#0B9444",
   "dir": "ltr",
   "lang": "nl-NL",
-  "categories": ["books", "education", "lifestyle"],
+  "categories": [
+    "books",
+    "education",
+    "lifestyle"
+  ],
   "screenshots": [
     {
-      "src": "/images/Screenshots/sagutidhome.png",
+      "src": "/images/Screenshots/sagutid-nl-480x800phone-8b6584.png",
       "type": "image/png",
-      "sizes": "1893x919",
+      "sizes": "480x800",
+      "label": "Screenshot van de homepage phone"
+    },
+    {
+      "src": "/images/Screenshots/sagutid-nl-1920x1080desktop-8b6584.png",
+      "type": "image/png",
+      "sizes": "1920x1080",
       "label": "Screenshot van de homepage desktop",
       "form_factor": "wide"
     },
     {
-      "src": "/images/Screenshots/sagutidhomemobile.png",
+      "src": "/images/Screenshots/sagutid-nl-1024x768desktop-8b6584.png",
       "type": "image/png",
-      "sizes": "395x829",
-      "label": "Screenshot van de homepage mobile"
+      "sizes": "1024x768",
+      "label": "Screenshot van de homepage desktop"
+    },
+    {
+      "src": "/images/Screenshots/sagutid-nl-1280x800tablet-8b6584.png",
+      "type": "image/png",
+      "sizes": "1280x800",
+      "label": "Screenshot van de homepage tablet"
+    },
+    {
+      "src": "/images/Screenshots/sagutid-nl-800x1280tablet-8b6584.png",
+      "type": "image/png",
+      "sizes": "800x1280",
+      "label": "Screenshot van de homepage tablet"
+    },
+    {
+      "src": "/images/Screenshots/sagutid-nl-480x800phone-fafd85.png",
+      "type": "image/png",
+      "sizes": "480x800",
+      "label": "Screenshot van de homepage phone"
+    },
+    {
+      "src": "/images/Screenshots/sagutid-nl-1920x1080desktop-fafd85.png",
+      "type": "image/png",
+      "sizes": "1920x1080",
+      "label": "Screenshot van de homepage desktop",
+      "form_factor": "wide"
     }
-  ],
+  ]
   "shortcuts": [
     {
       "name": "Home",
@@ -69,6 +107,19 @@
       ]
     },
     {
+      "name": "Open wijsheden",
+      "short_name": "Wijsheden",
+      "description": "Lees mijn wijsheden",
+      "url": "/tegeltjes-wijsheden",
+      "icons": [
+        {
+          "src": "/images/Logo/Sagutid-wijsheden.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Open overig",
       "short_name": "Overig",
       "description": "Lees mijn overige sagu",
@@ -88,7 +139,6 @@
       "sizes": "2493x1000",
       "type": "image/jpeg"
     },
-
     {
       "src": "/images/Logo/android-chrome-192x192.png",
       "sizes": "192x192",
@@ -118,6 +168,9 @@
   "prefer_related_applications": false,
   "handle_links": "preferred",
   "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
   }
 }

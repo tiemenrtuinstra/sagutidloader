@@ -1,4 +1,8 @@
 const CACHE_NAME = `sagutid-v26.4.1`;
+// Base path for plugin assets (derived from the SW script URL, not the scope)
+const SCRIPT_PATHNAME = (typeof self !== 'undefined' && self.location) ? new URL(self.location).pathname : '/plugins/system/sagutidloader/assets/serviceworker.js';
+const ASSET_BASE = SCRIPT_PATHNAME.replace(/[^/]+$/, ''); // strip filename to get folder
+const OFFLINE_URL = ASSET_BASE + 'offline.html';
 
 // Helper: fetch with timeout and better error handling
 async function fetchWithTimeout(resource, options = {}, timeout = 8000) {
@@ -25,8 +29,8 @@ class SagutidServiceWorker {
 
     // Simplified asset lists - only cache what's guaranteed to exist
     this.STATIC_ASSETS = [
-      '/',
-      '/index.php',
+      // Keep only same-origin assets likely available; note: navigations will be handled separately
+      OFFLINE_URL,
       '/templates/yootheme/css/theme.css',
       '/templates/yootheme/js/app.js',
       '/images/Logo/android-chrome-192x192.png',
@@ -37,7 +41,7 @@ class SagutidServiceWorker {
 
     // Only critical assets that definitely exist
     this.CRITICAL_ASSETS = [
-      '/index.php',
+      OFFLINE_URL,
       '/templates/yootheme/css/theme.css'
     ];
   }
@@ -158,8 +162,7 @@ class SagutidServiceWorker {
             }
 
             // Try to serve offline page
-            const offlinePage = await caches.match('/offline.html') ||
-              await caches.match('/index.php');
+            const offlinePage = await caches.match(OFFLINE_URL);
             return offlinePage || new Response('Offline', { status: 503 });
           })
       );
@@ -214,33 +217,58 @@ class SagutidServiceWorker {
       try {
         const cache = await caches.open(this.CACHE_NAME);
 
-        // Try to update sitemap-based content
-        const sitemapRes = await fetchWithTimeout('/index.php?option=com_jmap&view=sitemap&format=xml');
+        const limit = (typeof data?.limit === 'number' && data.limit > 0) ? Math.floor(data.limit) : 300;
 
-        if (sitemapRes.ok) {
-          const xml = await sitemapRes.text();
+        // Helper: parse a sitemap or sitemap index and collect up to `limit` URLs
+        const collectUrls = async (sitemapUrl, out) => {
+          if (out.length >= limit) return;
+          const res = await fetchWithTimeout(sitemapUrl);
+          if (!res.ok) throw new Error(`Sitemap request failed: ${res.status}`);
+          const xml = await res.text();
           const doc = new DOMParser().parseFromString(xml, 'application/xml');
-          const urls = Array.from(doc.querySelectorAll('url > loc')).map(el => el.textContent);
 
-          let updateCount = 0;
-          for (const url of urls.slice(0, 50)) { // Limit to first 50 URLs
-            try {
-              const res = await fetchWithTimeout(url);
-              if (res.ok) {
-                await cache.put(url, res.clone());
-                updateCount++;
-              }
-            } catch (err) {
-              console.warn(`SW: Failed to update ${url}:`, err.message);
+          // urlset -> <url><loc>
+          const urlNodes = Array.from(doc.querySelectorAll('url > loc'));
+          if (urlNodes.length) {
+            for (const el of urlNodes) {
+              if (out.length >= limit) break;
+              const u = el.textContent?.trim();
+              if (!u) continue;
+              out.push(u);
             }
+            return;
           }
 
-          console.log(`SW: Updated ${updateCount} URLs`);
-          event.ports[0]?.postMessage({ success: true, count: updateCount });
-        } else {
-          throw new Error(`Sitemap request failed: ${sitemapRes.status}`);
+          // sitemapindex -> <sitemap><loc>
+          const mapNodes = Array.from(doc.querySelectorAll('sitemap > loc'));
+          for (const el of mapNodes) {
+            if (out.length >= limit) break;
+            const sm = el.textContent?.trim();
+            if (!sm) continue;
+            try { await collectUrls(sm, out); } catch (e) { console.warn('SW: Failed nested sitemap:', e.message); }
+          }
+        };
+
+        // Start from primary sitemap
+        const startSitemap = '/index.php?option=com_jmap&view=sitemap&format=xml';
+        const urls = [];
+        await collectUrls(startSitemap, urls);
+
+        let updateCount = 0;
+        for (const url of urls) {
+          try {
+            const res = await fetchWithTimeout(url);
+            if (res.ok) {
+              await cache.put(url, res.clone());
+              updateCount++;
+            }
+          } catch (err) {
+            console.warn(`SW: Failed to update ${url}:`, err.message);
+          }
         }
 
+        console.log(`SW: Updated ${updateCount} URLs (limit ${limit})`);
+        event.ports[0]?.postMessage({ success: true, count: updateCount });
       } catch (err) {
         console.error('SW: Update failed:', err);
         event.ports[0]?.postMessage({ success: false, error: err.message });

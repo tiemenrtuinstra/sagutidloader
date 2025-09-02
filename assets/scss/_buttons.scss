@@ -26,6 +26,8 @@
   &:hover,
   &:active,
   &:focus {
-    box-shadow: none;
+    background:unset;
+    background-color: $color-primary;
+    box-shadow: none !important;
   }
 }
