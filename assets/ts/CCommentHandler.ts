@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger';
+import { Logger, LogType } from './Util/Logger';
 
 export class CCommentHandler {
     static init() {
@@ -10,7 +10,7 @@ export class CCommentHandler {
 
         if (poweredByElements.length > 0) {
             poweredByElements.forEach(element => element.remove());
-            Logger.log('CComment "Powered by" link removed', 'orange', 'CCommentHandler');
+            Logger.log('CComment "Powered by" link removed', undefined, 'CCommentHandler', LogType.WARN);
         }
     }
 }

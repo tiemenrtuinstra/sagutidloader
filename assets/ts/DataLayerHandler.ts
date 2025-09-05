@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger';
+import { Logger, LogType } from './Util/Logger';
 
 export class DataLayerHandler {
     static hasErrors(): boolean {
@@ -13,7 +13,7 @@ export class DataLayerHandler {
             if (DataLayerHandler.hasErrors()) {
                 Logger.error('Validation errors present, check your form.', 'DataLayerHandler');
             }
-            Logger.log('Event pushed to dataLayer:', '#48dbfb', 'DataLayerHandler', eventData);
+            Logger.log('Event pushed to dataLayer:', 'DataLayerHandler', LogType.INFO, eventData);
         }
     }
 
@@ -21,7 +21,7 @@ export class DataLayerHandler {
         const elements = document.querySelectorAll(selector);
 
         if (!elements.length) {
-            Logger.log(`No elements found for selector: ${selector}`, 'orange', 'DataLayerHandler');
+            Logger.log(`No elements found for selector: ${selector}`, undefined, 'DataLayerHandler', LogType.WARN);
             return;
         }
 
@@ -44,7 +44,7 @@ export class DataLayerHandler {
             });
         });
 
-        Logger.log(`Event binding added for selector: ${selector}`, 'green', 'DataLayerHandler');
+    Logger.log(`Event binding added for selector: ${selector}`, 'DataLayerHandler', LogType.INFO);
     }
 
     static createFormFieldEvent(field: any) {
@@ -54,7 +54,7 @@ export class DataLayerHandler {
         const isSensitive = /(email|name|phone|tel|adres|address)/i.test(fieldName);
         const fieldValue = isSensitive ? '[masked]' : value;
 
-        Logger.log(`Form field event created for field: ${fieldName}`, '#48dbfb', 'DataLayerHandler');
+    Logger.log(`Form field event created for field: ${fieldName}`, 'DataLayerHandler', LogType.INFO);
 
         return {
             event: 'formFieldChange',
@@ -70,12 +70,12 @@ export class DataLayerHandler {
 
         (window as any).dataLayer.push = (...args: any[]) => {
             if (Logger.debugMode) {
-                args.forEach((arg) => Logger.log('Pushed to dataLayer:', '#48dbfb', 'DataLayerHandler', arg));
+                args.forEach((arg) => Logger.log('Pushed to dataLayer:', 'DataLayerHandler', LogType.INFO, arg));
             }
             return originalPush.apply((window as any).dataLayer, args);
         };
 
-        Logger.log('DataLayer initialized and enhanced with debug logging.', 'green', 'DataLayerHandler');
+    Logger.log('DataLayer initialized and enhanced with debug logging.', 'DataLayerHandler', LogType.INFO);
     }
 
     static attachFormEventListeners(form: any, formId: any) {
@@ -125,7 +125,7 @@ export class DataLayerHandler {
             }
         });
 
-        Logger.log('Form event listeners attached.', 'green', 'DataLayerHandler');
+    Logger.log('Form event listeners attached.', 'DataLayerHandler', LogType.INFO);
     }
 
     static init() {
@@ -150,13 +150,13 @@ export class DataLayerHandler {
             };
 
             DataLayerHandler.pushEvent(eventData);
-            Logger.log('Button clicked:', '#48dbfb', 'DataLayerHandler', eventData);
+            Logger.log('Button clicked:', 'DataLayerHandler', LogType.INFO, eventData);
         });
 
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.querySelector('.rsform form');
             if (!form) {
-                Logger.log('No form found on the page.', 'orange', 'DataLayerHandler');
+                Logger.log('No form found on the page.', undefined, 'DataLayerHandler', LogType.WARN);
                 return;
             }
 
@@ -165,6 +165,6 @@ export class DataLayerHandler {
             DataLayerHandler.attachFormEventListeners(form, formId);
         });
 
-        Logger.log('DataLayerHandler initialized.', 'green', 'DataLayerHandler');
+    Logger.log('DataLayerHandler initialized.', 'DataLayerHandler', LogType.INFO);
     }
 }

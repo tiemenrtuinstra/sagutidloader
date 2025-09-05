@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger';
+import { Logger, LogType } from './Util/Logger';
 
 export class HeaderHandler {
 
@@ -13,7 +13,7 @@ export class HeaderHandler {
         if (shouldRemoveHeader) {
             // jQuery usage retained
             (window as any).$(".tm-header-mobile, .tm-header, .tm-toolbar, #mobile-tab-menu, #footer-copyright").remove();
-            Logger.log('Header verwijderd van pagina', 'orange');
+            Logger.log('Header verwijderd van pagina', undefined, 'HeaderHandler', LogType.WARN);
         }
     }
 }

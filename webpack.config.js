@@ -8,15 +8,20 @@ module.exports = {
     mode: 'production',
     entry: {
         main: './assets/ts/sagutid.ts',
-        styles: './assets/scss/sagutid.scss'
+        styles: './assets/scss/sagutid.scss',
+        // Bundle the service worker so it can import shared modules like Util/Logger
+        serviceworker: './assets/serviceworker.js'
     },
 
     devtool: 'source-map',
 
     output: {
         path: path.resolve(__dirname, 'assets/dist'),
-        filename: pathData =>
-            pathData.chunk.name === 'main' ? '[name].bundle.js' : '[name].js',
+        filename: pathData => {
+            // Ensure the service worker output file is written as serviceworker.js (no chunk suffix)
+            if (pathData.chunk && pathData.chunk.name === 'serviceworker') return 'serviceworker.js';
+            return pathData.chunk && pathData.chunk.name === 'main' ? '[name].bundle.js' : '[name].js';
+        },
         chunkFilename: '[name].js'
     },
 

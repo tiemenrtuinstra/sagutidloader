@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger';
+import { Logger, LogType } from './Util/Logger';
 
 export class PWAShareHandler {
     static init() {
@@ -8,7 +8,7 @@ export class PWAShareHandler {
     static setupShareLinks() {
         const shareLinks = document.querySelectorAll('[aria-label="pwa-share"]');
         if (!shareLinks.length) {
-            Logger.log('No share links found on the page.', 'orange', 'PWAShareHandler');
+            Logger.log('No share links found on the page.', 'PWAShareHandler', LogType.WARN);
             return;
         }
 
@@ -18,7 +18,7 @@ export class PWAShareHandler {
             shareLink.addEventListener('click', (event: Event) => this.handleShareClick(event, shareLink as HTMLAnchorElement));
         });
 
-        Logger.log('Share links initialized.', 'green', 'PWAShareHandler');
+    Logger.log('Share links initialized.', 'PWAShareHandler', LogType.INFO);
     }
 
     static handleShareClick(event: Event, shareLink: HTMLAnchorElement) {
@@ -52,7 +52,7 @@ export class PWAShareHandler {
             .trim();
 
         if (!text) {
-            Logger.log('No text provided for sharing, using default.', 'orange', 'PWAShareHandler');
+            Logger.log('No text provided for sharing, using default.', undefined, 'PWAShareHandler', LogType.WARN);
         }
 
         const shareData = {
@@ -62,12 +62,12 @@ export class PWAShareHandler {
         };
 
         navigator.share(shareData)
-            .then(() => Logger.log('Content shared successfully.', 'green', 'PWAShareHandler'))
+            .then(() => Logger.log('Content shared successfully.', undefined, 'PWAShareHandler', LogType.INFO))
             .catch(error => {
                 Logger.error(`Share failed: ${error.message || error}`, 'PWAShareHandler');
                 // Fallback: copy URL to clipboard
                 navigator.clipboard?.writeText(url)
-                    .then(() => Logger.log('URL copied to clipboard as fallback.', 'orange', 'PWAShareHandler'))
+                    .then(() => Logger.log('URL copied to clipboard as fallback.', undefined, 'PWAShareHandler', LogType.WARN))
                     .catch(() => Logger.error('Fallback clipboard copy also failed.', 'PWAShareHandler'));
             });
     }

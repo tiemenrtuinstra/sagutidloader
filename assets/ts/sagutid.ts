@@ -5,7 +5,7 @@ import { CCommentHandler } from './CCommentHandler';
 import { HeaderHandler } from './HeaderHandler';
 import { PWAShareHandler } from './PWAShareHandler';
 import { DataLayerHandler } from './DataLayerHandler';
-import { Logger } from './Util/Logger';
+import { Logger, LogType } from './Util/Logger';
 
 // Lazy-load Material Web only when needed to keep initial bundle small
 async function loadMaterialIfNeeded() {
@@ -27,7 +27,7 @@ async function loadMaterialIfNeeded() {
       (document as any).adoptedStyleSheets.push((typescaleStyles as any).styleSheet);
     }
   } catch (e) {
-    Logger?.log?.('Material load skipped: ' + e, '#ffaa00', 'sagutid.ts');
+  Logger?.log?.('Material load skipped: ' + e, undefined, 'sagutid.ts', LogType.WARN);
   }
 }
 
@@ -41,7 +41,14 @@ function initializeApp() {
   }
 
   // Log the debug mode status
-  Logger.log(`Debug mode: ${Logger.debugMode}`, '#00ff00', 'sagutid.ts');
+  Logger.log(`Debug mode: ${Logger.debugMode}`, 'sagutid.ts', LogType.INFO);
+
+  // Always-on verification: echo the injected config value for quick debugging (not gated)
+  try {
+    Logger.info('[Sagutid] injected SAGUTID_CONFIG.debugMode = ' + String((window as any).SAGUTID_CONFIG?.debugMode), 'sagutid.ts');
+  } catch (e) {
+    // ignore
+  }
 
   const handlers = [
     { condition: !!document.querySelector('#installPopup'), handler: PWAHandler },
