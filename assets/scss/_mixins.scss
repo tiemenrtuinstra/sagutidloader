@@ -2,7 +2,7 @@
 @use "sass:map";
 @use "sass:meta";
 @use "sass:color";
-@use "variables" as vars;
+@use "variables" as *;
 
 // Fix: make mixin Dart Sass–compatible and backward compatible with trailing boolean or keyword `important: true`.
 @mixin box-shadow($args...) {
@@ -120,7 +120,7 @@ $transition-safe-props: (
 
   $color: rgba(color.red($color), color.green($color), color.blue($color), 0.4) !default;
 
-  border-radius: vars.$border-radius-main;
+  border-radius: $border-radius-main;
   background: $color;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
