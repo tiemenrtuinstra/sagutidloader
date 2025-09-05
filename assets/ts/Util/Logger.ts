@@ -110,4 +110,6 @@ export class Logger {
     }
 }
 
+export type LoggerType = typeof Logger;
+
 export default Logger;

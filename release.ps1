@@ -4,6 +4,18 @@ param(
     [string]$ReleaseType,
     [switch]$Force,
     [switch]$SkipBuild
+    ,
+    # Optional: include Play Store/TWA support
+    [switch]$PublishPlay,
+    [string]$PlayOrigin,
+    [string]$PlayPackage,
+    [string]$PlaySha256
+    ,
+    [switch]$BuildAab,
+    [string]$PlayManifest,
+    [string]$KeystorePath,
+    [string]$KeystoreAlias,
+    [string]$KeystorePassword
 )
 
 $ErrorActionPreference = "Stop"
@@ -147,6 +159,14 @@ function Package-Plugin([string]$ManifestPath) {
         if (Test-Path $src) { Copy-Item $src (Join-Path $stageDir $folder) -Recurse -Force }
     }
 
+    # If an assetlinks file was prepared earlier, include it under .well-known so it can be deployed with the plugin
+    if ($global:AssetLinksFilePath -and (Test-Path $global:AssetLinksFilePath)) {
+        $wellKnownDir = Join-Path $stageDir '.well-known'
+        if (-not (Test-Path $wellKnownDir)) { New-Item -ItemType Directory -Path $wellKnownDir | Out-Null }
+        Copy-Item $global:AssetLinksFilePath (Join-Path $wellKnownDir 'assetlinks.json') -Force
+        Write-Host "Included assetlinks.json for Play Store under $wellKnownDir"
+    }
+
     $ZipName = "$pluginName.zip"
     $ZipPath = Join-Path (Get-Location) $ZipName
     if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
@@ -277,6 +297,50 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion) {
     return $updatesFile
 }
 
+function Generate-AssetLinks([string]$Origin, [string]$Package, [string]$Sha256) {
+    if (-not $Origin -or -not $Package -or -not $Sha256) { throw 'Play Origin, Package and Sha256 must be provided to generate assetlinks.' }
+    $obj = @(
+        @{ relation = @('delegate_permission/common.handle_all_urls'); target = @{ namespace = 'android_app'; package_name = $Package; sha256_cert_fingerprints = @($Sha256) } }
+    )
+    $json = $obj | ConvertTo-Json -Depth 8
+
+    $tmp = Join-Path (Get-Location) 'build' 'assetlinks.json'
+    if (-not (Test-Path (Join-Path (Get-Location) 'build'))) { New-Item -ItemType Directory -Path (Join-Path (Get-Location) 'build') | Out-Null }
+    Set-Content -Path $tmp -Value $json -Encoding UTF8
+    $global:AssetLinksFilePath = $tmp
+    Write-Host "Generated assetlinks.json at $tmp" -ForegroundColor Green
+    Write-Host "Remember to publish the same JSON at: $Origin/.well-known/assetlinks.json" -ForegroundColor Yellow
+}
+
+function Build-TwaAab([string]$ManifestUrl, [string]$OutDir, [string]$KeystorePath, [string]$KeystoreAlias, [string]$KeystorePassword) {
+    if (-not (Get-Command bubblewrap -ErrorAction SilentlyContinue)) { Write-Warning 'bubblewrap CLI not found in PATH. Install @bubblewrap/cli to enable AAB builds.'; return $null }
+    if (-not (Get-Command java -ErrorAction SilentlyContinue)) { Write-Warning 'Java not found in PATH. Android build requires Java (JDK).' ; return $null }
+
+    if (-not $ManifestUrl) { throw 'ManifestUrl is required to build TWA' }
+    if (-not $OutDir) { $OutDir = Join-Path (Get-Location) 'build' }
+
+    if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir | Out-Null }
+    $cwd = Get-Location
+    Push-Location $OutDir
+    try {
+        Write-Host "Initializing Bubblewrap in $OutDir..."
+        # bubblewrap init will create twa-manifest.json; run non-interactively where possible
+        & bubblewrap init --manifest $ManifestUrl | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Warning 'bubblewrap init failed.'; Pop-Location; return $null }
+
+        Write-Host 'Building AAB with bubblewrap...'
+        # If keystore provided, bubblewrap build will prompt; we attempt a non-interactive build and rely on environment for signing
+        & bubblewrap build | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Warning 'bubblewrap build failed.'; Pop-Location; return $null }
+
+        # Find produced .aab
+        $aab = Get-ChildItem -Path (Get-Location) -Recurse -Filter *.aab -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($aab) { Write-Host "Found AAB: $($aab.FullName)"; return $aab.FullName }
+        else { Write-Warning 'No .aab found after build.'; return $null }
+    }
+    finally { Pop-Location }
+}
+
 function Commit-UpdateXml([string]$ManifestPath, [string]$NewVersion) {
     # Regenerate update XML and commit/push if it changed
     $updatesFile = Write-UpdateServerXml -ManifestPath $ManifestPath -NewVersion $NewVersion
@@ -314,10 +378,20 @@ if ($confirm -ne 'yes') { Write-Host 'Aborted.'; exit 0 }
 $PackageJsonFile = 'package.json'
 Update-VersionFiles -XmlFile $XmlFile -NewVersion $nv.NewVersion -PackageJsonFile $PackageJsonFile
 
-$ServiceWorkerFile = Join-Path 'assets' 'serviceworker.js'
+$ServiceWorkerFile = Join-Path 'assets' 'ts\serviceworker.ts'
 Update-ServiceWorkerCacheName -ServiceWorkerFile $ServiceWorkerFile -NewCacheName $nv.CacheName
 
 $DidBuild = Run-Build -SkipBuild:$SkipBuild
+
+# If requested, generate assetlinks.json for Play/TWA and include it in the staged package
+if ($PublishPlay) {
+    if (-not $PlayOrigin -or -not $PlayPackage -or -not $PlaySha256) {
+        Write-Warning 'PublishPlay requested but PlayOrigin, PlayPackage or PlaySha256 not provided. Provide these parameters to generate assetlinks.json.'
+    }
+    else {
+        Generate-AssetLinks -Origin $PlayOrigin -Package $PlayPackage -Sha256 $PlaySha256
+    }
+}
 
 # Generate/update update server XML now (referencing the soon-to-exist release asset)
 $null = Write-UpdateServerXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion
@@ -329,6 +403,19 @@ $Tag = Git-Commit-Push-Tag -NewVersion $nv.NewVersion -DidBuild:([bool]$DidBuild
 Ensure-TagNotReleased -Tag $Tag
 Create-GitHubRelease -Tag $Tag -NewVersion $nv.NewVersion
 Upload-ReleaseAsset -Tag $Tag -ZipPath $pkg.ZipPath
+ 
+# Optionally build and upload Android AAB via Bubblewrap
+if ($BuildAab) {
+    if (-not $PlayManifest) { Write-Warning 'BuildAab requested but PlayManifest (manifest URL) not provided.' }
+    else {
+        $aabPath = Build-TwaAab -ManifestUrl $PlayManifest -OutDir (Join-Path (Get-Location) 'build' ) -KeystorePath $KeystorePath -KeystoreAlias $KeystoreAlias -KeystorePassword $KeystorePassword
+        if ($aabPath) {
+            Write-Host "Uploading AAB $aabPath to release $Tag"
+            gh release upload $Tag $aabPath --clobber
+            if ($LASTEXITCODE -ne 0) { Write-Warning 'Failed to upload AAB to release.' } else { Write-Host 'Uploaded AAB to release.' }
+        }
+    }
+}
 Commit-UpdateXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion
 Show-LatestReleaseAssetUrl -AssetName $pkg.ZipName
 

@@ -9,8 +9,7 @@ module.exports = {
     entry: {
         main: './assets/ts/sagutid.ts',
         styles: './assets/scss/sagutid.scss',
-        // Bundle the service worker so it can import shared modules like Util/Logger
-        serviceworker: './assets/serviceworker.js'
+        serviceworker: './assets/ts/serviceworker.ts'
     },
 
     devtool: 'source-map',

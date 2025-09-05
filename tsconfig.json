@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2019",
-    "module": "ESNext",
+  "target": "ES2020",
+  "module": "ESNext",
+  "lib": ["ES2020", "DOM", "WebWorker"],
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowJs": true,
@@ -14,8 +15,9 @@
     "isolatedModules": true
   },
   "include": [
-    "assets/ts/**/*",
-    "assets/**/*.ts",
-    "assets/**/*.tsx"
+  "assets/ts/**/*",
+  "assets/**/*.ts",
+  "assets/**/*.tsx",
+  "assets/ts/types/**/*"
   ]
 }

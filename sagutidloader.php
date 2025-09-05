@@ -143,7 +143,8 @@ class PlgSystemSagutidloader extends CMSPlugin
             $vendorsUrl  = $distBase . 'vendors.js';
             $styleUrl    = $distBase . 'styles.bundle.css';
             $manifestUrl = $assetBase . 'manifest.webmanifest';
-            $swUrl       = $assetBase . 'serviceworker.js';
+            // Prefer the bundled service worker output in dist if available
+            $swUrl       = $distBase . 'serviceworker.js';
             $offlineUrl  = $assetBase . 'offline.html';
             $imagesBase  = Uri::root() . 'images/';
 

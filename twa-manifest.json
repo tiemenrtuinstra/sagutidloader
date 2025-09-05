@@ -1,0 +1,73 @@
+{
+  "packageId": "nl.sagutid.twa",
+  "host": "sagutid.nl",
+  "name": "Sagu Tid",
+  "launcherName": "Sagu Tid",
+  "display": "standalone",
+  "themeColor": "#0B9444",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0B9444",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://sagutid.nl/images/Logo/Sagutid-groot.jpg",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "C:\\xampp\\htdocs\\sagutidloader\\android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Home",
+      "shortName": "Home",
+      "url": "https://sagutid.nl/",
+      "chosenIconUrl": "https://sagutid.nl/images/Logo/android-chrome-512x512.png"
+    },
+    {
+      "name": "Open verhalen",
+      "shortName": "Verhalen",
+      "url": "https://sagutid.nl/verhalen",
+      "chosenIconUrl": "https://sagutid.nl/images/Logo/Sagutid-verhalen.png"
+    },
+    {
+      "name": "Open gedichten",
+      "shortName": "Gedichten",
+      "url": "https://sagutid.nl/gedichten",
+      "chosenIconUrl": "https://sagutid.nl/images/Logo/Sagutid-gedichten.png"
+    },
+    {
+      "name": "Open wijsheden",
+      "shortName": "Wijsheden",
+      "url": "https://sagutid.nl/tegeltjes-wijsheden",
+      "chosenIconUrl": "https://sagutid.nl/images/Logo/Sagutid-wijsheden.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://sagutid.nl/plugins/system/sagutidloader/assets/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://sagutid.nl/",
+  "minSdkVersion": 21,
+  "orientation": "natural",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": [
+    "navigate-existing",
+    "auto"
+  ],
+  "appVersion": "1"
+}
