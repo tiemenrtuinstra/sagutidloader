@@ -1,13 +1,13 @@
-import { Logger } from './Util/Logger.js';
+import { Logger } from './Util/Logger';
 
 export class DataLayerHandler {
-    static hasErrors() {
+    static hasErrors(): boolean {
         return document.querySelectorAll('.rsform-error').length > 0;
     }
 
-    static pushEvent(eventData) {
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push(eventData);
+    static pushEvent(eventData: any) {
+        (window as any).dataLayer = (window as any).dataLayer || [];
+        (window as any).dataLayer.push(eventData);
 
         if (Logger.debugMode) {
             if (DataLayerHandler.hasErrors()) {
@@ -17,7 +17,7 @@ export class DataLayerHandler {
         }
     }
 
-    static bindTrackEvent(selector, eventType, eventName, step, formId, getData) {
+    static bindTrackEvent(selector: string, eventType: string, eventName: string, step: any, formId: any, getData?: (target:any)=>any) {
         const elements = document.querySelectorAll(selector);
 
         if (!elements.length) {
@@ -26,7 +26,7 @@ export class DataLayerHandler {
         }
 
         elements.forEach((element) => {
-            element.addEventListener(eventType, (event) => {
+            element.addEventListener(eventType, (event: any) => {
                 if (
                     (document.activeElement === element && !DataLayerHandler.hasErrors()) ||
                     eventType === 'change'
@@ -47,7 +47,7 @@ export class DataLayerHandler {
         Logger.log(`Event binding added for selector: ${selector}`, 'green', 'DataLayerHandler');
     }
 
-    static createFormFieldEvent(field) {
+    static createFormFieldEvent(field: any) {
         const { name, id, type, tagName, value } = field;
         const fieldName = name || id || 'unknown';
         const fieldType = type || tagName.toLowerCase();
@@ -65,27 +65,27 @@ export class DataLayerHandler {
     }
 
     static initializeDataLayer() {
-        window.dataLayer = window.dataLayer || [];
-        const originalPush = window.dataLayer.push;
+        (window as any).dataLayer = (window as any).dataLayer || [];
+        const originalPush = (window as any).dataLayer.push;
 
-        window.dataLayer.push = (...args) => {
+        (window as any).dataLayer.push = (...args: any[]) => {
             if (Logger.debugMode) {
                 args.forEach((arg) => Logger.log('Pushed to dataLayer:', '#48dbfb', 'DataLayerHandler', arg));
             }
-            return originalPush.apply(window.dataLayer, args);
+            return originalPush.apply((window as any).dataLayer, args);
         };
 
         Logger.log('DataLayer initialized and enhanced with debug logging.', 'green', 'DataLayerHandler');
     }
 
-    static attachFormEventListeners(form, formId) {
+    static attachFormEventListeners(form: any, formId: any) {
         DataLayerHandler.bindTrackEvent(form, 'rsform-init', 'formStep', 1, formId);
         form.dispatchEvent(new Event('rsform-init'));
 
         DataLayerHandler.bindTrackEvent('.rsform-button-next', 'click', 'formStep', 2, formId);
         DataLayerHandler.bindTrackEvent('.rsform-submit-button', 'click', 'formSubmission', 'submit', formId);
 
-        form.querySelectorAll('input, select, textarea').forEach((element) => {
+        form.querySelectorAll('input, select, textarea').forEach((element: any) => {
             const fieldId = element.id;
             if (fieldId) {
                 DataLayerHandler.bindTrackEvent(
@@ -99,7 +99,7 @@ export class DataLayerHandler {
             }
         });
 
-        form.addEventListener('keyup', (event) => {
+        form.addEventListener('keyup', (event: any) => {
             const target = event.target;
             const classValue = target.className;
             const formId = target.closest('form')?.id;
@@ -132,8 +132,8 @@ export class DataLayerHandler {
         DataLayerHandler.initializeDataLayer();
 
         // Track all button clicks
-        document.addEventListener('click', (event) => {
-            const target = event.target;
+        document.addEventListener('click', (event: any) => {
+            const target = event.target as any;
             const tagName = target.tagName.toLowerCase();
             const elementText = target.textContent.trim();
             const elementClass = target.className;
@@ -160,7 +160,7 @@ export class DataLayerHandler {
                 return;
             }
 
-            const formId = form.id;
+            const formId = (form as any).id;
 
             DataLayerHandler.attachFormEventListeners(form, formId);
         });

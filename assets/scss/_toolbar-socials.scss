@@ -33,11 +33,7 @@
       $bg: map.get($style, bg);
       $color: map.get($style, color);
       $border: map.get($style, border);
-      $bg-hover: if(
-        map.has-key($style, bg-hover),
-        map.get($style, bg-hover),
-        $bg
-      );
+      $bg-hover: if(map.has-key($style, bg-hover), map.get($style, bg-hover), $bg);
 
       // Match by icon name fragments
       [uk-icon*="#{$key}"],
@@ -48,7 +44,7 @@
         }
 
         // Explicit distinct hover variant
-  @if map.has-key($style, bg-hover) {
+        @if map.has-key($style, bg-hover) {
           &:hover {
             background: $bg-hover;
           }

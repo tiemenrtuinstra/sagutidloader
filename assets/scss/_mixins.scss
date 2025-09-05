@@ -1,6 +1,8 @@
-@use 'sass:list';
-@use 'sass:map';
-@use 'sass:meta';
+@use "sass:list";
+@use "sass:map";
+@use "sass:meta";
+@use "sass:color";
+@use "variables" as vars;
 
 // Fix: make mixin Dart Sass–compatible and backward compatible with trailing boolean or keyword `important: true`.
 @mixin box-shadow($args...) {
@@ -16,7 +18,7 @@
   $positional: ();
   $len: list.length($args);
 
-  @if $len > 0 and type-of(list.nth($args, $len)) == 'bool' and not map.has-key($kwargs, important) {
+  @if $len > 0 and meta.type-of(list.nth($args, $len)) == "bool" and not map.has-key($kwargs, important) {
     // Last positional is the important flag
     @for $i from 1 through $len - 1 {
       $positional: list.append($positional, list.nth($args, $i), comma);
@@ -28,7 +30,7 @@
     }
   }
 
-  box-shadow: $positional#{if($important, ' !important', '')};
+  box-shadow: $positional#{if($important, " !important", "")};
 }
 
 @mixin transition($props...) {
@@ -38,10 +40,10 @@
 }
 
 // ---------- Transition System (Global) ----------
-$transition-duration-fast:  .2s  !default;
-$transition-duration-base:  .4s  !default;
-$transition-duration-slow:  .65s !default;
-$transition-ease:           ease !default;
+$transition-duration-fast: 0.2s !default;
+$transition-duration-base: 0.4s !default;
+$transition-duration-slow: 0.65s !default;
+$transition-ease: ease !default;
 
 $transition-safe-props: (
   color,
@@ -63,11 +65,7 @@ $transition-safe-props: (
   @return $out;
 }
 
-@mixin transition-props(
-  $props: $transition-safe-props,
-  $duration: $transition-duration-base,
-  $ease: $transition-ease
-) {
+@mixin transition-props($props: $transition-safe-props, $duration: $transition-duration-base, $ease: $transition-ease) {
   transition: build-transition($props, $duration, $ease);
 }
 
@@ -76,21 +74,20 @@ $transition-safe-props: (
 }
 
 // Specific nav link mixin
-@mixin nav-link-transition(
-  $duration: $transition-duration-base,
-  $ease: $transition-ease
-) {
+@mixin nav-link-transition($duration: $transition-duration-base, $ease: $transition-ease) {
   transition:
-    color        $duration $ease,
-    transform    $transition-duration-fast $ease,
+    color $duration $ease,
+    transform $transition-duration-fast $ease,
     border-color $duration $ease,
-    box-shadow   $duration $ease,
-    text-shadow  $duration $ease,
-    font-size    $duration $ease;
+    box-shadow $duration $ease,
+    text-shadow $duration $ease,
+    font-size $duration $ease;
 }
 
 // Placeholder for extend
-%smooth-transition { @include transition-props(); }
+%smooth-transition {
+  @include transition-props();
+}
 
 // ---------- GLOBAL APPLICATION (Everything) ----------
 *,
@@ -108,4 +105,25 @@ $transition-safe-props: (
   *::after {
     transition: none !important;
   }
+}
+
+@mixin blur-panel($color: rgba(255, 255, 255, 0.4), $shadow) {
+  // Accept color, hex string or number; normalize to a color and force alpha to 0.4
+  @if meta.type-of($color) == "string" {
+    $color: unquote($color);
+  }
+
+  @if meta.type-of($color) != "color" {
+    // fallback to white translucent
+    $color: rgba(255, 255, 255, 0.4);
+  }
+
+  $color: rgba(color.red($color), color.green($color), color.blue($color), 0.4) !default;
+
+  border-radius: vars.$border-radius-main;
+  background: $color;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  padding: 30px;
+  @include box-shadow($shadow);
 }

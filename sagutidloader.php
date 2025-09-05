@@ -75,6 +75,7 @@ class PlgSystemSagutidloader extends CMSPlugin
             $assetBase   = $this->assetUrl; // .../plugins/system/sagutidloader/assets/
             $distBase    = $assetBase . 'dist/';
             $scriptUrl   = $distBase . 'main.bundle.js';
+            $vendorsUrl  = $distBase . 'vendors.js';
             $styleUrl    = $distBase . 'styles.bundle.css';
             $manifestUrl = $assetBase . 'manifest.webmanifest';
             $swUrl       = $assetBase . 'serviceworker.js';
@@ -99,6 +100,8 @@ class PlgSystemSagutidloader extends CMSPlugin
             $block .= '<link rel="manifest" href="' . htmlspecialchars($manifestUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
             $block .= '<link rel="stylesheet" type="text/css" href="' . htmlspecialchars($styleUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
             // Properly close the external script tag without escaping the slash
+            // Include vendors chunk first so shared runtime is available
+            $block .= '<script defer type="text/javascript" src="' . htmlspecialchars($vendorsUrl, ENT_QUOTES, 'UTF-8') . '"></script>' . "\n";
             $block .= '<script defer type="text/javascript" src="' . htmlspecialchars($scriptUrl, ENT_QUOTES, 'UTF-8') . '"></script>' . "\n";
             $block .= "<!-- END Sagutid Loader -->\n";
 
@@ -151,6 +154,7 @@ class PlgSystemSagutidloader extends CMSPlugin
         $doc = $app->getDocument();
         $headHtml = $doc->getBuffer('head');
         $assets = [
+            'vendors.js',
             'main.bundle.js',
             'styles.bundle.css',
             'manifest.webmanifest',

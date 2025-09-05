@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger.js';
+import { Logger } from './Util/Logger';
 
 export const ServiceWorkerHandler = {
   init() {
@@ -6,16 +6,17 @@ export const ServiceWorkerHandler = {
 
     window.addEventListener('load', async () => {
       try {
-  const cfg = (typeof window !== 'undefined' && window.SAGUTID_CONFIG) ? window.SAGUTID_CONFIG : {};
-  const swPath = cfg.serviceWorker || cfg.serviceWorkerPath || '/plugins/system/sagutidloader/assets/serviceworker.js';
+        const cfg = (typeof window !== 'undefined' && (window as any).SAGUTID_CONFIG) ? (window as any).SAGUTID_CONFIG : {};
+        const swPath = cfg.serviceWorker || cfg.serviceWorkerPath || '/plugins/system/sagutidloader/assets/serviceworker.js';
 
-  // Try to register with site-wide scope; if not allowed, fall back to SW's directory
-  let reg;
-  try {
-    reg = await navigator.serviceWorker.register(swPath, { updateViaCache: 'none', scope: '/' });
-  } catch (e) {
-    reg = await navigator.serviceWorker.register(swPath, { updateViaCache: 'none' });
-  }
+        // Try to register with site-wide scope; if not allowed, fall back to SW's directory
+        let reg: ServiceWorkerRegistration;
+        try {
+          // @ts-ignore Allow scope option
+          reg = await navigator.serviceWorker.register(swPath, { updateViaCache: 'none', scope: '/' } as any);
+        } catch (e) {
+          reg = await navigator.serviceWorker.register(swPath, { updateViaCache: 'none' } as any);
+        }
 
         // Force a check now and on window focus
         reg.update();
@@ -23,11 +24,11 @@ export const ServiceWorkerHandler = {
 
         // Kick off offline content update shortly after registration if online
         setTimeout(() => {
-          if (navigator.onLine) this._updateDynamicContent(reg);
+          if (navigator.onLine) (this as any)._updateDynamicContent(reg);
         }, 1500);
 
         // Handle an already waiting worker on page load
-        if (reg.waiting) this._activate(reg.waiting);
+        if (reg.waiting) (this as any)._activate(reg.waiting);
 
         // Detect new update arrivals
         reg.addEventListener('updatefound', () => {
@@ -36,7 +37,7 @@ export const ServiceWorkerHandler = {
           sw.addEventListener('statechange', () => {
             if (sw.state === 'installed' && navigator.serviceWorker.controller) {
               // New version ready – activate it (or show a prompt first)
-              this._activate(sw);
+              (this as any)._activate(sw);
             }
           });
         });
@@ -44,21 +45,21 @@ export const ServiceWorkerHandler = {
         // When the new SW takes control, reload to get fresh assets
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           // After controller changes, send config so SW can compute OFFLINE_URL correctly
-          if (navigator.serviceWorker.controller && window.SAGUTID_CONFIG) {
-            navigator.serviceWorker.controller.postMessage({ type: 'INIT_CONFIG', config: window.SAGUTID_CONFIG });
+          if (navigator.serviceWorker.controller && (window as any).SAGUTID_CONFIG) {
+            navigator.serviceWorker.controller.postMessage({ type: 'INIT_CONFIG', config: (window as any).SAGUTID_CONFIG });
           }
           // After activate, refresh offline content soon
           setTimeout(() => {
-            if (navigator.onLine) this._updateDynamicContent(reg);
+            if (navigator.onLine) (this as any)._updateDynamicContent(reg);
           }, 2000);
           window.location.reload();
         });
 
         // Refresh offline content when coming back online
-        window.addEventListener('online', () => this._updateDynamicContent(reg));
+        window.addEventListener('online', () => (this as any)._updateDynamicContent(reg));
 
         // Try to register periodic background sync when supported
-        const swApi = navigator.serviceWorker;
+        const swApi = navigator.serviceWorker as any;
         if (swApi && 'periodicSync' in swApi) {
           try {
             // @ts-ignore - periodicSync is experimental
@@ -71,19 +72,19 @@ export const ServiceWorkerHandler = {
     });
   },
 
-  _activate(sw) {
+  _activate(sw: ServiceWorker) {
     // Auto-activate. If you want a prompt, show UI then call this.
     sw.postMessage('SKIP_WAITING');
   },
 
-  async _updateDynamicContent(reg) {
+  async _updateDynamicContent(reg: ServiceWorkerRegistration) {
     try {
-      const sw = reg.active || navigator.serviceWorker.controller;
+      const sw = (reg as any).active || navigator.serviceWorker.controller;
       if (!sw) return;
       const msg = { type: 'UPDATE_DYNAMIC_CONTENT' };
       // Use MessageChannel to optionally receive a result
       const channel = new MessageChannel();
-      channel.port1.onmessage = (e) => {
+      channel.port1.onmessage = (e: any) => {
         if (e.data?.success) {
           console.log(`SW: Precached ${e.data.count} pages from sitemap`);
         } else if (e.data?.error) {

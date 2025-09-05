@@ -1,13 +1,13 @@
 @use "variables" as *;
 @use "mixins" as *;
+
 .uk-label {
-  border-radius: $border-radius-main;
-  @include box-shadow($shadow);
   &.uk-label-secondary {
-    background: $color-secondary;
+    @include blur-panel($color: $color-secondary, $shadow: $shadow);
+    color: #fff;
   }
   &.uk-label-muted {
-    background-color: transparent;
-    box-shadow: unset;
+    @include blur-panel($shadow: $shadow);
+    color: #444;
   }
 }

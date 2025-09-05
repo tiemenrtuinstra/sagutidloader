@@ -1,11 +1,12 @@
-import { PWAHandler } from './PWAHandler.js';
-import { ServiceWorkerHandler } from './ServiceWorkerHandler.js';
-import { MetaTagHandler } from './MetaTagHandler.js';
-import { CCommentHandler } from './CCommentHandler.js';
-import { HeaderHandler } from './HeaderHandler.js';
-import { PWAShareHandler } from './PWAShareHandler.js';
-import { DataLayerHandler } from './DataLayerHandler.js';
-import { Logger } from './Util/Logger.js';
+import { PWAHandler } from './PWAHandler';
+import { ServiceWorkerHandler } from './ServiceWorkerHandler';
+import { MetaTagHandler } from './MetaTagHandler';
+import { CCommentHandler } from './CCommentHandler';
+import { HeaderHandler } from './HeaderHandler';
+import { PWAShareHandler } from './PWAShareHandler';
+import { DataLayerHandler } from './DataLayerHandler';
+import { Logger } from './Util/Logger';
+
 // Lazy-load Material Web only when needed to keep initial bundle small
 async function loadMaterialIfNeeded() {
   try {
@@ -22,11 +23,11 @@ async function loadMaterialIfNeeded() {
       /* webpackChunkName: "material" */ '@material/web/typography/md-typescale-styles.js'
     );
 
-    if ('adoptedStyleSheets' in document && typescaleStyles?.styleSheet) {
-      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    if ('adoptedStyleSheets' in document && (typescaleStyles as any)?.styleSheet) {
+      (document as any).adoptedStyleSheets.push((typescaleStyles as any).styleSheet);
     }
   } catch (e) {
-    Logger?.log?.('Material load skipped: ' + e, '#ffaa00', 'sagutid.js');
+    Logger?.log?.('Material load skipped: ' + e, '#ffaa00', 'sagutid.ts');
   }
 }
 
@@ -40,7 +41,7 @@ function initializeApp() {
   }
 
   // Log the debug mode status
-  Logger.log(`Debug mode: ${Logger.debugMode}`, '#00ff00', 'sagutid.js');
+  Logger.log(`Debug mode: ${Logger.debugMode}`, '#00ff00', 'sagutid.ts');
 
   const handlers = [
     { condition: !!document.querySelector('#installPopup'), handler: PWAHandler },
@@ -55,9 +56,9 @@ function initializeApp() {
   handlers.forEach(({ condition, handler }) => {
     if (condition) {
       try {
-        handler.init();
+        (handler as any).init();
       } catch (error) {
-        Logger.error(`Error initializing ${handler.name}: ${error}`, 'sagutid.js');
+        Logger.error(`Error initializing ${ (handler as any).name }: ${error}`, 'sagutid.ts');
       }
     }
   });

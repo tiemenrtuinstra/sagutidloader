@@ -1,7 +1,7 @@
-import { Logger } from './Util/Logger.js';
+import { Logger } from './Util/Logger';
 
 export class PWAHandler {
-    static deferredPrompt = null;
+    static deferredPrompt: any = null;
 
     static init() {
         const installPopup = document.getElementById('installPopup');
@@ -18,13 +18,13 @@ export class PWAHandler {
         this.registerServiceWorker();
     }
 
-    static hideInstallPopup(installPopup) {
+    static hideInstallPopup(installPopup: HTMLElement) {
         installPopup.style.display = 'none';
         Logger.log('Install popup hidden.', 'blue', 'PWAHandler');
     }
 
-    static listenForInstallPrompt(installPopup) {
-        window.addEventListener('beforeinstallprompt', e => {
+    static listenForInstallPrompt(installPopup: HTMLElement) {
+        window.addEventListener('beforeinstallprompt', (e: any) => {
             e.preventDefault();
             this.deferredPrompt = e;
 
@@ -33,8 +33,8 @@ export class PWAHandler {
         });
     }
 
-    static handleInstallButtonClick(installPopup) {
-        document.addEventListener('click', async e => {
+    static handleInstallButtonClick(installPopup: HTMLElement) {
+        document.addEventListener('click', async (e: any) => {
             if (e.target.matches('[aria-label="install-app"]')) {
                 e.preventDefault();
                 if (this.deferredPrompt) {
@@ -52,8 +52,8 @@ export class PWAHandler {
         });
     }
 
-    static handleDismissButtonClick(installPopup) {
-        document.addEventListener('click', e => {
+    static handleDismissButtonClick(installPopup: HTMLElement) {
+        document.addEventListener('click', (e: any) => {
             if (e.target.matches('[aria-label="dismiss-install-popup"]')) {
                 e.preventDefault();
                 installPopup.style.display = 'none';

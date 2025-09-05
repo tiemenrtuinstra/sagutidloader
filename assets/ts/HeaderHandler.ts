@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger.js';
+import { Logger } from './Util/Logger';
 
 export class HeaderHandler {
 
@@ -11,7 +11,8 @@ export class HeaderHandler {
         const shouldRemoveHeader = pathsToRemoveHeader.some(path => window.location.pathname.includes(path));
 
         if (shouldRemoveHeader) {
-            $(".tm-header-mobile, .tm-header, .tm-toolbar, #mobile-tab-menu, #footer-copyright").remove();
+            // jQuery usage retained
+            (window as any).$(".tm-header-mobile, .tm-header, .tm-toolbar, #mobile-tab-menu, #footer-copyright").remove();
             Logger.log('Header verwijderd van pagina', 'orange');
         }
     }

@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger.js';
+import { Logger } from './Util/Logger';
 
 export class CCommentHandler {
     static init() {

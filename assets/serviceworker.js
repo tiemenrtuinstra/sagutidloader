@@ -42,7 +42,10 @@ class SagutidServiceWorker {
     // Only critical assets that definitely exist
     this.CRITICAL_ASSETS = [
       OFFLINE_URL,
-      '/templates/yootheme/css/theme.css'
+      '/templates/yootheme/css/theme.css',
+      '/plugins/system/sagutidloader/assets/dist/main.bundle.js',
+      '/plugins/system/sagutidloader/assets/dist/styles.bundle.css',
+      '/plugins/system/sagutidloader/offline.html'
     ];
   }
 

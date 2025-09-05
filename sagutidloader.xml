@@ -8,7 +8,8 @@
     <filename plugin="sagutidloader">sagutidloader.php</filename>
     <folder>assets</folder>
     <folder>assets/dist</folder>
-    <file>assets/dist/main.bundle.js</file>
+  <file>assets/dist/vendors.js</file>
+  <file>assets/dist/main.bundle.js</file>
     <file>assets/dist/styles.bundle.css</file>
     <folder>language</folder>
   </files>

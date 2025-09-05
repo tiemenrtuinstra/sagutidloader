@@ -1,4 +1,4 @@
-import { Logger } from './Util/Logger.js';
+import { Logger } from './Util/Logger';
 
 export class PWAShareHandler {
     static init() {
@@ -12,16 +12,16 @@ export class PWAShareHandler {
             return;
         }
 
-        shareLinks.forEach(shareLink => {
+        shareLinks.forEach((shareLink: Element) => {
             shareLink.classList.add('pwa-share');
             shareLink.setAttribute('aria-label', 'Share Sagutid.nl');
-            shareLink.addEventListener('click', event => this.handleShareClick(event, shareLink));
+            shareLink.addEventListener('click', (event: Event) => this.handleShareClick(event, shareLink as HTMLAnchorElement));
         });
 
         Logger.log('Share links initialized.', 'green', 'PWAShareHandler');
     }
 
-    static handleShareClick(event, shareLink) {
+    static handleShareClick(event: Event, shareLink: HTMLAnchorElement) {
         event.preventDefault();
 
         // Early Web Share API check
@@ -30,7 +30,7 @@ export class PWAShareHandler {
             return;
         }
 
-        const href = shareLink.getAttribute('href');
+        const href = shareLink.getAttribute('href') || '';
         if (!href || !href.includes('?')) {
             Logger.error('Invalid or missing href attribute on share link.', 'PWAShareHandler');
             return;
@@ -38,7 +38,7 @@ export class PWAShareHandler {
 
         const params = new URLSearchParams(href.substring(href.indexOf('?') + 1));
         const url = decodeURIComponent(params.get('url') || '').trim();
-        
+
         if (!url) {
             Logger.error('No URL found in share parameters.', 'PWAShareHandler');
             return;

@@ -12,172 +12,154 @@ $social-style: (
   facebook: (
     bg: #1877f2,
     color: #fff,
-    border: #1877f2,
+    border: #1877f2
   ),
   instagram: (
-    bg:
-      linear-gradient(
-        45deg,
-        #f09433 0%,
-        #e6683c 25%,
-        #dc2743 50%,
-        #cc2366 75%,
-        #bc1888 100%
-      ),
+    bg: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%),
     color: #fff,
-    border:
-      linear-gradient(
-        45deg,
-        #f09433 0%,
-        #e6683c 25%,
-        #dc2743 50%,
-        #cc2366 75%,
-        #bc1888 100%
-      ),
+    border: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)
   ),
   linkedin: (
     bg: #0077b5,
     color: #fff,
-    border: #0077b5,
+    border: #0077b5
   ),
   whatsapp: (
     bg: #075e54,
     color: #fff,
-    border: #075e54,
+    border: #075e54
   ),
   youtube: (
     bg: red,
     color: #fff,
-    border: red,
+    border: red
   ),
   twitter: (
     bg: #000,
     color: #fff,
-    border: #1da1f2,
+    border: #1da1f2
   ),
   telegram: (
     bg: #0088cc,
     color: #fff,
-    border: #0088cc,
+    border: #0088cc
   ),
   threads: (
     bg: #000,
     color: #fff,
-    border: #000,
+    border: #000
   ),
   pinterest: (
     bg: #bd081c,
     color: #fff,
-    border: #bd081c,
+    border: #bd081c
   ),
   signal: (
     bg: #0032a0,
     color: #fff,
-    border: #ff9332,
+    border: #ff9332
   ),
   envelope: (
     bg: #00a3ee,
     color: #fff,
-    border: #00a3ee,
+    border: #00a3ee
   ),
   social: (
     bg: hsla(145, 86%, 31%, 1),
     color: #fff,
-    border: hsla(145, 86%, 31%, 1),
+    border: hsla(145, 86%, 31%, 1)
   ),
   phone: (
     bg: #9ad772,
     color: #9ad772,
     border: $color-primary,
-    bg-hover: $color-dark,
+    bg-hover: $color-dark
   ),
   flickr: (
-    bg:
-      linear-gradient(90deg, #0063dc 0, #0063dc 49%, #ff0084 51%, #ff0084 100%),
+    bg: linear-gradient(90deg, #0063dc 0, #0063dc 49%, #ff0084 51%, #ff0084 100%),
     color: #fff,
-    border:
-      linear-gradient(90deg, #0063dc 0, #0063dc 49%, #ff0084 51%, #ff0084 100%),
+    border: linear-gradient(90deg, #0063dc 0, #0063dc 49%, #ff0084 51%, #ff0084 100%)
   ),
   imdb: (
     bg: #f5de50,
     color: #000,
-    border: #000,
+    border: #000
   ),
   untappd: (
     bg: #ffc000,
     color: #fff,
-    border: #ffc000,
+    border: #ffc000
   ),
   xbox: (
     bg: #7b4,
     color: #fff,
-    border: #107c10,
+    border: #107c10
   ),
   github: (
     bg: #333,
     color: #4078c0,
-    border: #333,
+    border: #333
   ),
   snapchat: (
     bg: #fffc00,
     color: #000,
-    border: #fffc00,
+    border: #fffc00
   ),
   teams: (
     bg: #7b83eb,
     color: #4f42b5,
-    border: #109dd9,
+    border: #109dd9
   ),
   steam: (
     bg: linear-gradient(120deg, #66c0f4, #2a475e, #1b2838),
     color: #c7d5e0,
-    border: #171a21,
+    border: #171a21
   ),
   nintendo: (
     bg: #e60012,
     color: #fff,
-    border: #e60012,
+    border: #e60012
   ),
   tiktok: (
     bg: #000,
     color: #fff,
-    border: #000,
+    border: #000
   ),
   spotify: (
     bg: #1db954,
     color: #fff,
-    border: #1db954,
+    border: #1db954
   ),
   discord: (
     bg: #7289da,
     color: #fff,
-    border: #7289da,
+    border: #7289da
   ),
   sms: (
     bg: #39ff5a,
     color: #218aff,
-    border: #218aff,
+    border: #218aff
   ),
   health: (
     bg: linear-gradient(45deg, #00bfff, #7fffd4),
     color: #fff,
-    border: #0ec3c7,
+    border: #0ec3c7
   ),
   bereal: (
     bg: #000,
     color: #fff,
-    border: #fff,
+    border: #fff
   ),
   polarsteps: (
     bg: #002e3d,
     color: #fff,
-    border: #de2b52,
+    border: #de2b52
   ),
   komoot: (
     bg: linear-gradient(180deg, #8fce3c 0, #6aa127 100%),
     color: #fff,
-    border: #6aa127,
-  ),
+    border: #6aa127
+  )
 );
 
 $header-img: url(https://sagutid.nl/images/assets_task_01k2c30ka9fnnv20sqgtfakv64_1754900177_img_0.webp);

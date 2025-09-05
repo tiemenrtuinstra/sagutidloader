@@ -1,11 +1,12 @@
 @use "variables" as *;
 @use "mixins" as *;
+
 footer {
   padding-bottom: 25px;
   .uk-section-primary {
     background: $footer-img center bottom / cover no-repeat !important;
-        @include box-shadow($shadow);
-    border-radius: 25px;
+    @include box-shadow($shadow);
+    border-radius: $border-radius-main;
     overflow: hidden;
     margin: 0px 25px;
 

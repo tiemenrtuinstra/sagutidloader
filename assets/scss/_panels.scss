@@ -1,16 +1,12 @@
 @use "variables" as *;
 @use "mixins" as *;
+
 .uk-panel[class*="uk-card"],
 .uk-panel[class*="uk-tile"] {
-  @include box-shadow($shadow);
+  @include blur-panel($shadow: $shadow);
 }
-.uk-tile{
-  &.uk-tile-default{
-    border-radius:25px;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    padding:30px;
-    @include box-shadow($shadow);
+.uk-tile {
+  &.uk-tile-default {
+    @include blur-panel($shadow: $shadow);
   }
 }

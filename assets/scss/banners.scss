@@ -1,5 +1,6 @@
 @use "variables" as *;
 @use "mixins" as *;
+
 .tm-cookie-banner {
   z-index: 9999;
   @include box-shadow($shadow);

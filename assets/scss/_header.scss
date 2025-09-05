@@ -1,6 +1,12 @@
 @use "variables" as *;
 @use "mixins" as *;
+
 .tm-page {
+  .tm-toolbar {
+    .uk-panel {
+      @include blur-panel($shadow: $shadow);
+    }
+  }
   .tm-headerbar-top .tm-headerbar-stacked,
   #module-menu-dialog-mobile {
     display: none;
@@ -11,7 +17,7 @@
       position: relative;
       top: 12.5px;
       .uk-navbar-container {
-        border-radius: 25px;
+        border-radius: $border-radius-main;
         overflow: hidden;
         @include box-shadow($shadow);
         margin: 12.5px 12.5px 0px 12.5px;
@@ -25,7 +31,7 @@
     }
     &.tm-header {
       background: $header-img center top / cover no-repeat;
-      border-radius: 25px;
+      border-radius: $border-radius-main;
       overflow: hidden;
       margin: 0 25px 25px;
       @include box-shadow($shadow);
@@ -44,8 +50,14 @@
         & > li {
           &.uk-active {
             & > a {
-              text-shadow: 0.5px 0 #fff, -0.5px 0 #fff, 0 0.5px #fff,
-                0 -0.5px #fff, 1px 1px #fff, -1px -1px #fff, 1px -1px #fff,
+              text-shadow:
+                0.5px 0 #fff,
+                -0.5px 0 #fff,
+                0 0.5px #fff,
+                0 -0.5px #fff,
+                1px 1px #fff,
+                -1px -1px #fff,
+                1px -1px #fff,
                 -1px 1px #fff;
               font-size: 1.6em;
               color: #e0ad10;
@@ -57,8 +69,14 @@
             &:hover,
             &:active,
             &:focus {
-              text-shadow: 0.5px 0 #fff, -0.5px 0 #fff, 0 0.5px #fff,
-                0 -0.5px #fff, 1px 1px #fff, -1px -1px #fff, 1px -1px #fff,
+              text-shadow:
+                0.5px 0 #fff,
+                -0.5px 0 #fff,
+                0 0.5px #fff,
+                0 -0.5px #fff,
+                1px 1px #fff,
+                -1px -1px #fff,
+                1px -1px #fff,
                 -1px 1px #fff;
               font-size: 1.6em;
               color: #e0ad10;
@@ -75,7 +93,7 @@
         }
 
         &.uk-sticky.uk-sticky-fixed {
-          border-radius: 25px;
+          border-radius: $border-radius-main;
           overflow: hidden;
           top: 25px !important;
           @include box-shadow($shadow);
@@ -97,8 +115,8 @@
       overflow: hidden;
       position: relative;
       bottom: 60px;
-      & .uk-tile-primary{
-        background-color:transparent !important;
+      & .uk-tile-primary {
+        background-color: transparent !important;
       }
     }
   }

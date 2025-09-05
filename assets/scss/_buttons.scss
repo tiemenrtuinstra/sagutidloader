@@ -1,5 +1,6 @@
 @use "variables" as *;
 @use "mixins" as *;
+
 .btn,
 .uk-button {
   @include box-shadow($shadow-light);
@@ -26,7 +27,7 @@
   &:hover,
   &:active,
   &:focus {
-    background:unset;
+    background: unset;
     background-color: $color-primary;
     box-shadow: none !important;
   }

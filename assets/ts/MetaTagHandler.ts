@@ -1,22 +1,24 @@
-import { Logger } from './Util/Logger.js';
+import Logger from './Util/Logger';
+
+type LinkAttributes = { [key: string]: string };
 
 export class MetaTagHandler {
-    static init() {
+    static init(): void {
         this.addIcons();
         this.addMetaTags();
         this.addOpenGraphTags();
         this.addCanonicalLink();
     }
 
-    static addLink(attributes) {
-        if (typeof joomlaLogoPath === 'undefined') {
+    static addLink(attributes: LinkAttributes): void {
+        if (typeof (window as any).joomlaLogoPath === 'undefined') {
             Logger.error('Joomla logo path is not defined.', 'MetaTagHandler');
             return;
         }
 
         // Prepend joomlaLogoPath to relative hrefs
         if (attributes.href && !attributes.href.startsWith('http')) {
-            attributes.href = joomlaLogoPath + attributes.href;
+            attributes.href = (window as any).joomlaLogoPath + attributes.href;
         }
 
         const link = document.createElement('link');
@@ -27,7 +29,7 @@ export class MetaTagHandler {
         Logger.log(`Link tag added: ${JSON.stringify(attributes)}`, 'green', 'MetaTagHandler');
     }
 
-    static addMeta(attributes, attrType = 'name') {
+    static addMeta(attributes: LinkAttributes, attrType: 'name' | 'property' = 'name'): void {
         const meta = document.createElement('meta');
         Object.entries(attributes).forEach(([key, value]) => {
             meta.setAttribute(key, value);
@@ -36,8 +38,8 @@ export class MetaTagHandler {
         Logger.log(`Meta tag added: ${JSON.stringify(attributes)}`, 'green', 'MetaTagHandler');
     }
 
-    static addIcons() {
-        const icons = [
+    static addIcons(): void {
+        const icons: LinkAttributes[] = [
             { rel: 'apple-touch-icon', href: 'android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
             { rel: 'apple-touch-icon', href: 'android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
             { rel: 'apple-touch-icon', href: 'apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
@@ -49,8 +51,8 @@ export class MetaTagHandler {
         Logger.log('Icons added to the document.', 'green', 'MetaTagHandler');
     }
 
-    static addMetaTags() {
-        const metaTags = [
+    static addMetaTags(): void {
+        const metaTags: LinkAttributes[] = [
             { name: 'theme-color', content: '#0B9444' },
             { name: 'apple-mobile-web-app-capable', content: 'yes' },
             { name: 'mobile-web-app-capable', content: 'yes' },
@@ -64,8 +66,8 @@ export class MetaTagHandler {
         Logger.log('Meta tags added to the document.', 'green', 'MetaTagHandler');
     }
 
-    static addOpenGraphTags() {
-        const openGraphTags = [
+    static addOpenGraphTags(): void {
+        const openGraphTags: LinkAttributes[] = [
             { property: 'og:title', content: document.title },
             { property: 'og:description', content: 'Welkom op Sagutid.nl, waar verhalen tot leven komen.' },
             { property: 'og:image', content: 'https://sagutid.nl/images/Logo/Sagutid-groot.jpg' },
@@ -77,8 +79,10 @@ export class MetaTagHandler {
         Logger.log('OpenGraph tags added to the document.', 'green', 'MetaTagHandler');
     }
 
-    static addCanonicalLink() {
+    static addCanonicalLink(): void {
         this.addLink({ rel: 'canonical', href: window.location.href });
         Logger.log('Canonical link added to the document.', 'green', 'MetaTagHandler');
     }
 }
+
+export default MetaTagHandler;

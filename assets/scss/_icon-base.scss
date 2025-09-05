@@ -1,5 +1,6 @@
 @use "variables" as *;
 @use "mixins" as *;
+
 %icon-base {
   color: #fff;
   background: transparent;
@@ -8,13 +9,10 @@
   text-shadow: none;
   padding: 10px;
   border-radius: $border-radius-main;
-  @include transition(
-    color, background-color,
-    box-shadow, transform,
-    border-radius, border-color,
-    text-shadow
-  );
-  &:hover, &:active, &:focus {
+  @include transition(color, background-color, box-shadow, transform, border-radius, border-color, text-shadow);
+  &:hover,
+  &:active,
+  &:focus {
     color: #fff;
     background-color: $color-dark;
     @include box-shadow($shadow);
@@ -22,4 +20,4 @@
     animation: hoverAnimation 0.5s ease-in-out;
     border-radius: $border-radius-main;
   }
-} 
+}

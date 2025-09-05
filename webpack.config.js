@@ -2,11 +2,12 @@ const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 module.exports = {
     mode: 'production',
     entry: {
-        main: './assets/js/sagutid.js',
+        main: './assets/ts/sagutid.ts',
         styles: './assets/scss/sagutid.scss'
     },
 
@@ -22,12 +23,12 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.js$/,
+                test: /\.(js|ts|tsx)$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: ['@babel/preset-env'],
+                        presets: ['@babel/preset-env', '@babel/preset-typescript'],
                         sourceMaps: true
                     }
                 }
@@ -50,7 +51,7 @@ module.exports = {
     },
 
     resolve: {
-        extensions: ['.js', '.json', '.scss']
+        extensions: ['.ts', '.tsx', '.js', '.json', '.scss']
     },
 
     optimization: {
@@ -85,6 +86,13 @@ module.exports = {
         new RemoveEmptyScriptsPlugin(),
         new MiniCssExtractPlugin({
             filename: '[name].bundle.css'
+        }),
+        // Type checking in a separate process
+        new ForkTsCheckerWebpackPlugin({
+            async: false,
+            typescript: {
+                configFile: 'tsconfig.json'
+            }
         })
     ],
 
