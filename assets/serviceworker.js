@@ -1,4 +1,4 @@
-const CACHE_NAME = `sagutid-v26.6.0`;
+const CACHE_NAME = `sagutid-v27.0.0`;
 // Base path for plugin assets (derived from the SW script URL, not the scope)
 const SCRIPT_PATHNAME = (typeof self !== 'undefined' && self.location) ? new URL(self.location).pathname : '/plugins/system/sagutidloader/assets/serviceworker.js';
 const ASSET_BASE = SCRIPT_PATHNAME.replace(/[^/]+$/, ''); // strip filename to get folder
@@ -288,6 +288,7 @@ self.addEventListener('install', event => sagutidSW.install(event));
 self.addEventListener('activate', event => sagutidSW.activate(event));
 self.addEventListener('fetch', event => sagutidSW.fetch(event));
 self.addEventListener('message', event => sagutidSW.message(event));
+
 
 
 

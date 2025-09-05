@@ -1,6 +1,6 @@
 {
   "name": "sagutidloader",
-  "version": "26.6.0",
+  "version": "27.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,8 +17,8 @@
     "pack": "pwsh ./package.ps1",
     "pack:skip-build": "pwsh ./package.ps1 -SkipBuild",
     "pack:dry-run": "pwsh ./package.ps1 -DryRun",
-  "lint": "eslint \"assets/ts/**/*.{js,ts,tsx}\"",
-  "lint:fix": "eslint \"assets/ts/**/*.{js,ts,tsx}\" --fix",
+    "lint": "eslint \"assets/ts/**/*.{js,ts,tsx}\"",
+    "lint:fix": "eslint \"assets/ts/**/*.{js,ts,tsx}\" --fix",
     "lint:css": "stylelint \"assets/scss/**/*.scss\"",
     "lint:css:fix": "stylelint \"assets/scss/**/*.scss\" --fix",
     "format": "prettier --write .",
