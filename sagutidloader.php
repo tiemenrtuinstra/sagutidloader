@@ -342,4 +342,75 @@ class PlgSystemSagutidloader extends CMSPlugin
             // Swallow errors to avoid breaking the admin UI
         }
     }
+
+    /**
+     * Ensure the plugin params are present when the plugin configuration form is prepared.
+     * This helps avoid cases where the form doesn't populate saved params correctly.
+     *
+     * @param string $context
+     * @param mixed  $data
+     * @return void
+     */
+    public function onContentPrepareData($context, $data = null): void
+    {
+        try {
+            $app = Factory::getApplication();
+            if (!$app->isClient('administrator')) {
+                return;
+            }
+
+            if (strpos((string) $context, 'com_plugins') === false) {
+                return;
+            }
+
+            // If $data is an object (form data), ensure params contains current saved params
+            if (is_object($data)) {
+                if (empty($data->params)) {
+                    if (property_exists($this, 'params') && isset($this->params) && method_exists($this->params, 'toArray')) {
+                        $data->params = $this->params->toArray();
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Swallow to avoid breaking admin UI
+        }
+    }
+
+    /**
+     * Debug hook: log incoming plugin params when the plugin config is saved.
+     * This does not alter save behaviour, only writes a debug file to tmp for troubleshooting.
+     *
+     * @param string $context
+     * @param object $table
+     * @param bool   $isNew
+     * @return void
+     */
+    public function onExtensionBeforeSave($context, $table, $isNew): void
+    {
+        try {
+            if (strpos((string) $context, 'com_plugins') === false) {
+                return;
+            }
+
+            $posted = [];
+            if (!empty($_POST['jform']['params']) && is_array($_POST['jform']['params'])) {
+                $posted = $_POST['jform']['params'];
+            }
+
+            // If params were posted, serialize them onto the extension table so Joomla saves them
+            if (!empty($posted) && is_object($table) && property_exists($table, 'params')) {
+                $table->params = json_encode($posted);
+            }
+
+            // Write a debug file to tmp so admins can inspect what was posted
+            $tmpDir = defined('JPATH_ROOT') ? JPATH_ROOT . '/tmp' : __DIR__ . '/tmp';
+            if (!is_dir($tmpDir)) {
+                @mkdir($tmpDir, 0755, true);
+            }
+            $debugFile = $tmpDir . '/sagutid_posted_params.json';
+            @file_put_contents($debugFile, json_encode($posted, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
 }
