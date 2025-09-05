@@ -6,3 +6,27 @@ assets/dist/**/*
 /*.zip
 *.zip
 sagutidloader.zip
+
+# Android / Bubblewrap / TWA
+.gradle/
+/.gradle/
+/android/
+/android/**
+/*.jks
+*.jks
+/*.keystore
+*.keystore
+/.well-known/assetlinks.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Environment
+.env
+.env.local
