@@ -228,27 +228,27 @@ class SagutidServiceWorker {
           const res = await fetchWithTimeout(sitemapUrl);
           if (!res.ok) throw new Error(`Sitemap request failed: ${res.status}`);
           const xml = await res.text();
-          const doc = new DOMParser().parseFromString(xml, 'application/xml');
 
-          // urlset -> <url><loc>
-          const urlNodes = Array.from(doc.querySelectorAll('url > loc'));
-          if (urlNodes.length) {
-            for (const el of urlNodes) {
-              if (out.length >= limit) break;
-              const u = el.textContent?.trim();
-              if (!u) continue;
-              out.push(u);
-            }
-            return;
-          }
-
-          // sitemapindex -> <sitemap><loc>
-          const mapNodes = Array.from(doc.querySelectorAll('sitemap > loc'));
-          for (const el of mapNodes) {
+          // Simple, robust XML parsing without DOMParser: extract <url><loc> and <sitemap><loc>
+          // 1) Find <url> entries and their <loc>
+          const urlRegex = /<url\b[^>]*>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/url>/gi;
+          let match;
+          let found = false;
+          while (!out.length >= limit && (match = urlRegex.exec(xml))) {
+            found = true;
+            const u = match[1].trim();
+            if (u) out.push(u);
             if (out.length >= limit) break;
-            const sm = el.textContent?.trim();
+          }
+          if (found) return;
+
+          // 2) If no <url> entries, treat as sitemapindex and recurse into <sitemap><loc>
+          const sitemapRegex = /<sitemap\b[^>]*>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/sitemap>/gi;
+          while (!out.length >= limit && (match = sitemapRegex.exec(xml))) {
+            const sm = match[1].trim();
             if (!sm) continue;
             try { await collectUrls(sm, out); } catch (e) { console.warn('SW: Failed nested sitemap:', e.message); }
+            if (out.length >= limit) break;
           }
         };
 

@@ -24,48 +24,39 @@
     {
       "src": "/images/Screenshots/sagutid-nl-480x800phone-8b6584.png",
       "type": "image/png",
-      "sizes": "480x800",
-      "label": "Screenshot van de homepage phone"
+      "sizes": "480x800"
     },
     {
       "src": "/images/Screenshots/sagutid-nl-1920x1080desktop-8b6584.png",
       "type": "image/png",
-      "sizes": "1920x1080",
-      "label": "Screenshot van de homepage desktop",
-      "form_factor": "wide"
+      "sizes": "1920x1080"
     },
     {
       "src": "/images/Screenshots/sagutid-nl-1024x768desktop-8b6584.png",
       "type": "image/png",
-      "sizes": "1024x768",
-      "label": "Screenshot van de homepage desktop"
+      "sizes": "1024x768"
     },
     {
       "src": "/images/Screenshots/sagutid-nl-1280x800tablet-8b6584.png",
       "type": "image/png",
-      "sizes": "1280x800",
-      "label": "Screenshot van de homepage tablet"
+      "sizes": "1280x800"
     },
     {
       "src": "/images/Screenshots/sagutid-nl-800x1280tablet-8b6584.png",
       "type": "image/png",
-      "sizes": "800x1280",
-      "label": "Screenshot van de homepage tablet"
+      "sizes": "800x1280"
     },
     {
       "src": "/images/Screenshots/sagutid-nl-480x800phone-fafd85.png",
       "type": "image/png",
-      "sizes": "480x800",
-      "label": "Screenshot van de homepage phone"
+      "sizes": "480x800"
     },
     {
       "src": "/images/Screenshots/sagutid-nl-1920x1080desktop-fafd85.png",
       "type": "image/png",
-      "sizes": "1920x1080",
-      "label": "Screenshot van de homepage desktop",
-      "form_factor": "wide"
+      "sizes": "1920x1080"
     }
-  ]
+  ],
   "shortcuts": [
     {
       "name": "Home",
