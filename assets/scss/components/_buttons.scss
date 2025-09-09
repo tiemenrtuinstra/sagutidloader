@@ -14,9 +14,10 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 
-    box-shadow:
+    @include box-shadow(
         0 1px 3px rgba(21, 21, 21, 0.08),
-        0 1px 2px rgba(21, 21, 21, 0.04);
+        0 1px 2px rgba(21, 21, 21, 0.04)
+    );
     transition:
         transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
         box-shadow 160ms ease,
@@ -81,35 +82,33 @@
         background: $button-img center center / cover no-repeat;
         color: #fff;
     }
+    // Generate color variants via a map to keep source concise while preserving output
+    $__button_color_variants: (
+        success: $color-success,
+        info: $color-info,
+        warning: $color-warning,
+        danger: $color-danger
+    );
 
-    &.uk-button-success {
-        background: $color-success;
-        color: #fff;
-    }
-    &.uk-button-info {
-        background: $color-info;
-        color: #fff;
-    }
-    &.uk-button-warning {
-        background: $color-warning;
-        color: #fff;
-    }
-    &.uk-button-danger {
-        background: $color-danger;
-        color: #fff;
+    @each $variant, $bg in $__button_color_variants {
+        &.uk-button-#{$variant} {
+            background: $bg;
+            color: #fff;
+        }
     }
 
     &--clickable {
         cursor: pointer;
         &:active {
             transform: translateY(1px);
-            box-shadow: 0 4px 10px rgba(21, 21, 21, 0.12);
+            @include box-shadow(0 4px 10px rgba(21, 21, 21, 0.12));
         }
     }
     &--elevated {
-        box-shadow:
+        @include box-shadow(
             0 3px 6px rgba(21, 21, 21, 0.12),
-            0 1px 3px rgba(21, 21, 21, 0.08);
+            0 1px 3px rgba(21, 21, 21, 0.08)
+        );
     }
     &--outlined {
         background: transparent;
@@ -146,6 +145,7 @@
     &:hover,
     &:active,
     &:focus {
+        border-radius: 4px;
         background: unset;
         background-color: $color-primary;
         box-shadow: none !important;
@@ -153,6 +153,7 @@
     }
     &:focus-visible {
         outline: none;
+        border-radius: 4px;
         box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.12);
     }
 }

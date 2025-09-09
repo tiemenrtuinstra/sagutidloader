@@ -3,6 +3,7 @@
 
 .uk-label {
     color: #fff;
+
     &.uk-label-secondary {
         @include blur-panel($color: $color-secondary, $shadow: $shadow);
     }
@@ -31,10 +32,12 @@
 }
 
 .uk-label-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; // use gap so wrapped rows keep correct spacing and the first item has no left margin
+
+    // Fallback/reset: clear individual margins so gap controls spacing
     .uk-label {
-        margin-left: 5px;
-        &:first-child {
-            margin-left: 0px;
-        }
+        margin: 0;
     }
 }
