@@ -3,7 +3,7 @@ import Logger from './Util/Logger';
 // Ensure TypeScript treats `self` as the ServiceWorker global scope
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
-const CACHE_NAME = `sagutid-v29.0.4`;
+const CACHE_NAME = `sagutid-v29.0.5`;
 // Base path for plugin assets (derived from the SW script URL, not the scope)
 const SCRIPT_PATHNAME = (typeof self !== 'undefined' && 'location' in self) ? new URL(self.location.href).pathname : '/plugins/system/sagutidloader/assets/serviceworker.js';
 const ASSET_BASE = SCRIPT_PATHNAME.replace(/[^/]+$/, ''); // strip filename to get folder
@@ -416,6 +416,7 @@ const sagutidSW = new SagutidServiceWorker();
 (self as any).addEventListener('activate', (event: any) => sagutidSW.activate(event));
 (self as any).addEventListener('fetch', (event: any) => sagutidSW.fetch(event));
 (self as any).addEventListener('message', (event: any) => sagutidSW.message(event));
+
 
 
 
