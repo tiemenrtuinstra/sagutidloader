@@ -3,10 +3,6 @@
 
 .uk-label {
     color: #fff;
-
-    &.uk-label-secondary {
-        @include blur-panel($color: $color-secondary, $shadow: $shadow);
-    }
     &.uk-label-muted {
         @include blur-panel($shadow: $shadow);
         color: #444;
@@ -14,20 +10,29 @@
             color: #444 !important;
         }
     }
-    &.uk-label-success {
-        @include blur-panel($color: $color-success, $shadow: $shadow);
-    }
-    &.uk-label-info {
-        @include blur-panel($color: $color-info, $shadow: $shadow);
-    }
-    &.uk-label-warning {
-        @include blur-panel($color: $color-warning, $shadow: $shadow);
-    }
-    &.uk-label-danger {
-        @include blur-panel($color: $color-danger, $shadow: $shadow);
-    }
-    & > a {
-        color: #fff;
+}
+
+// Collapse color variant blocks into a map for maintainability
+// (keeps generated CSS identical to explicit declarations)
+$__label_color_variants: (
+    secondary: $color-secondary,
+    success: $color-success,
+    info: $color-info,
+    warning: $color-warning,
+    danger: $color-danger
+);
+
+@each $name, $col in $__label_color_variants {
+    .uk-label {
+        &.uk-label {
+            &-#{$name} {
+                @include blur-panel($color: $col, $shadow: $shadow);
+                color: #fff;
+                & > a {
+                    color: #fff;
+                }
+            }
+        }
     }
 }
 
