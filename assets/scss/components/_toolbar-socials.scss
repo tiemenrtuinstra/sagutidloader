@@ -8,7 +8,7 @@
 @if not meta.variable-exists("social-style") {
     $social-style: () !default;
 }
-
+.socials,
 .tm-toolbar,
 .tm-socials {
     @if list.length(map.keys($social-style)) > 0 {
@@ -91,6 +91,7 @@
 }
 
 body.homepage {
+    .socials,
     .tm-toolbar,
     .tm-socials {
         .el-overlay [uk-icon],
@@ -99,17 +100,23 @@ body.homepage {
             color: $color-primary;
         }
     }
+    .tm-toolbar {
+        color: #444;
+    }
 }
 
-.tm-toolbar .uk-container {
-    margin: 0 -12.5px;
-}
-.tm-toolbar-default {
-    background: transparent;
-    z-index: 999;
+.tm-toolbar {
+    .uk-container {
+        margin: 0 -12.5px;
+    }
+    &-default {
+        background: transparent;
+        z-index: 999;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .socials,
     .tm-toolbar,
     .tm-socials {
         .el-overlay [uk-icon],
