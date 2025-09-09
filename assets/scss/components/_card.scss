@@ -34,4 +34,28 @@
     &.uk-tile-default {
         @include blur-panel($shadow: $shadow);
     }
+    &.uk-tile-primary {
+        @include blur-panel($color:$color-primary, $shadow: $shadow);
+        color: #fff;
+    }
+    &.uk-tile-secondary {
+        @include blur-panel($color:$color-secondary, $shadow: $shadow);
+        color: #fff;
+    }
+    &.uk-tile-success {
+        @include blur-panel($color:$color-success, $shadow: $shadow);
+        color: #fff;
+    }
+    &.uk-tile-danger {
+        @include blur-panel($color:$color-danger, $shadow: $shadow);
+        color: #fff;
+    }
+    &.uk-tile-warning {
+        @include blur-panel($color:$color-warning, $shadow: $shadow);
+        color: #fff;
+    }
+    &.uk-tile-info {
+        @include blur-panel($color:$color-info, $shadow: $shadow);
+        color: #fff;
+    }
 }
