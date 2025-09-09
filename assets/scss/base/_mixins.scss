@@ -1,0 +1,107 @@
+@use "sass:list";
+@use "sass:map";
+@use "sass:meta";
+@use "sass:color";
+@use "variables" as *;
+
+// Copy of previous mixins adapted to new path. Keep signatures stable.
+@mixin box-shadow($args...) {
+    $kwargs: meta.keywords($args);
+    $important: false;
+    @if map.has-key($kwargs, important) {
+        $important: map.get($kwargs, important);
+    }
+    $positional: ();
+    $len: list.length($args);
+    @if $len > 0 and meta.type-of(list.nth($args, $len)) == "bool" and not map.has-key($kwargs, important) {
+        @for $i from 1 through $len - 1 {
+            $positional: list.append($positional, list.nth($args, $i), comma);
+        }
+        $important: list.nth($args, $len);
+    } @else {
+        @for $i from 1 through $len {
+            $positional: list.append($positional, list.nth($args, $i), comma);
+        }
+    }
+    box-shadow: $positional#{if($important, " !important", "")};
+}
+
+@mixin transition($props...) {
+    transition: 0.4s ease;
+    transition-property: list.join($props, ", ");
+}
+
+$transition-duration-fast: 0.2s !default;
+$transition-duration-base: 0.4s !default;
+$transition-duration-slow: 0.65s !default;
+$transition-ease: ease !default;
+
+$transition-safe-props: (
+    color,
+    background-color,
+    border-color,
+    box-shadow,
+    text-shadow,
+    transform,
+    opacity,
+    filter
+) !default;
+
+@function build-transition($props: $transition-safe-props, $dur: $transition-duration-base, $ease: $transition-ease) {
+    $out: ();
+    @each $p in $props {
+        $out: list.append($out, "#{$p} #{$dur} #{$ease}", comma);
+    }
+    @return $out;
+}
+
+@mixin transition-props($props: $transition-safe-props, $duration: $transition-duration-base, $ease: $transition-ease) {
+    transition: build-transition($props, $duration, $ease);
+}
+
+@mixin transition-all($duration: $transition-duration-base, $ease: $transition-ease) {
+    transition: all $duration $ease;
+}
+
+@mixin nav-link-transition($duration: $transition-duration-base, $ease: $transition-ease) {
+    transition:
+        color $duration $ease,
+        transform $transition-duration-fast $ease,
+        border-color $duration $ease,
+        box-shadow $duration $ease,
+        text-shadow $duration $ease,
+        font-size $duration $ease;
+}
+
+%smooth-transition {
+    @include transition-props();
+}
+
+*,
+*::before,
+*::after {
+    @include transition-props();
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+    }
+}
+
+@mixin blur-panel($color: rgba(255, 255, 255, 0.4), $shadow) {
+    @if meta.type-of($color) == "string" {
+        $color: unquote($color);
+    }
+    @if meta.type-of($color) != "color" {
+        $color: rgba(255, 255, 255, 0.4);
+    }
+    $color: rgba(color.red($color), color.green($color), color.blue($color), 0.4) !default;
+    border-radius: $border-radius-main;
+    background: $color;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    @include box-shadow($shadow);
+}

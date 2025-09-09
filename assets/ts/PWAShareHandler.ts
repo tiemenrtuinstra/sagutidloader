@@ -18,7 +18,7 @@ export class PWAShareHandler {
             shareLink.addEventListener('click', (event: Event) => this.handleShareClick(event, shareLink as HTMLAnchorElement));
         });
 
-    Logger.log('Share links initialized.', 'PWAShareHandler', LogType.INFO);
+        Logger.log('Share links initialized.', 'PWAShareHandler', LogType.INFO);
     }
 
     static handleShareClick(event: Event, shareLink: HTMLAnchorElement) {

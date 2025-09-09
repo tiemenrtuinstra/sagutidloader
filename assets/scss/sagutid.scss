@@ -1,35 +1,21 @@
-// Switch to the Sass module system to avoid @import deprecations
+@forward "base/variables";
+@forward "base/fonts";
+@forward "base/typography";
+@forward "base/mixins";
+@use "base/keyframes" as *;
+
+@use "layout/layout" as *;
+@use "layout/header" as *;
+@use "layout/footer" as *;
+
+@use "components/card" as *;
+@forward "components/icons";
+@use "components/toolbar-socials" as *;
+@use "components/labels" as *;
+@use "components/buttons" as *;
+@use "components/offcanvas" as *;
+@use "components/banners" as *;
+
 @use "sass:list";
-@use "variables" as *;
-@use "mixins" as *;
-@use "icon-base" as *;
-@use "keyframes" as *;
-@use "layout" as *;
-@use "header" as *;
-@use "card" as *;
-@use "icon" as *;
-@use "toolbar-socials" as *;
-@use "labels" as *;
-@use "buttons" as *;
-@use "offcanvas" as *;
-@use "banners" as *;
-@use "panels" as *;
-@use "footer" as *;
-
-em,
-i {
-  color: $color-primary;
-  font-family: "McLaren", sans-serif;
-  font-size: 0.9rem;
-}
-
-.uk-nav img,
-nav img {
-  display: none;
-}
-
-.uk-section-muted {
-  %icon-base {
-    color: $color-primary;
-  }
-}
+@use "sass:map";
+@use "sass:meta";

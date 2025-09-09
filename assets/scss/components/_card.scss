@@ -1,0 +1,37 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+
+.el-item {
+    .uk-card,
+    .uk-card-body img {
+        @include box-shadow($shadow-light);
+        min-width: 355px;
+        &.full-img {
+            margin: 0 -15px;
+            width: -webkit-fill-available;
+            display: block;
+            clear: both;
+        }
+    }
+    &.uk-card .el-content {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+}
+
+.uk-card {
+    border-radius: $border-radius-main;
+}
+
+.uk-panel[class*="uk-card"],
+.uk-panel[class*="uk-tile"] {
+    @include blur-panel($shadow: $shadow);
+}
+.uk-tile {
+    &.uk-tile-default {
+        @include blur-panel($shadow: $shadow);
+    }
+}

@@ -17,7 +17,7 @@ export class DataLayerHandler {
         }
     }
 
-    static bindTrackEvent(selector: string, eventType: string, eventName: string, step: any, formId: any, getData?: (target:any)=>any) {
+    static bindTrackEvent(selector: string, eventType: string, eventName: string, step: any, formId: any, getData?: (target: any) => any) {
         const elements = document.querySelectorAll(selector);
 
         if (!elements.length) {
@@ -44,7 +44,7 @@ export class DataLayerHandler {
             });
         });
 
-    Logger.log(`Event binding added for selector: ${selector}`, 'DataLayerHandler', LogType.INFO);
+        Logger.log(`Event binding added for selector: ${selector}`, 'DataLayerHandler', LogType.INFO);
     }
 
     static createFormFieldEvent(field: any) {
@@ -54,7 +54,7 @@ export class DataLayerHandler {
         const isSensitive = /(email|name|phone|tel|adres|address)/i.test(fieldName);
         const fieldValue = isSensitive ? '[masked]' : value;
 
-    Logger.log(`Form field event created for field: ${fieldName}`, 'DataLayerHandler', LogType.INFO);
+        Logger.log(`Form field event created for field: ${fieldName}`, 'DataLayerHandler', LogType.INFO);
 
         return {
             event: 'formFieldChange',
@@ -75,7 +75,7 @@ export class DataLayerHandler {
             return originalPush.apply((window as any).dataLayer, args);
         };
 
-    Logger.log('DataLayer initialized and enhanced with debug logging.', 'DataLayerHandler', LogType.INFO);
+        Logger.log('DataLayer initialized and enhanced with debug logging.', 'DataLayerHandler', LogType.INFO);
     }
 
     static attachFormEventListeners(form: any, formId: any) {
@@ -125,7 +125,7 @@ export class DataLayerHandler {
             }
         });
 
-    Logger.log('Form event listeners attached.', 'DataLayerHandler', LogType.INFO);
+        Logger.log('Form event listeners attached.', 'DataLayerHandler', LogType.INFO);
     }
 
     static init() {
@@ -165,6 +165,6 @@ export class DataLayerHandler {
             DataLayerHandler.attachFormEventListeners(form, formId);
         });
 
-    Logger.log('DataLayerHandler initialized.', 'DataLayerHandler', LogType.INFO);
+        Logger.log('DataLayerHandler initialized.', 'DataLayerHandler', LogType.INFO);
     }
 }

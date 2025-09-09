@@ -43,7 +43,7 @@ export class Logger {
         // Determine whether the 3rd param is a LogType or the first arg
         // Prefer INFO as the default type; LOG remains available for compatibility
         let type: LogType = LogType.INFO as LogType;
-    if (typeOrArg === LogType.INFO || typeOrArg === LogType.WARN || typeOrArg === LogType.ERROR || typeOrArg === LogType.SUCCESS) {
+        if (typeOrArg === LogType.INFO || typeOrArg === LogType.WARN || typeOrArg === LogType.ERROR || typeOrArg === LogType.SUCCESS) {
             type = typeOrArg as LogType;
         } else if (typeof typeOrArg !== 'undefined') {
             // shift this value into args
@@ -63,7 +63,7 @@ export class Logger {
                 default: return '#48dbfb';
             }
         };
-    const resolvedColor = defaultColor(type);
+        const resolvedColor = defaultColor(type);
 
         try {
             if (type === LogType.ERROR) {
@@ -82,22 +82,22 @@ export class Logger {
             } else {
                 console.log(`[${context}] ${message}`, ...args);
             }
-    }
+        }
     }
 
     static warn(message: string, context = 'App', ...args: any[]): void {
         // Warning logs respect debugMode like normal logs; rely on default warn color
-    Logger.log(message, context, LogType.WARN, ...args);
+        Logger.log(message, context, LogType.WARN, ...args);
     }
 
     static info(message: string, context = 'App', ...args: any[]): void {
         // Info logs behave like normal logs and are gated by debugMode
-    Logger.log(message, context, LogType.INFO, ...args);
+        Logger.log(message, context, LogType.INFO, ...args);
     }
 
     static success(message: string, context = 'App', ...args: any[]): void {
         // Success messages are informational but have a dedicated color
-    Logger.log(message, context, LogType.SUCCESS, ...args);
+        Logger.log(message, context, LogType.SUCCESS, ...args);
     }
 
     static error(message: string, context = 'App', ...args: any[]): void {

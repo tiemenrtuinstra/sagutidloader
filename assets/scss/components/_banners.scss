@@ -1,0 +1,15 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+
+.tm-cookie-banner {
+    z-index: 9999;
+    @include blur-panel($color: $color-dark, $shadow: $shadow);
+    overflow: hidden;
+    .uk-button {
+        &.uk-button-default {
+            background: transparent !important;
+            background-color: #fff !important;
+            color: $color-primary !important;
+        }
+    }
+}

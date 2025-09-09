@@ -5,8 +5,8 @@ export class PWAHandler {
 
     static init() {
         const installPopup = document.getElementById('installPopup');
-            if (!installPopup) {
-                Logger.error('Install popup element not found.', 'PWAHandler');
+        if (!installPopup) {
+            Logger.error('Install popup element not found.', 'PWAHandler');
             return;
         }
 
@@ -20,7 +20,7 @@ export class PWAHandler {
 
     static hideInstallPopup(installPopup: HTMLElement) {
         installPopup.style.display = 'none';
-                Logger.log('Install popup hidden.', 'PWAHandler', LogType.INFO);
+        Logger.log('Install popup hidden.', 'PWAHandler', LogType.INFO);
     }
 
     static listenForInstallPrompt(installPopup: HTMLElement) {
@@ -29,7 +29,7 @@ export class PWAHandler {
             this.deferredPrompt = e;
 
             installPopup.style.display = 'block';
-        Logger.log('Install prompt triggered and popup displayed.', 'PWAHandler', LogType.INFO);
+            Logger.log('Install prompt triggered and popup displayed.', 'PWAHandler', LogType.INFO);
         });
     }
 
@@ -41,9 +41,9 @@ export class PWAHandler {
                     this.deferredPrompt.prompt();
                     const result = await this.deferredPrompt.userChoice;
                     if (result.outcome === 'accepted') {
-                            Logger.log('🎉 App successfully installed.', 'PWAHandler', LogType.INFO);
+                        Logger.log('🎉 App successfully installed.', 'PWAHandler', LogType.INFO);
                     } else {
-                            Logger.log('❌ App installation declined.', 'PWAHandler', LogType.ERROR);
+                        Logger.log('❌ App installation declined.', 'PWAHandler', LogType.ERROR);
                     }
                     this.deferredPrompt = null;
                     installPopup.style.display = 'none';
@@ -57,14 +57,14 @@ export class PWAHandler {
             if (e.target.matches('[aria-label="dismiss-install-popup"]')) {
                 e.preventDefault();
                 installPopup.style.display = 'none';
-                    Logger.log('Install popup dismissed.', 'PWAHandler', LogType.WARN);
+                Logger.log('Install popup dismissed.', 'PWAHandler', LogType.WARN);
             }
         });
     }
 
     static listenForAppInstalled() {
         window.addEventListener('appinstalled', () => {
-                    Logger.log('🎉 App successfully installed via appinstalled event.', 'PWAHandler', LogType.INFO);
+            Logger.log('🎉 App successfully installed via appinstalled event.', 'PWAHandler', LogType.INFO);
         });
     }
 

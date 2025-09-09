@@ -1,16 +1,22 @@
-@use "variables" as *;
-@use "mixins" as *;
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
 
 .uk-offcanvas-bar {
     @include blur-panel($shadow: $shadow);
     left: 0;
     right: 0;
-    top: 120px;
-    height: 408px;
+    top: 12.5px;
+    bottom: 12.5px;
     position: fixed;
     width: calc(100vw - 39px);
     margin: 0px 12.5px;
     overflow: hidden;
+
+    & .uk-panel {
+        padding: 12.5px;
+        @include blur-panel($color: rgba(50, 50, 350, 0.5), $shadow: $shadow);
+        color: #fff;
+    }
 }
 a {
     .uk-navbar-toggle[aria-expanded="true"] {

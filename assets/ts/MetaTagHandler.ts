@@ -26,7 +26,7 @@ export class MetaTagHandler {
             link.setAttribute(key, value);
         });
         document.head.appendChild(link);
-    Logger.log(`Link tag added: ${JSON.stringify(attributes)}`, 'MetaTagHandler', LogType.INFO);
+        Logger.log(`Link tag added: ${JSON.stringify(attributes)}`, 'MetaTagHandler', LogType.INFO);
     }
 
     static addMeta(attributes: LinkAttributes, attrType: 'name' | 'property' = 'name'): void {
@@ -35,7 +35,7 @@ export class MetaTagHandler {
             meta.setAttribute(key, value);
         });
         document.head.appendChild(meta);
-    Logger.log(`Meta tag added: ${JSON.stringify(attributes)}`, 'MetaTagHandler', LogType.INFO);
+        Logger.log(`Meta tag added: ${JSON.stringify(attributes)}`, 'MetaTagHandler', LogType.INFO);
     }
 
     static addIcons(): void {
@@ -48,7 +48,7 @@ export class MetaTagHandler {
         ];
 
         icons.forEach(icon => this.addLink(icon));
-    Logger.log('Icons added to the document.', 'MetaTagHandler', LogType.INFO);
+        Logger.log('Icons added to the document.', 'MetaTagHandler', LogType.INFO);
     }
 
     static addMetaTags(): void {
@@ -63,7 +63,7 @@ export class MetaTagHandler {
         ];
 
         metaTags.forEach(tag => this.addMeta(tag));
-    Logger.log('Meta tags added to the document.', 'MetaTagHandler', LogType.INFO);
+        Logger.log('Meta tags added to the document.', 'MetaTagHandler', LogType.INFO);
     }
 
     static addOpenGraphTags(): void {
@@ -76,12 +76,12 @@ export class MetaTagHandler {
         ];
 
         openGraphTags.forEach(tag => this.addMeta(tag, 'property'));
-    Logger.log('OpenGraph tags added to the document.', 'MetaTagHandler', LogType.INFO);
+        Logger.log('OpenGraph tags added to the document.', 'MetaTagHandler', LogType.INFO);
     }
 
     static addCanonicalLink(): void {
         this.addLink({ rel: 'canonical', href: window.location.href });
-    Logger.log('Canonical link added to the document.', 'MetaTagHandler', LogType.INFO);
+        Logger.log('Canonical link added to the document.', 'MetaTagHandler', LogType.INFO);
     }
 }
 

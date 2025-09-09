@@ -12,98 +12,76 @@
     />
     <link rel="apple-touch-icon" href="/images/Logo/apple-touch-icon.png" />
 
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, sans-serif;
-        background-color: #f5f5f5;
-        color: #333;
-      }
+    <!-- Prefer the built app styles; these are cached by the service worker when available -->
+    <link rel="stylesheet" href="/plugins/system/sagutidloader/assets/dist/styles.bundle.css" />
 
-      .page-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background-image: url("/images/yootheme/photo-1556033368-8a5d814918f3.jpg");
-        background-size: cover;
-        background-position: center center;
-        background-repeat: no-repeat;
-      }
+    <!-- Attempt to load the site's template styles (YOOtheme Pro and common template paths).
+         This probes a list of likely stylesheet URLs using HEAD requests; if the resource
+         is available (or cached by the service worker), it will be injected so the offline
+         page matches the site's look-and-feel. -->
+    <script>
+      (function(){
+        const candidates = [
+          '/templates/yootheme/dist/style.css',
+          '/templates/yootheme/css/theme.css',
+          '/templates/yootheme/css/style.css',
+          '/templates/yootheme/style.css',
+          '/templates/yootheme/css/theme.min.css',
+          '/templates/yootheme-pro/dist/style.css',
+          '/templates/yootheme-pro/css/theme.css',
+          '/templates/yootheme-pro/css/style.css',
+          '/templates/uikit/css/uikit.min.css',
+          '/templates/pro/css/template.css',
+          '/templates/yootheme/css/template.css'
+        ];
 
-      .content-wrapper {
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 40px 20px;
-        border-radius: 12px;
-        text-align: center;
-        max-width: 700px;
-        width: 90%;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-      }
-
-      .content-wrapper img.logo {
-        width: 250px;
-        height: auto;
-        margin-bottom: 20px;
-      }
-
-      h1 {
-        font-size: 2em;
-        margin: 10px 0;
-      }
-
-      p {
-        font-size: 1.1em;
-        margin: 10px 0 20px;
-      }
-
-      .nav-links {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 20px;
-      }
-
-      .nav-link {
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        color: #333;
-        font-weight: 500;
-        transition: color 0.3s;
-      }
-
-      .nav-link:hover {
-        color: #0077cc;
-      }
-
-      .nav-link img {
-        width: 35px;
-        height: 35px;
-        margin-right: 8px;
-      }
-
-      @media (max-width: 480px) {
-        .nav-links {
-          flex-direction: column;
-          gap: 12px;
+        function tryLoad(url){
+          return fetch(url, { method: 'HEAD', credentials: 'same-origin', mode: 'same-origin' })
+            .then(resp => {
+              if (resp && resp.ok) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = url;
+                document.head.appendChild(link);
+                return true;
+              }
+              return false;
+            })
+            .catch(() => false);
         }
-      }
+
+        async function loadAll(){
+          for (const url of candidates) {
+            // await so order is preserved when multiple candidates exist
+            await tryLoad(url);
+          }
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', loadAll);
+        } else {
+          loadAll();
+        }
+      })();
+    </script>
+    <!-- Minimal fallback styles so the offline page remains usable even if the cached stylesheet is not available -->
+    <style>
+      html,body{margin:0;padding:0;font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial;color:#222;background:#f7f9fb}
+      .logo{width:220px;height:auto;margin:0 auto 16px;display:block}
+      h1{font-size:1.6rem;margin:.2rem 0}
+      p{color:#6b7280;margin:.5rem 0 1rem}
+      .nav-links{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+      .nav-link{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;text-decoration:none;color:inherit;background:#fbfdff;border:1px solid #eef3f7}
+      .page-container{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+      .content-wrapper{background:#0b9444;padding:28px;border-radius:25px;max-width:760px;width:100%;box-shadow:0 8px 30px rgba(2,6,23,0.06);text-align:center}
+      @media(max-width:480px){.card{padding:18px}.logo{width:160px}}
     </style>
   </head>
   <body>
     <div class="page-container">
       <div class="content-wrapper">
-        <a href="https://sagutid.nl">
-          <img
-            src="/images/Logo/Sagutid-groot-01.svg"
-            alt="Sagutid logo"
-            class="logo"
-            loading="lazy"
-          />
+        <a href="/" aria-label="Sagutid home">
+          <img src="/images/Logo/Sagutid-groot-01.svg" alt="Sagutid logo" class="logo" loading="eager" />
         </a>
         <h1>Je bent Offline.</h1>
         <p>
@@ -111,31 +89,11 @@
           verhalen genieten.
         </p>
 
-        <div class="nav-links">
-          <a href="/verhalen" class="nav-link">
-            <img
-              src="/images/Logo/Sagutid-verhalen.png"
-              alt="Verhalen"
-              loading="lazy"
-            />
-            <span>Verhalen</span>
-          </a>
-          <a href="/gedichten" class="nav-link">
-            <img
-              src="/images/Logo/Sagutid-gedichten.png"
-              alt="Gedichten"
-              loading="lazy"
-            />
-            <span>Gedichten</span>
-          </a>
-          <a href="/overig" class="nav-link">
-            <img
-              src="/images/Logo/Sagutid-overig.png"
-              alt="Overig"
-              loading="lazy"
-            />
-            <span>Overig</span>
-          </a>
+        <div class="nav-links" role="navigation" aria-label="Offline navigation">
+          <a class="nav-link" href="/verhalen">Verhalen</a>
+          <a class="nav-link" href="/gedichten">Gedichten</a>
+          <a class="nav-link" href="/tegeltjes-wijsheden">Wijsheden</a>
+          <a class="nav-link" href="/overig">Overig</a>
         </div>
       </div>
     </div>

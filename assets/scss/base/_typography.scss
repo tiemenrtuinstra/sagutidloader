@@ -1,0 +1,9 @@
+@use "variables" as *;
+
+// Basic typography tweaks used across the project
+em,
+i {
+    color: $color-primary;
+    font-family: "McLaren", sans-serif;
+    font-size: 0.9rem;
+}

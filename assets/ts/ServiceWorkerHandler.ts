@@ -6,10 +6,10 @@ export const ServiceWorkerHandler = {
 
     window.addEventListener('load', async () => {
       try {
-  const cfg = (typeof window !== 'undefined' && (window as any).SAGUTID_CONFIG) ? (window as any).SAGUTID_CONFIG : {};
-  // Prefer the bundled service worker in dist to avoid unbundled ES imports being fetched
-  const preferredSw = '/plugins/system/sagutidloader/assets/dist/serviceworker.js';
-  const swPath = cfg.serviceWorker || cfg.serviceWorkerPath || preferredSw;
+        const cfg = (typeof window !== 'undefined' && (window as any).SAGUTID_CONFIG) ? (window as any).SAGUTID_CONFIG : {};
+        // Prefer the bundled service worker in dist to avoid unbundled ES imports being fetched
+        const preferredSw = '/plugins/system/sagutidloader/assets/dist/serviceworker.js';
+        const swPath = cfg.serviceWorker || cfg.serviceWorkerPath || preferredSw;
 
         // Try to register with site-wide scope; if not allowed, fall back to SW's directory
         let reg: ServiceWorkerRegistration;
@@ -20,9 +20,9 @@ export const ServiceWorkerHandler = {
           reg = await navigator.serviceWorker.register(swPath, { updateViaCache: 'none' } as any);
         }
 
-  // Log registration and the actual script URL used by the registration (helps debug wrong file served)
-  const actualScript = (reg && (reg.active || reg.installing || reg.waiting) && ((reg.active && (reg.active as any).scriptURL) || (reg.installing && (reg.installing as any).scriptURL) || (reg.waiting && (reg.waiting as any).scriptURL))) || 'unknown';
-  Logger.log(`SW registered (attempted: ${swPath}) (actual: ${actualScript})`, 'ServiceWorkerHandler', reg as any);
+        // Log registration and the actual script URL used by the registration (helps debug wrong file served)
+        const actualScript = (reg && (reg.active || reg.installing || reg.waiting) && ((reg.active && (reg.active as any).scriptURL) || (reg.installing && (reg.installing as any).scriptURL) || (reg.waiting && (reg.waiting as any).scriptURL))) || 'unknown';
+        Logger.log(`SW registered (attempted: ${swPath}) (actual: ${actualScript})`, 'ServiceWorkerHandler', reg as any);
         reg.update();
         window.addEventListener('focus', () => reg.update());
 

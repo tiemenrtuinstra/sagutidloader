@@ -16,4 +16,4 @@ declare global {
   var self: ServiceWorkerGlobalScope & typeof globalThis;
 }
 
-export {};
+export { };

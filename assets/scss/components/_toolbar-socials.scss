@@ -1,0 +1,125 @@
+@use "sass:meta";
+@use "sass:map";
+@use "sass:list";
+@use "../base/variables" as *;
+@use "../components/icons" as *;
+
+// ---------- 0. Fallbacks (only if not defined elsewhere) ----------
+@if not meta.variable-exists("social-style") {
+    $social-style: () !default;
+}
+
+.tm-toolbar,
+.tm-socials {
+    @if list.length(map.keys($social-style)) > 0 {
+        @each $key, $style in $social-style {
+            $bg: map.get($style, bg);
+            $color: map.get($style, color);
+            $border: map.get($style, border);
+            $bg-hover: if(map.has-key($style, bg-hover), map.get($style, bg-hover), $bg);
+
+            [uk-icon*="#{$key}"],
+            a img[alt*="#{$key}"],
+            a img[src*="#{$key}"] {
+                @if $border {
+                    border-color: transparent;
+                }
+                @if map.has-key($style, bg-hover) {
+                    &:hover {
+                        background: $bg-hover;
+                    }
+                }
+                &:hover,
+                &:focus,
+                &:active {
+                    @if $border {
+                        border-color: $border;
+                    }
+                    background: $bg;
+                    color: $color;
+                }
+            }
+        }
+    }
+
+    ul.uk-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        align-items: center;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    a[href*="bere.al"] svg,
+    a[href*="komoot"] svg,
+    a[href*="shealth"] svg,
+    a[href*="polarsteps"] svg {
+        display: none !important;
+    }
+
+    .el-overlay [uk-icon],
+    [uk-icon],
+    a img {
+        @extend %icon-base;
+        position: relative;
+        padding: 0.95rem;
+        border: 2px solid transparent;
+        border-radius: 50%;
+        background: transparent;
+        color: #fff;
+        line-height: 1;
+        filter: drop-shadow(0 3px 5px rgb(0 0 0 / 85%));
+        transition:
+            background 0.4s ease,
+            color 0.4s ease,
+            transform 0.35s ease,
+            border-color 0.4s ease,
+            box-shadow 0.4s ease;
+        &:focus,
+        &:hover,
+        &:active {
+            color: #fff !important;
+        }
+        &:focus-visible {
+            outline: 2px solid currentcolor;
+            outline-offset: 3px;
+        }
+    }
+}
+
+body.homepage {
+    .tm-toolbar,
+    .tm-socials {
+        .el-overlay [uk-icon],
+        [uk-icon],
+        a img {
+            color: $color-primary;
+        }
+    }
+}
+
+.tm-toolbar .uk-container {
+    margin: 0 -12.5px;
+}
+.tm-toolbar-default {
+    background: transparent;
+    z-index: 999;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-toolbar,
+    .tm-socials {
+        .el-overlay [uk-icon],
+        [uk-icon],
+        a img {
+            transition: none;
+            &:hover,
+            &:active {
+                transform: none;
+            }
+        }
+    }
+}

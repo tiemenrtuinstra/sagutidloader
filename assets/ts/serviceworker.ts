@@ -43,7 +43,13 @@ class SagutidServiceWorker {
             '/templates/yootheme/css/theme.css',
             '/templates/yootheme/js/app.js',
             '/images/Logo/android-chrome-192x192.png',
-            '/images/Logo/android-chrome-512x512.png'
+            '/images/Logo/android-chrome-512x512.png',
+            // Common site images used by the offline page
+            '/images/Logo/Sagutid-groot-01.svg',
+            '/images/Logo/Sagutid-verhalen.png',
+            '/images/Logo/Sagutid-gedichten.png',
+            '/images/Logo/Sagutid-wijsheden.png',
+            '/images/Logo/Sagutid-overig.png'
         ];
 
         this.dynamicPaths = ['/', '/verhalen', '/gedichten', '/overig', 'tegeltjes-wijsheden'];
@@ -54,13 +60,19 @@ class SagutidServiceWorker {
             '/templates/yootheme/css/theme.css',
             '/plugins/system/sagutidloader/assets/dist/main.bundle.js',
             '/plugins/system/sagutidloader/assets/dist/styles.bundle.css',
-            '/plugins/system/sagutidloader/offline.html'
+            '/plugins/system/sagutidloader/offline.html',
+            // Ensure the primary logo and essential images are cached at install so offline.html renders correctly
+            '/images/Logo/Sagutid-groot-01.svg',
+            '/images/Logo/Sagutid-verhalen.png',
+            '/images/Logo/Sagutid-gedichten.png',
+            '/images/Logo/Sagutid-wijsheden.png',
+            '/images/Logo/Sagutid-overig.png'
         ];
     }
 
-        async install(event: ExtendableEvent) {
+    async install(event: ExtendableEvent) {
         Logger.info('SW: Installing...', 'ServiceWorker');
-    self.skipWaiting();
+        self.skipWaiting();
 
         event.waitUntil((async () => {
             try {
@@ -115,7 +127,7 @@ class SagutidServiceWorker {
         })());
     }
 
-        async activate(event: ExtendableEvent) {
+    async activate(event: ExtendableEvent) {
         Logger.info('SW: Activating...', 'ServiceWorker');
 
         event.waitUntil((async () => {
@@ -137,12 +149,12 @@ class SagutidServiceWorker {
 
                 // Start background precache from sitemap asynchronously so activation isn't blocked.
                 // Use optional config.sitemapPrefetchLimit (0 = no limit / all URLs). Default: 0 (all).
-                    try {
+                try {
                     const cfg = (self as any).SAGUTID_CONFIG || {};
                     const limit = (typeof cfg.sitemapPrefetchLimit === 'number') ? Math.max(0, Math.floor(cfg.sitemapPrefetchLimit)) : 0;
                     // Schedule async precache without awaiting so activation completes promptly
                     setTimeout(() => {
-                                (async () => {
+                        (async () => {
                             try {
                                 Logger.info('SW: Starting background sitemap precache', 'ServiceWorker');
                                 await (new SagutidServiceWorker()).precacheFromSitemap(limit);
@@ -162,7 +174,7 @@ class SagutidServiceWorker {
         })());
     }
 
-        fetch(event: FetchEvent) {
+    fetch(event: FetchEvent) {
         const req = event.request;
 
         // Only handle GET requests
@@ -175,30 +187,33 @@ class SagutidServiceWorker {
 
         // Network-first for navigation requests
         if (req.mode === 'navigate') {
-            event.respondWith(
-                fetch(req)
-                    .then(response => {
-                        // Cache successful responses
-                        if (response.ok) {
-                            caches.open(this.CACHE_NAME)
-                                .then(cache => cache.put(req, response.clone()))
-                                .catch(err => Logger.warn('SW: Failed to cache navigation response: ' + ((err as any)?.message || err), 'ServiceWorker'));
-                        }
-                        return response;
-                    })
-                    .catch(async () => {
-                        // Fallback to cache, then offline page
-                        const cached = await caches.match(req);
-                        if (cached) {
-                            Logger.log(`SW: Serving cached navigation: ${req.url}`, 'ServiceWorker');
-                            return cached;
-                        }
+            event.respondWith((async () => {
+                try {
+                    const response = await fetch(req);
+                    // Cache successful responses (do not await to keep response fast)
+                    if (response && response.ok) {
+                        caches.open(this.CACHE_NAME)
+                            .then(cache => cache.put(req, response.clone()))
+                            .catch(err => Logger.warn('SW: Failed to cache navigation response: ' + ((err as any)?.message || err), 'ServiceWorker'));
+                    }
+                    return response;
+                } catch (e) {
+                    // Network failed — try to serve previously cached navigation entries.
+                    // Try several match strategies to increase chance of a hit (Request object and URL string).
+                    let cached = await caches.match(req).catch(() => null);
+                    if (!cached) {
+                        try { cached = await caches.match(req.url); } catch (_) { cached = null; }
+                    }
+                    if (cached) {
+                        Logger.log(`SW: Serving cached navigation: ${req.url}`, 'ServiceWorker');
+                        return cached;
+                    }
 
-                        // Try to serve offline page
-                        const offlinePage = await caches.match(OFFLINE_URL);
-                        return offlinePage || new Response('Offline', { status: 503 });
-                    })
-            );
+                    // No cached page — serve offline fallback
+                    const offlinePage = await caches.match(OFFLINE_URL);
+                    return offlinePage || new Response('Offline', { status: 503 });
+                }
+            })());
             return;
         }
 
@@ -230,7 +245,7 @@ class SagutidServiceWorker {
         }
     }
 
-        async message(event: ExtendableMessageEvent) {
+    async message(event: ExtendableMessageEvent) {
         const { data } = event;
 
         if (data === 'SKIP_WAITING') {
@@ -238,7 +253,7 @@ class SagutidServiceWorker {
             return (self as any).skipWaiting();
         }
 
-            if (data?.type === 'INIT_CONFIG') {
+        if (data?.type === 'INIT_CONFIG') {
             (self as any).SAGUTID_CONFIG = data.config;
             // Propagate debugMode into the Logger runtime for the service worker
             try {
