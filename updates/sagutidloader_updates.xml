@@ -6,9 +6,9 @@
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
-        <version>29.0.5</version>
+        <version>29.1.0</version>
         <downloads>
-            <downloadurl type="full" format="zip">https://github.com/tiemenrtuinstra/sagutidloader/releases/download/v29.0.5/sagutidloader.zip</downloadurl>
+            <downloadurl type="full" format="zip">https://github.com/tiemenrtuinstra/sagutidloader/releases/download/v29.1.0/sagutidloader.zip</downloadurl>
         </downloads>
         <targetplatform name="joomla" version=">=4.0.0" />
     </update>
