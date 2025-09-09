@@ -1,10 +1,6 @@
 import Logger from './Util/Logger';
 
 // Ensure TypeScript treats `self` as the ServiceWorker global scope
-
-import Logger from './Util/Logger';
-
-// Ensure TypeScript treats `self` as the ServiceWorker global scope
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
 const CACHE_NAME = `sagutid-v29.0.5`;
@@ -73,6 +69,85 @@ class SagutidServiceWorker {
             '/images/Logo/Sagutid-wijsheden.png',
             '/images/Logo/Sagutid-overig.png'
         ];
+    }
+
+    // Helper: generate a synthetic metadata key URL for a cached resource
+    private metaKeyFor(url: string) {
+        try {
+            // append a query param that will never be requested from the network
+            return url + (url.includes('?') ? '&' : '?') + 'sagutid_meta=1';
+        } catch (e) {
+            return url + '?sagutid_meta=1';
+        }
+    }
+
+    // Helper: determine whether a cached response is still considered fresh
+    private async isCachedFresh(cache: Cache, url: string): Promise<boolean> {
+        try {
+            const cached = await cache.match(url);
+            if (!cached) return false;
+
+            // Try meta entry first
+            const metaKey = this.metaKeyFor(url);
+            const metaResp = await cache.match(metaKey);
+            if (metaResp) {
+                try {
+                    const meta = await metaResp.json();
+                    if (meta && typeof meta.ts === 'number' && typeof meta.ttl === 'number') {
+                        return (Date.now() - meta.ts) < (meta.ttl * 1000);
+                    }
+                } catch (e) {
+                    // ignore and fallback
+                }
+            }
+
+            // Fallback: respect response cache headers if present
+            const cc = cached.headers.get('cache-control') || '';
+            const m = /max-age=(\d+)/i.exec(cc);
+            if (m) {
+                const maxAge = parseInt(m[1], 10) || 0;
+                // Use Date header if available else assume cached now
+                const dateHeader = cached.headers.get('date');
+                const baseTs = dateHeader ? Date.parse(dateHeader) : Date.now();
+                return (Date.now() - baseTs) < (maxAge * 1000);
+            }
+
+            const expires = cached.headers.get('expires');
+            if (expires) {
+                const expTs = Date.parse(expires);
+                if (!isNaN(expTs)) return Date.now() < expTs;
+            }
+
+            // No metadata or headers -> treat as stale so it will be refreshed
+            return false;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Helper: store metadata about cached resource (timestamp + ttl seconds)
+    private async storeCacheMeta(cache: Cache, url: string, resp: Response) {
+        try {
+            let ttl = 0;
+            const cc = resp.headers.get('cache-control') || '';
+            const m = /max-age=(\d+)/i.exec(cc);
+            if (m) ttl = parseInt(m[1], 10) || 0;
+            if (!ttl) {
+                const expires = resp.headers.get('expires');
+                if (expires) {
+                    const expTs = Date.parse(expires);
+                    if (!isNaN(expTs)) ttl = Math.max(0, Math.floor((expTs - Date.now()) / 1000));
+                }
+            }
+            // Default TTL if none provided: 7 days
+            if (!ttl || ttl <= 0) ttl = 7 * 24 * 3600;
+
+            const meta = { ts: Date.now(), ttl };
+            const metaKey = this.metaKeyFor(url);
+            await cache.put(metaKey, new Response(JSON.stringify(meta), { headers: { 'Content-Type': 'application/json' } }));
+        } catch (e) {
+            // ignore failures
+        }
     }
 
     async install(event: ExtendableEvent) {
@@ -343,11 +418,32 @@ class SagutidServiceWorker {
                         let j = 0;
                         const imgWorker = async () => {
                             while (j < toCache.length) {
+
+                // Force precache request (explicit from client when installed as PWA or user requested)
+                if (data?.type === 'FORCE_PRECACHE_NOW') {
+                    Logger.info('SW: FORCE_PRECACHE_NOW requested', 'ServiceWorker');
+                    const limit = (typeof data?.limit === 'number' && data.limit >= 0) ? Math.floor(data.limit) : 0;
+                    try {
+                        const result = await this.precacheFromSitemap(limit);
+                        event.ports[0]?.postMessage({ success: true, result });
+                    } catch (err) {
+                        Logger.warn('SW: FORCE_PRECACHE_NOW failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+                        event.ports[0]?.postMessage({ success: false, error: (err as any)?.message || String(err) });
+                    }
+                    return;
+                }
                                 const idx = j++;
                                 const imgUrl = toCache[idx];
                                 try {
+                                    // Skip if cached and still fresh
+                                    if (await this.isCachedFresh(cache, imgUrl)) continue;
+
                                     const r = await fetchWithTimeout(imgUrl, {}, 8000);
-                                    if (r.ok) await cache.put(imgUrl, r.clone());
+                                    if (r.ok) {
+                                        await cache.put(imgUrl, r.clone());
+                                        // store metadata for freshness checks
+                                        await this.storeCacheMeta(cache, imgUrl, r);
+                                    }
                                 } catch (e) { /* ignore */ }
                             }
                         };
@@ -475,8 +571,12 @@ class SagutidServiceWorker {
                             const idx = j++;
                             const imgUrl = toCache[idx];
                             try {
+                                if (await this.isCachedFresh(cache, imgUrl)) continue;
                                 const r = await fetchWithTimeout(imgUrl, {}, 8000);
-                                if (r.ok) await cache.put(imgUrl, r.clone());
+                                if (r.ok) {
+                                    await cache.put(imgUrl, r.clone());
+                                    await this.storeCacheMeta(cache, imgUrl, r);
+                                }
                             } catch (e) { /* ignore */ }
                         }
                     };
@@ -502,8 +602,10 @@ class SagutidServiceWorker {
             for (let w = 0; w < concurrency; w++) workers.push(worker());
             await Promise.all(workers);
             Logger.info(`SW: precacheFromSitemap done. Success: ${results.success}, Failed: ${results.failed}`, 'ServiceWorker');
+            return { success: results.success, failed: results.failed };
         } catch (err) {
             Logger.warn('SW: precacheFromSitemap failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+            return { success: 0, failed: 0, error: ((err as any)?.message || String(err)) };
         }
     }
 }

@@ -41,7 +41,17 @@ export class PWAHandler {
                     this.deferredPrompt.prompt();
                     const result = await this.deferredPrompt.userChoice;
                     if (result.outcome === 'accepted') {
-                        Logger.log('🎉 App successfully installed.', 'PWAHandler', LogType.INFO);
+                        Logger.log('🎉 App install accepted by user.', 'PWAHandler', LogType.INFO);
+                        // Ask service worker to force precache now (best-effort)
+                        try {
+                            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                                const channel = new MessageChannel();
+                                channel.port1.onmessage = (e: any) => Logger.log('SW FORCE_PRECACHE_NOW result: ' + JSON.stringify(e.data), 'PWAHandler');
+                                navigator.serviceWorker.controller.postMessage({ type: 'FORCE_PRECACHE_NOW', limit: 0 }, [channel.port2]);
+                            }
+                        } catch (err) {
+                            Logger.warn('Failed to request FORCE_PRECACHE_NOW', 'PWAHandler');
+                        }
                     } else {
                         Logger.log('❌ App installation declined.', 'PWAHandler', LogType.ERROR);
                     }
@@ -64,7 +74,16 @@ export class PWAHandler {
 
     static listenForAppInstalled() {
         window.addEventListener('appinstalled', () => {
-            Logger.log('🎉 App successfully installed via appinstalled event.', 'PWAHandler', LogType.INFO);
+            Logger.log('🎉 App installed (appinstalled event). Triggering FORCE_PRECACHE_NOW', 'PWAHandler', LogType.INFO);
+            try {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    const channel = new MessageChannel();
+                    channel.port1.onmessage = (e: any) => Logger.log('SW FORCE_PRECACHE_NOW result: ' + JSON.stringify(e.data), 'PWAHandler');
+                    navigator.serviceWorker.controller.postMessage({ type: 'FORCE_PRECACHE_NOW', limit: 0 }, [channel.port2]);
+                }
+            } catch (err) {
+                Logger.warn('Failed to request FORCE_PRECACHE_NOW after appinstall', 'PWAHandler');
+            }
         });
     }
 
