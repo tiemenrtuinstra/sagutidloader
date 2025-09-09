@@ -3,4 +3,25 @@
 // Importing whole package can increase bundle size; consider importing specific component
 // CSS if you only need a subset.
 
-@import '@material/web/all.css';
+// The project includes @material/web in package.json. Directly importing its
+// CSS here caused resolver issues in this environment; instead expose a
+// small set of CSS token helpers and compatibility rules so you can style UIkit
+// elements with Material-like tokens. If you prefer to include the full
+// Material CSS, import it from your JS entry with `import '@material/web/all.js'`
+// or adjust webpack sass-loader resolve rules.
+
+// Material-like tokens (minimal subset)
+:root {
+	--md-sys-color-primary: #0b9444;
+	--md-sys-color-on-primary: #ffffff;
+	--md-sys-elevation-1: 0 1px 3px rgba(2,6,23,0.08);
+}
+
+/* Example compatibility helpers: map a few UIkit classes to material tokens */
+.uk-button--material {
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+	border-radius: 12px;
+	padding: .5rem 1rem;
+	box-shadow: var(--md-sys-elevation-1);
+}
