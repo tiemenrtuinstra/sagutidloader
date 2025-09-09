@@ -11,14 +11,16 @@ export class MetaTagHandler {
     }
 
     static addLink(attributes: LinkAttributes): void {
-        if (typeof (window as any).joomlaLogoPath === 'undefined') {
-            Logger.error('Joomla logo path is not defined.', 'MetaTagHandler');
-            return;
+        const joomlaLogoPath = (window as any).joomlaLogoPath;
+
+        // If there's no global base path and the href is a relative non-root path, warn but continue.
+        if (!joomlaLogoPath && attributes.href && !attributes.href.startsWith('http') && !attributes.href.startsWith('/')) {
+            Logger.warn('Joomla logo path is not defined; relative href will be used as-is.', 'MetaTagHandler');
         }
 
-        // Prepend joomlaLogoPath to relative hrefs
-        if (attributes.href && !attributes.href.startsWith('http')) {
-            attributes.href = (window as any).joomlaLogoPath + attributes.href;
+        // Prepend joomlaLogoPath to relative non-root hrefs when available
+        if (joomlaLogoPath && attributes.href && !attributes.href.startsWith('http') && !attributes.href.startsWith('/')) {
+            attributes.href = joomlaLogoPath + attributes.href;
         }
 
         const link = document.createElement('link');
