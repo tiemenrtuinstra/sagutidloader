@@ -11,6 +11,7 @@
     <file>assets/dist/vendors.js</file>
     <file>assets/dist/main.bundle.js</file>
     <file>assets/dist/styles.bundle.css</file>
+    <file>assets/dist/serviceworker.js</file>
     <folder>language</folder>
   </files>
   <languages>
