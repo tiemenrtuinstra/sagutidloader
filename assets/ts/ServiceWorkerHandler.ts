@@ -113,6 +113,20 @@ export const ServiceWorkerHandler = {
           (this as any)._updateDynamicContent(reg);
         });
 
+        // Listen for SW messages (e.g. MANIFEST_CHANGED)
+        navigator.serviceWorker.addEventListener('message', (e: any) => {
+          try {
+            const data = e.data;
+            if (!data) return;
+            if (data.type === 'MANIFEST_CHANGED') {
+              Logger.info('Received MANIFEST_CHANGED from SW: ' + (data.href || ''), 'ServiceWorkerHandler');
+              // You can show UI here or reload depending on your UX choice. For now just log.
+            }
+          } catch (err) {
+            Logger.warn('Error handling SW message', 'ServiceWorkerHandler', err);
+          }
+        });
+
         // Try to register periodic background sync when supported
         const swApi = navigator.serviceWorker as any;
         if (swApi && 'periodicSync' in swApi) {
@@ -128,6 +142,24 @@ export const ServiceWorkerHandler = {
         Logger.error('SW registration failed: ' + (e?.message || e), 'ServiceWorkerHandler');
       }
     });
+  },
+
+  // Ask the service worker to check the manifest immediately
+  async checkManifestNow(manifestHref = '/plugins/system/sagutidloader/assets/manifest.webmanifest') {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      const reg = regs[0] || null;
+      const sw = (reg as any)?.active || navigator.serviceWorker.controller;
+      if (!sw) return;
+      const channel = new MessageChannel();
+      channel.port1.onmessage = (e: any) => {
+        if (e.data?.changed) Logger.log('Manifest check result: changed=' + String(e.data.changed), 'ServiceWorkerHandler');
+        else if (e.data?.error) Logger.warn('Manifest check error: ' + e.data.error, 'ServiceWorkerHandler');
+      };
+      sw.postMessage({ type: 'CHECK_MANIFEST', href: manifestHref }, [channel.port2]);
+    } catch (err) {
+      Logger.warn('Failed to request manifest check: ' + (err?.message || err), 'ServiceWorkerHandler');
+    }
   },
 
   _activate(sw: ServiceWorker) {

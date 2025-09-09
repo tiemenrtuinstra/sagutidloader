@@ -150,6 +150,57 @@ class SagutidServiceWorker {
         }
     }
 
+    // Check manifest for changes. Returns object { changed, etag?, hash?, error? }
+    async checkManifestChange(manifestHref = '/plugins/system/sagutidloader/assets/manifest.webmanifest') {
+        try {
+            const cache = await caches.open(this.CACHE_NAME);
+            // Fetch manifest fresh
+            const res = await fetchWithTimeout(manifestHref, {}, 8000);
+            if (!res.ok) return { changed: false, error: `fetch failed ${res.status}` };
+
+            const etag = res.headers.get('ETag') || res.headers.get('etag') || null;
+            const text = await res.text();
+
+            // compute sha256
+            let hash = null;
+            try {
+                const buf = new TextEncoder().encode(text);
+                const digest = await crypto.subtle.digest('SHA-256', buf);
+                hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                // ignore hashing errors
+            }
+
+            const metaKey = this.metaKeyFor(manifestHref + '#manifest');
+            const metaResp = await cache.match(metaKey);
+            let old: any = null;
+            if (metaResp) {
+                try { old = await metaResp.json(); } catch (e) { old = null; }
+            }
+
+            const changed = !(old && ((etag && old.etag === etag) || (old.hash && hash && old.hash === hash)));
+            if (changed) {
+                Logger.info('SW: Manifest change detected: ' + manifestHref, 'ServiceWorker');
+                // update cached manifest and meta
+                await cache.put(manifestHref, new Response(text, { headers: { 'Content-Type': 'application/manifest+json' } }));
+                await cache.put(metaKey, new Response(JSON.stringify({ etag, hash, ts: Date.now() }), { headers: { 'Content-Type': 'application/json' } }));
+
+                // notify clients
+                const clientsList = await self.clients.matchAll({ includeUncontrolled: true });
+                for (const c of clientsList) {
+                    try { c.postMessage({ type: 'MANIFEST_CHANGED', href: manifestHref, etag, hash }); } catch (e) { /* ignore */ }
+                }
+            } else {
+                Logger.info('SW: Manifest not changed: ' + manifestHref, 'ServiceWorker');
+            }
+
+            return { changed, etag, hash };
+        } catch (err) {
+            Logger.warn('SW: checkManifestChange failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+            return { changed: false, error: (err as any)?.message || String(err) };
+        }
+    }
+
     async install(event: ExtendableEvent) {
         Logger.info('SW: Installing...', 'ServiceWorker');
         self.skipWaiting();
@@ -429,6 +480,18 @@ class SagutidServiceWorker {
                     } catch (err) {
                         Logger.warn('SW: FORCE_PRECACHE_NOW failed: ' + ((err as any)?.message || err), 'ServiceWorker');
                         event.ports[0]?.postMessage({ success: false, error: (err as any)?.message || String(err) });
+                    }
+                    return;
+                }
+
+                // Check manifest on demand
+                if (data?.type === 'CHECK_MANIFEST') {
+                    const href = (data && data.href) ? String(data.href) : '/manifest.webmanifest';
+                    try {
+                        const r = await this.checkManifestChange(href);
+                        event.ports[0]?.postMessage(r);
+                    } catch (err) {
+                        event.ports[0]?.postMessage({ changed: false, error: (err as any)?.message || String(err) });
                     }
                     return;
                 }
