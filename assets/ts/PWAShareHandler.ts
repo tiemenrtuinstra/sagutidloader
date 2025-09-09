@@ -1,74 +1,109 @@
-import { Logger, LogType } from './Util/Logger';
+import Logger from './Util/Logger';
 
-export class PWAShareHandler {
-    static init() {
-        this.setupShareLinks();
-    }
+const PWAShareHandler = {
+    clickHandler: null as ((e: Event) => void) | null,
+    canShare: typeof navigator !== 'undefined' && typeof (navigator as any).share === 'function',
 
-    static setupShareLinks() {
-        const shareLinks = document.querySelectorAll('[aria-label="pwa-share"]');
-        if (!shareLinks.length) {
-            Logger.log('No share links found on the page.', 'PWAShareHandler', LogType.WARN);
-            return;
+    init() {
+        this.addShareClassToLinks();
+        this.registerClickHandler();
+    },
+
+    destroy() {
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler);
+            this.clickHandler = null;
         }
+    },
 
-        shareLinks.forEach((shareLink: Element) => {
-            shareLink.classList.add('pwa-share');
-            shareLink.setAttribute('aria-label', 'Share Sagutid.nl');
-            shareLink.addEventListener('click', (event: Event) => this.handleShareClick(event, shareLink as HTMLAnchorElement));
-        });
+    addShareClassToLinks() {
+        try {
+            const shareLinks = document.querySelectorAll('[aria-label="pwa-share"]');
+            if (!shareLinks.length) {
+                Logger.Warn('No share links found on the page.', 'PWAShareHandler');
+                return;
+            }
+            shareLinks.forEach((el) => el.classList.add('pwa-share'));
+            Logger.Info('Share links initialized (class added).', 'PWAShareHandler');
+        } catch (e) {
+            Logger.Error('Failed to initialize share links.', 'PWAShareHandler', e);
+        }
+    },
 
-        Logger.log('Share links initialized.', 'PWAShareHandler', LogType.INFO);
-    }
+    registerClickHandler() {
+        if (this.clickHandler) return;
+        this.clickHandler = (ev: Event) => {
+            const e = ev as MouseEvent & { target: Element };
+            try {
+                if (!e.target) return;
+                const anchor = (e.target as Element).closest('[aria-label="pwa-share"]') as HTMLAnchorElement | null;
+                if (!anchor) return;
+                ev.preventDefault();
+                (this as any).handleShareClick(anchor);
+            } catch (err) {
+                Logger.Error('Error handling share click', 'PWAShareHandler', err);
+            }
+        };
+        document.addEventListener('click', this.clickHandler);
+    },
 
-    static handleShareClick(event: Event, shareLink: HTMLAnchorElement) {
-        event.preventDefault();
-
-        // Early Web Share API check
-        if (!navigator.share) {
-            Logger.error('Web Share API is not supported in this browser.', 'PWAShareHandler');
+    async handleShareClick(shareLink: HTMLAnchorElement) {
+        if (!this.canShare) {
+            Logger.Warn('Web Share API is not supported in this browser.', 'PWAShareHandler');
+            const href = shareLink.getAttribute('href') || '';
+            await (this as any).fallbackCopyFromHref(href);
             return;
         }
 
         const href = shareLink.getAttribute('href') || '';
-        if (!href || !href.includes('?')) {
-            Logger.error('Invalid or missing href attribute on share link.', 'PWAShareHandler');
-            return;
+        let url = '';
+        let text = '';
+        try {
+            const parsed = new URL(href, location.href);
+            const params = parsed.searchParams;
+            url = (params.get('url') || '').trim();
+            text = (params.get('text') || '').trim();
+        } catch (e) {
+            const idx = href.indexOf('?');
+            if (idx >= 0) {
+                const params = new URLSearchParams(href.substring(idx + 1));
+                url = (params.get('url') || '').trim();
+                text = (params.get('text') || '').trim();
+            }
         }
-
-        const params = new URLSearchParams(href.substring(href.indexOf('?') + 1));
-        const url = decodeURIComponent(params.get('url') || '').trim();
 
         if (!url) {
-            Logger.error('No URL found in share parameters.', 'PWAShareHandler');
+            Logger.Error('No URL found in share link.', 'PWAShareHandler');
+            await (this as any).fallbackCopyFromHref(href);
             return;
         }
 
-        const text = decodeURIComponent(params.get('text') || '')
-            .trim()
-            .replace(/<[^>]*>/g, '')  // Strip HTML tags
-            .replace(/&[^;]+;/g, ' ') // Strip HTML entities
-            .replace(/\s+/g, ' ')     // Normalize whitespace
-            .trim();
+        text = text.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
 
-        if (!text) {
-            Logger.log('No text provided for sharing, using default.', undefined, 'PWAShareHandler', LogType.WARN);
+        const shareData: any = { title: document.title, text: text || 'Check this out!', url };
+        try {
+            await (navigator as any).share(shareData);
+            Logger.Info('Content shared successfully.', 'PWAShareHandler');
+        } catch (err: any) {
+            Logger.Error(`Share failed: ${err?.message || err}`, 'PWAShareHandler');
+            await (this as any).fallbackCopyFromHref(url);
         }
+    },
 
-        const shareData = {
-            title: document.title,
-            text: text || 'Check this out!',
-            url: url
-        };
-
-        navigator.share(shareData)
-            .then(() => Logger.log('Content shared successfully.', undefined, 'PWAShareHandler', LogType.INFO))
-            .catch(error => {
-                Logger.error(`Share failed: ${error.message || error}`, 'PWAShareHandler');
-                // Fallback: copy URL to clipboard
-                navigator.clipboard?.writeText(url)
-                    .then(() => Logger.log('URL copied to clipboard as fallback.', undefined, 'PWAShareHandler', LogType.WARN))
-                    .catch(() => Logger.error('Fallback clipboard copy also failed.', 'PWAShareHandler'));
-            });
+    async fallbackCopyFromHref(maybeUrl: string) {
+        const toCopy = maybeUrl || window.location.href;
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            try {
+                await navigator.clipboard.writeText(toCopy);
+                Logger.Warn('URL copied to clipboard as fallback.', 'PWAShareHandler');
+                return;
+            } catch (err) {
+                Logger.Error('Fallback clipboard copy failed.', 'PWAShareHandler', err);
+            }
+        } else {
+            Logger.Error('Clipboard API unavailable for fallback copy.', 'PWAShareHandler');
+        }
     }
-}
+};
+
+export default PWAShareHandler;

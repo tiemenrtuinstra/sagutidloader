@@ -1,6 +1,6 @@
-import { Logger } from './Util/Logger';
+import Logger from './Util/Logger';
 
-export const ServiceWorkerHandler = {
+const ServiceWorkerHandler = {
   init() {
     if (!('serviceWorker' in navigator)) return;
 
@@ -22,7 +22,7 @@ export const ServiceWorkerHandler = {
 
         // Log registration and the actual script URL used by the registration (helps debug wrong file served)
         const actualScript = (reg && (reg.active || reg.installing || reg.waiting) && ((reg.active && (reg.active as any).scriptURL) || (reg.installing && (reg.installing as any).scriptURL) || (reg.waiting && (reg.waiting as any).scriptURL))) || 'unknown';
-        Logger.log(`SW registered (attempted: ${swPath}) (actual: ${actualScript})`, 'ServiceWorkerHandler', reg as any);
+        Logger.Log(`SW registered (attempted: ${swPath}) (actual: ${actualScript})`, 'ServiceWorkerHandler', reg as any);
         reg.update();
         window.addEventListener('focus', () => reg.update());
 
@@ -50,7 +50,7 @@ export const ServiceWorkerHandler = {
                 setTimeout(() => {
                   if (navigator.serviceWorker.controller && (window as any).SAGUTID_CONFIG) {
                     navigator.serviceWorker.controller.postMessage({ type: 'INIT_CONFIG', config: (window as any).SAGUTID_CONFIG });
-                    Logger.info('Sent INIT_CONFIG after forced re-register', 'ServiceWorkerHandler');
+                    Logger.Info('Sent INIT_CONFIG after forced re-register', 'ServiceWorkerHandler');
                   }
                 }, 1000);
               } catch (e) {
@@ -65,14 +65,14 @@ export const ServiceWorkerHandler = {
         // Kick off offline content update shortly after registration if online
         setTimeout(() => {
           if (navigator.onLine) {
-            Logger.log('Triggering dynamic content update after registration', 'ServiceWorkerHandler');
+            Logger.Log('Triggering dynamic content update after registration', 'ServiceWorkerHandler');
             (this as any)._updateDynamicContent(reg);
           }
         }, 1500);
 
         // Handle an already waiting worker on page load
         if (reg.waiting) {
-          Logger.log('Found waiting service worker on load, activating', 'ServiceWorkerHandler');
+          Logger.Log('Found waiting service worker on load, activating', 'ServiceWorkerHandler');
           (this as any)._activate(reg.waiting);
         }
 
@@ -83,7 +83,7 @@ export const ServiceWorkerHandler = {
           sw.addEventListener('statechange', () => {
             if (sw.state === 'installed' && navigator.serviceWorker.controller) {
               // New version ready – activate it (or show a prompt first)
-              Logger.log('New service worker installed, activating', 'ServiceWorkerHandler');
+              Logger.Log('New service worker installed, activating', 'ServiceWorkerHandler');
               (this as any)._activate(sw);
             }
           });
@@ -91,16 +91,16 @@ export const ServiceWorkerHandler = {
 
         // When the new SW takes control, reload to get fresh assets
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          Logger.log('Service worker controller changed', 'ServiceWorkerHandler');
+          Logger.Log('Service worker controller changed', 'ServiceWorkerHandler');
           // After controller changes, send config so SW can compute OFFLINE_URL correctly
           if (navigator.serviceWorker.controller && (window as any).SAGUTID_CONFIG) {
-            Logger.log('Sending INIT_CONFIG to new service worker', 'ServiceWorkerHandler');
+            Logger.Log('Sending INIT_CONFIG to new service worker', 'ServiceWorkerHandler');
             navigator.serviceWorker.controller.postMessage({ type: 'INIT_CONFIG', config: (window as any).SAGUTID_CONFIG });
           }
           // After activate, refresh offline content soon
           setTimeout(() => {
             if (navigator.onLine) {
-              Logger.log('Requesting dynamic content update after controller change', 'ServiceWorkerHandler');
+              Logger.Log('Requesting dynamic content update after controller change', 'ServiceWorkerHandler');
               (this as any)._updateDynamicContent(reg);
             }
           }, 2000);
@@ -109,7 +109,7 @@ export const ServiceWorkerHandler = {
 
         // Refresh offline content when coming back online
         window.addEventListener('online', () => {
-          Logger.log('Browser went online, requesting dynamic content update', 'ServiceWorkerHandler');
+          Logger.Log('Browser went online, requesting dynamic content update', 'ServiceWorkerHandler');
           (this as any)._updateDynamicContent(reg);
         });
 
@@ -119,11 +119,11 @@ export const ServiceWorkerHandler = {
             const data = e.data;
             if (!data) return;
             if (data.type === 'MANIFEST_CHANGED') {
-              Logger.info('Received MANIFEST_CHANGED from SW: ' + (data.href || ''), 'ServiceWorkerHandler');
+              Logger.Info('Received MANIFEST_CHANGED from SW: ' + (data.href || ''), 'ServiceWorkerHandler');
               // You can show UI here or reload depending on your UX choice. For now just log.
             }
           } catch (err) {
-            Logger.warn('Error handling SW message', 'ServiceWorkerHandler', err);
+            Logger.Warn('Error handling SW message', 'ServiceWorkerHandler', err);
           }
         });
 
@@ -133,13 +133,13 @@ export const ServiceWorkerHandler = {
           try {
             // @ts-ignore - periodicSync is experimental
             await swApi.periodicSync.register('sagutid-content', { minInterval: 24 * 60 * 60 * 1000 });
-            Logger.log('Registered periodicSync for sagutid-content', 'ServiceWorkerHandler');
+            Logger.Log('Registered periodicSync for sagutid-content', 'ServiceWorkerHandler');
           } catch (err) {
-            Logger.warn('Failed to register periodicSync', 'ServiceWorkerHandler', err);
+            Logger.Warn('Failed to register periodicSync', 'ServiceWorkerHandler', err);
           }
         }
       } catch (e) {
-        Logger.error('SW registration failed: ' + (e?.message || e), 'ServiceWorkerHandler');
+        Logger.Error('SW registration failed: ' + (e?.message || e), 'ServiceWorkerHandler');
       }
     });
   },
@@ -153,12 +153,12 @@ export const ServiceWorkerHandler = {
       if (!sw) return;
       const channel = new MessageChannel();
       channel.port1.onmessage = (e: any) => {
-        if (e.data?.changed) Logger.log('Manifest check result: changed=' + String(e.data.changed), 'ServiceWorkerHandler');
-        else if (e.data?.error) Logger.warn('Manifest check error: ' + e.data.error, 'ServiceWorkerHandler');
+        if (e.data?.changed) Logger.Log('Manifest check result: changed=' + String(e.data.changed), 'ServiceWorkerHandler');
+        else if (e.data?.error) Logger.Warn('Manifest check error: ' + e.data.error, 'ServiceWorkerHandler');
       };
       sw.postMessage({ type: 'CHECK_MANIFEST', href: manifestHref }, [channel.port2]);
     } catch (err) {
-      Logger.warn('Failed to request manifest check: ' + (err?.message || err), 'ServiceWorkerHandler');
+      Logger.Warn('Failed to request manifest check: ' + (err?.message || err), 'ServiceWorkerHandler');
     }
   },
 
@@ -176,14 +176,16 @@ export const ServiceWorkerHandler = {
       const channel = new MessageChannel();
       channel.port1.onmessage = (e: any) => {
         if (e.data?.success) {
-          Logger.log(`SW: Precached ${e.data.count} pages from sitemap`, 'ServiceWorkerHandler');
+          Logger.Log(`SW: Precached ${e.data.count} pages from sitemap`, 'ServiceWorkerHandler');
         } else if (e.data?.error) {
-          Logger.warn('SW: Update dynamic content reported error: ' + (e.data.error || ''), 'ServiceWorkerHandler');
+          Logger.Warn('SW: Update dynamic content reported error: ' + (e.data.error || ''), 'ServiceWorkerHandler');
         }
       };
       sw.postMessage(msg, [channel.port2]);
     } catch (err) {
-      Logger.warn('Failed to request dynamic content update: ' + (err?.message || err), 'ServiceWorkerHandler');
+      Logger.Warn('Failed to request dynamic content update: ' + (err?.message || err), 'ServiceWorkerHandler');
     }
   }
 };
+
+export default ServiceWorkerHandler;

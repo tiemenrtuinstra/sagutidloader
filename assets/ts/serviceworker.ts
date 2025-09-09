@@ -180,7 +180,7 @@ class SagutidServiceWorker {
 
             const changed = !(old && ((etag && old.etag === etag) || (old.hash && hash && old.hash === hash)));
             if (changed) {
-                Logger.info('SW: Manifest change detected: ' + manifestHref, 'ServiceWorker');
+                Logger.Info('SW: Manifest change detected: ' + manifestHref, 'ServiceWorker');
                 // update cached manifest and meta
                 await cache.put(manifestHref, new Response(text, { headers: { 'Content-Type': 'application/manifest+json' } }));
                 await cache.put(metaKey, new Response(JSON.stringify({ etag, hash, ts: Date.now() }), { headers: { 'Content-Type': 'application/json' } }));
@@ -191,24 +191,24 @@ class SagutidServiceWorker {
                     try { c.postMessage({ type: 'MANIFEST_CHANGED', href: manifestHref, etag, hash }); } catch (e) { /* ignore */ }
                 }
             } else {
-                Logger.info('SW: Manifest not changed: ' + manifestHref, 'ServiceWorker');
+                Logger.Info('SW: Manifest not changed: ' + manifestHref, 'ServiceWorker');
             }
 
             return { changed, etag, hash };
         } catch (err) {
-            Logger.warn('SW: checkManifestChange failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+            Logger.Warn('SW: checkManifestChange failed: ' + ((err as any)?.message || err), 'ServiceWorker');
             return { changed: false, error: (err as any)?.message || String(err) };
         }
     }
 
     async install(event: ExtendableEvent) {
-        Logger.info('SW: Installing...', 'ServiceWorker');
+        Logger.Info('SW: Installing...', 'ServiceWorker');
         self.skipWaiting();
 
         event.waitUntil((async () => {
             try {
                 const cache = await caches.open(this.CACHE_NAME);
-                Logger.info('SW: Cache opened successfully', 'ServiceWorker');
+                Logger.Info('SW: Cache opened successfully', 'ServiceWorker');
 
                 // Cache critical assets first
                 let successCount = 0;
@@ -220,14 +220,14 @@ class SagutidServiceWorker {
                         if (response.ok) {
                             await cache.put(asset, response.clone());
                             successCount++;
-                            Logger.info(`SW: Cached critical asset: ${asset}`, 'ServiceWorker');
+                            Logger.Info(`SW: Cached critical asset: ${asset}`, 'ServiceWorker');
                         } else {
                             failCount++;
-                            Logger.warn(`SW: Failed to cache ${asset}: ${response.status}`, 'ServiceWorker');
+                            Logger.Warn(`SW: Failed to cache ${asset}: ${response.status}`, 'ServiceWorker');
                         }
                     } catch (err) {
                         failCount++;
-                        Logger.warn(`SW: Error caching ${asset}: ${(err as any)?.message || err}`, 'ServiceWorker');
+                        Logger.Warn(`SW: Error caching ${asset}: ${(err as any)?.message || err}`, 'ServiceWorker');
                     }
                 }
 
@@ -238,28 +238,28 @@ class SagutidServiceWorker {
                         if (response.ok) {
                             await cache.put(asset, response.clone());
                             successCount++;
-                            Logger.info(`SW: Cached static asset: ${asset}`, 'ServiceWorker');
+                            Logger.Info(`SW: Cached static asset: ${asset}`, 'ServiceWorker');
                         } else {
                             failCount++;
-                            Logger.warn(`SW: Failed to cache ${asset}: ${response.status}`, 'ServiceWorker');
+                            Logger.Warn(`SW: Failed to cache ${asset}: ${response.status}`, 'ServiceWorker');
                         }
                     } catch (err) {
                         failCount++;
-                        Logger.warn(`SW: Error caching ${asset}: ${(err as any)?.message || err}`, 'ServiceWorker');
+                        Logger.Warn(`SW: Error caching ${asset}: ${(err as any)?.message || err}`, 'ServiceWorker');
                     }
                 }
 
-                Logger.info(`SW: Installation complete. Success: ${successCount}, Failed: ${failCount}`, 'ServiceWorker');
+                Logger.Info(`SW: Installation complete. Success: ${successCount}, Failed: ${failCount}`, 'ServiceWorker');
 
             } catch (err) {
-                Logger.error('SW: Installation failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+                Logger.Error('SW: Installation failed: ' + ((err as any)?.message || err), 'ServiceWorker');
                 // Don't throw - allow SW to install even with cache failures
             }
         })());
     }
 
     async activate(event: ExtendableEvent) {
-        Logger.info('SW: Activating...', 'ServiceWorker');
+        Logger.Info('SW: Activating...', 'ServiceWorker');
 
         event.waitUntil((async () => {
             try {
@@ -269,14 +269,14 @@ class SagutidServiceWorker {
 
                 await Promise.all(
                     oldCaches.map(name => {
-                        Logger.info(`SW: Deleting old cache: ${name}`, 'ServiceWorker');
+                        Logger.Info(`SW: Deleting old cache: ${name}`, 'ServiceWorker');
                         return caches.delete(name);
                     })
                 );
 
                 // Take control of all clients
                 await self.clients.claim();
-                Logger.info('SW: Activated and claimed clients', 'ServiceWorker');
+                Logger.Info('SW: Activated and claimed clients', 'ServiceWorker');
 
                 // Start background precache from sitemap asynchronously so activation isn't blocked.
                 // Use optional config.sitemapPrefetchLimit (0 = no limit / all URLs). Default: 0 (all).
@@ -287,11 +287,11 @@ class SagutidServiceWorker {
                     setTimeout(() => {
                         (async () => {
                             try {
-                                Logger.info('SW: Starting background sitemap precache', 'ServiceWorker');
+                                Logger.Info('SW: Starting background sitemap precache', 'ServiceWorker');
                                 await (new SagutidServiceWorker()).precacheFromSitemap(limit);
-                                Logger.info('SW: Background sitemap precache finished', 'ServiceWorker');
+                                Logger.Info('SW: Background sitemap precache finished', 'ServiceWorker');
                             } catch (e) {
-                                Logger.warn('SW: Background sitemap precache failed: ' + ((e as any)?.message || e), 'ServiceWorker');
+                                Logger.Warn('SW: Background sitemap precache failed: ' + ((e as any)?.message || e), 'ServiceWorker');
                             }
                         })();
                     }, 1000);
@@ -300,7 +300,7 @@ class SagutidServiceWorker {
                 }
 
             } catch (err) {
-                Logger.error('SW: Activation failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+                Logger.Error('SW: Activation failed: ' + ((err as any)?.message || err), 'ServiceWorker');
             }
         })());
     }
@@ -325,7 +325,7 @@ class SagutidServiceWorker {
                     if (response && response.ok) {
                         caches.open(this.CACHE_NAME)
                             .then(cache => cache.put(req, response.clone()))
-                            .catch(err => Logger.warn('SW: Failed to cache navigation response: ' + ((err as any)?.message || err), 'ServiceWorker'));
+                            .catch(err => Logger.Warn('SW: Failed to cache navigation response: ' + ((err as any)?.message || err), 'ServiceWorker'));
                     }
                     return response;
                 } catch (e) {
@@ -336,7 +336,7 @@ class SagutidServiceWorker {
                         try { cached = await caches.match(req.url); } catch (_) { cached = null; }
                     }
                     if (cached) {
-                        Logger.log(`SW: Serving cached navigation: ${req.url}`, 'ServiceWorker');
+                        Logger.Log(`SW: Serving cached navigation: ${req.url}`, 'ServiceWorker');
                         return cached;
                     }
 
@@ -362,12 +362,12 @@ class SagutidServiceWorker {
                                 if (response.ok) {
                                     caches.open(this.CACHE_NAME)
                                         .then(cache => cache.put(req, response.clone()))
-                                        .catch(err => Logger.warn('SW: Failed to cache static asset: ' + ((err as any)?.message || err), 'ServiceWorker'));
+                                        .catch(err => Logger.Warn('SW: Failed to cache static asset: ' + ((err as any)?.message || err), 'ServiceWorker'));
                                 }
                                 return response;
                             })
                             .catch(() => {
-                                Logger.warn(`SW: Failed to fetch static asset: ${req.url}`, 'ServiceWorker');
+                                Logger.Warn(`SW: Failed to fetch static asset: ${req.url}`, 'ServiceWorker');
                                 return new Response('Asset not available', { status: 404 });
                             });
                     })
@@ -380,7 +380,7 @@ class SagutidServiceWorker {
         const { data } = event;
 
         if (data === 'SKIP_WAITING') {
-            Logger.info('SW: Skip waiting requested', 'ServiceWorker');
+            Logger.Info('SW: Skip waiting requested', 'ServiceWorker');
             return (self as any).skipWaiting();
         }
 
@@ -391,12 +391,12 @@ class SagutidServiceWorker {
             } catch (e) {
                 // ignore if Logger isn't writable for any reason
             }
-            Logger.info('SW: Config initialized', 'ServiceWorker');
+            Logger.Info('SW: Config initialized', 'ServiceWorker');
             return;
         }
 
         if (data?.type === 'UPDATE_DYNAMIC_CONTENT') {
-            Logger.info('SW: Dynamic content update requested', 'ServiceWorker');
+            Logger.Info('SW: Dynamic content update requested', 'ServiceWorker');
 
             try {
                 const cache = await caches.open(this.CACHE_NAME);
@@ -472,13 +472,13 @@ class SagutidServiceWorker {
 
                 // Force precache request (explicit from client when installed as PWA or user requested)
                 if (data?.type === 'FORCE_PRECACHE_NOW') {
-                    Logger.info('SW: FORCE_PRECACHE_NOW requested', 'ServiceWorker');
+                    Logger.Info('SW: FORCE_PRECACHE_NOW requested', 'ServiceWorker');
                     const limit = (typeof data?.limit === 'number' && data.limit >= 0) ? Math.floor(data.limit) : 0;
                     try {
                         const result = await this.precacheFromSitemap(limit);
                         event.ports[0]?.postMessage({ success: true, result });
                     } catch (err) {
-                        Logger.warn('SW: FORCE_PRECACHE_NOW failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+                        Logger.Warn('SW: FORCE_PRECACHE_NOW failed: ' + ((err as any)?.message || err), 'ServiceWorker');
                         event.ports[0]?.postMessage({ success: false, error: (err as any)?.message || String(err) });
                     }
                     return;
@@ -522,14 +522,14 @@ class SagutidServiceWorker {
                         const ok = await cachePageAndImages(url);
                         if (ok) updateCount++;
                     } catch (err) {
-                        Logger.log(`SW: Failed to update ${url}: ${(err as any)?.message || err}`, 'ServiceWorker');
+                        Logger.Log(`SW: Failed to update ${url}: ${(err as any)?.message || err}`, 'ServiceWorker');
                     }
                 }
 
-                Logger.log(`SW: Updated ${updateCount} URLs (limit ${limit})`, 'ServiceWorker');
+                Logger.Log(`SW: Updated ${updateCount} URLs (limit ${limit})`, 'ServiceWorker');
                 event.ports[0]?.postMessage({ success: true, count: updateCount });
             } catch (err) {
-                Logger.error('SW: Update failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+                Logger.Error('SW: Update failed: ' + ((err as any)?.message || err), 'ServiceWorker');
                 event.ports[0]?.postMessage({ success: false, error: (err as any)?.message || String(err) });
             }
         }
@@ -563,7 +563,7 @@ class SagutidServiceWorker {
                 if (limit > 0 && out.length >= limit) break;
             }
         } catch (err) {
-            Logger.warn(`SW: collectUrls failed for ${sitemapUrl}: ${(err as any)?.message || err}`, 'ServiceWorker');
+            Logger.Warn(`SW: collectUrls failed for ${sitemapUrl}: ${(err as any)?.message || err}`, 'ServiceWorker');
         }
     }
 
@@ -664,10 +664,10 @@ class SagutidServiceWorker {
             const workers: Promise<any>[] = [];
             for (let w = 0; w < concurrency; w++) workers.push(worker());
             await Promise.all(workers);
-            Logger.info(`SW: precacheFromSitemap done. Success: ${results.success}, Failed: ${results.failed}`, 'ServiceWorker');
+            Logger.Info(`SW: precacheFromSitemap done. Success: ${results.success}, Failed: ${results.failed}`, 'ServiceWorker');
             return { success: results.success, failed: results.failed };
         } catch (err) {
-            Logger.warn('SW: precacheFromSitemap failed: ' + ((err as any)?.message || err), 'ServiceWorker');
+            Logger.Warn('SW: precacheFromSitemap failed: ' + ((err as any)?.message || err), 'ServiceWorker');
             return { success: 0, failed: 0, error: ((err as any)?.message || String(err)) };
         }
     }

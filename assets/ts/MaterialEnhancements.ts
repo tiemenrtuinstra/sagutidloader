@@ -9,40 +9,56 @@ type Options = {
 };
 
 const DEFAULTS: Required<Options> = {
-    selector: '.uk-button--clickable, .uk-chip--clickable, .uk-button.uk-chip--clickable',
+    // target elements that will receive ripple behaviour
+    selector: '.uk-button--clickable, .uk-icon-link, .uk-chip--clickable, .uk-button.uk-chip--clickable',
     rippleClass: 'uk-ripple',
     rippleColor: 'rgba(255,255,255,0.18)',
     keyboard: true,
 };
 
+function readGlobalConfig(): Partial<Options> {
+    try {
+        const cfg = (window as any).SAGUTID_CONFIG || {};
+        return cfg.materialEnhancements || {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function ensureRippleStyle(className: string) {
+    const id = `material-ripple-style-${className}`;
+    if (typeof document === 'undefined') return;
+    if (document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+        style.textContent = `.${className} {
+    position: absolute;
+    left: 0; top: 0;
+    width: 8px; height: 8px; border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.95; pointer-events: none;
+    transition: transform 420ms cubic-bezier(.22,.61,.36,1), opacity 420ms;
+    will-change: transform, opacity; z-index: 9999;
+}`;
+    document.head.appendChild(style);
+}
+
 function createRipple(el: HTMLElement, x: number, y: number, color: string, className: string) {
     const rect = el.getBoundingClientRect();
     const ripple = document.createElement('span');
     ripple.className = className;
+    ripple.style.left = `${x - rect.left}px`;
+    ripple.style.top = `${y - rect.top}px`;
+    ripple.style.background = color;
+
     const maxDim = Math.max(rect.width, rect.height) * 2;
-    Object.assign(ripple.style, {
-        position: 'absolute',
-        left: `${x - rect.left}px`,
-        top: `${y - rect.top}px`,
-        width: '8px',
-        height: '8px',
-        background: color,
-        borderRadius: '50%',
-        transform: 'translate(-50%, -50%) scale(0)',
-        opacity: '0.95',
-        pointerEvents: 'none',
-        transition: 'transform 420ms cubic-bezier(.22,.61,.36,1), opacity 420ms',
-        willChange: 'transform, opacity',
-        zIndex: '9999',
-    } as CSSStyleDeclaration);
 
     // ensure container is positioned
     const prevPos = getComputedStyle(el).position;
-    if (prevPos === 'static' || !prevPos) el.style.position = 'relative';
+    if (!prevPos || prevPos === 'static') el.style.position = 'relative';
 
     el.appendChild(ripple);
 
-    // expand
     requestAnimationFrame(() => {
         ripple.style.width = `${maxDim}px`;
         ripple.style.height = `${maxDim}px`;
@@ -50,12 +66,7 @@ function createRipple(el: HTMLElement, x: number, y: number, color: string, clas
         ripple.style.opacity = '0';
     });
 
-    // cleanup
-    setTimeout(() => {
-        ripple.remove();
-        // if we changed inline position and it was previously static, leave as-is - minimal side effects
-    }, 520);
-
+    setTimeout(() => ripple.remove(), 520);
     return ripple;
 }
 
@@ -66,64 +77,88 @@ class MaterialEnhancements {
     keydownHandler: (e: KeyboardEvent) => void;
 
     constructor(options?: Options) {
-        this.opts = { ...DEFAULTS, ...(options || {}) };
+        const globalCfg = readGlobalConfig();
+        this.opts = { ...DEFAULTS, ...globalCfg, ...(options || {}) };
+
+        // ensure ripple CSS exists
+        try { ensureRippleStyle(this.opts.rippleClass); } catch (e) { /* ignore */ }
 
         this.pointerHandler = (e: PointerEvent) => {
-            const el = (e.target as Element).closest(this.opts.selector) as HTMLElement | null;
+            const tgt = e.target as Element | null;
+            if (!tgt) return;
+            const el = tgt.closest(this.opts.selector) as HTMLElement | null;
             if (!el) return;
-            // only left button
             if ('button' in e && (e as any).button !== 0) return;
-            createRipple(el, e.clientX, e.clientY, this.opts.rippleColor, this.opts.rippleClass);
+            createRipple(el, (e as PointerEvent).clientX, (e as PointerEvent).clientY, this.opts.rippleColor, this.opts.rippleClass);
         };
 
         this.keydownHandler = (e: KeyboardEvent) => {
             if (!this.opts.keyboard) return;
-            const target = e.target as HTMLElement | null;
-            if (!target) return;
-            if (!target.matches(this.opts.selector)) return;
+            const tgt = e.target as Element | null;
+            if (!tgt) return;
+            // ignore typical input elements
+            if (/^(INPUT|TEXTAREA|SELECT)$/i.test(tgt.tagName)) return;
+            const el = tgt.closest ? (tgt as Element).closest(this.opts.selector) as HTMLElement | null : null;
+            if (!el) return;
             if (e.key === 'Enter' || e.key === ' ') {
-                // emulate click and centered ripple
-                const rect = target.getBoundingClientRect();
+                const rect = el.getBoundingClientRect();
                 const cx = rect.left + rect.width / 2;
                 const cy = rect.top + rect.height / 2;
-                createRipple(target, cx, cy, this.opts.rippleColor, this.opts.rippleClass);
-                // Trigger native activation
-                (target as HTMLElement).click();
+                createRipple(el, cx, cy, this.opts.rippleColor, this.opts.rippleClass);
+                try { (el as HTMLElement).click(); } catch (err) { /* ignore */ }
                 e.preventDefault();
             }
         };
     }
 
     attach(root: Document | HTMLElement = document) {
-        // attach delegated pointer listener at document level for simplicity
-        if (!this.roots.has(root as HTMLElement)) {
-            (root as Document).addEventListener('pointerdown', this.pointerHandler, { passive: true });
-            if (this.opts.keyboard) (root as Document).addEventListener('keydown', this.keydownHandler);
-            this.roots.add(root as HTMLElement);
-        }
+        if (this.roots.has(root as HTMLElement)) return;
+        (root as Document).addEventListener('pointerdown', this.pointerHandler, { passive: true });
+        if (this.opts.keyboard) (root as Document).addEventListener('keydown', this.keydownHandler);
+        this.roots.add(root as HTMLElement);
     }
 
     detach(root: Document | HTMLElement = document) {
-        if (this.roots.has(root as HTMLElement)) {
-            (root as Document).removeEventListener('pointerdown', this.pointerHandler);
-            if (this.opts.keyboard) (root as Document).removeEventListener('keydown', this.keydownHandler);
-            this.roots.delete(root as HTMLElement);
-        }
+        if (!this.roots.has(root as HTMLElement)) return;
+        (root as Document).removeEventListener('pointerdown', this.pointerHandler);
+        if (this.opts.keyboard) (root as Document).removeEventListener('keydown', this.keydownHandler);
+        this.roots.delete(root as HTMLElement);
     }
 
     init(options?: Options) {
         if (options) this.opts = { ...this.opts, ...options };
         if (typeof document === 'undefined') return;
-        // Attach automatically once DOM ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                this.attach(document);
+                this.enhanceButtonsAndIcons(document);
                 this.setIconsFromClass(document);
-            });
+                this.attach(document);
+            }, { once: true });
         } else {
-            this.attach(document);
+            this.enhanceButtonsAndIcons(document);
             this.setIconsFromClass(document);
+            this.attach(document);
         }
+    }
+
+    /**
+     * Ensure every `.uk-button` gets `.uk-button--clickable` and
+     * every `.uk-icon` gets `.uk-icon-link` (and clickable) so the enhancements apply.
+     */
+    enhanceButtonsAndIcons(root: Document | HTMLElement = document) {
+        try {
+            const doc = root as Document;
+            // make buttons clickable targets for ripple
+            for (const btn of Array.from(doc.querySelectorAll<HTMLElement>('.uk-button'))) {
+                if (!btn.classList.contains('uk-button--clickable')) btn.classList.add('uk-button--clickable');
+            }
+
+            // ensure icons are marked as link-style and clickable
+            for (const ic of Array.from(doc.querySelectorAll<HTMLElement>('.uk-icon'))) {
+                if (!ic.classList.contains('uk-icon-link')) ic.classList.add('uk-icon-link');
+                if (!ic.classList.contains('uk-button--clickable')) ic.classList.add('uk-button--clickable');
+            }
+        } catch (e) { /* ignore */ }
     }
 
     /**
@@ -132,26 +167,22 @@ class MaterialEnhancements {
      */
     setIconsFromClass(root: Document | HTMLElement = document) {
         try {
-            // Only consider elements that explicitly opt-in with .uk-icon--material
             const els = Array.from((root as Document).querySelectorAll('.uk-icon--material')) as Element[];
             const re = /^uk-icon-([a-z0-9-]+)$/i;
             els.forEach((el) => {
                 const classes = Array.from(el.classList || []);
                 for (const c of classes) {
-                    // only match single-dash names like `uk-icon-home` (not `uk-icon--modifier`)
                     const m = re.exec(c);
                     if (m) {
                         const iconName = m[1].replace(/-/g, '_');
                         if (!(el as HTMLElement).hasAttribute('data-icon')) {
                             (el as HTMLElement).setAttribute('data-icon', iconName);
                         }
-                        break; // only first match
+                        break;
                     }
                 }
             });
-        } catch (e) {
-            // ignore failures - non-critical
-        }
+        } catch (e) { /* ignore non-critical failures */ }
     }
 
     destroy() {

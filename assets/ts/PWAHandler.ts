@@ -1,94 +1,63 @@
-import { Logger, LogType } from './Util/Logger';
+import Logger from './Util/Logger';
 
-export class PWAHandler {
-    static deferredPrompt: any = null;
+const PWAHandler = {
+    deferredPrompt: null as any,
+    installPopupEl: null as HTMLElement | null,
+    documentClickHandler: null as ((e: Event) => void) | null,
 
-    static init() {
-        const installPopup = document.getElementById('installPopup');
-        if (!installPopup) {
-            Logger.error('Install popup element not found.', 'PWAHandler');
-            return;
-        }
-
-        this.hideInstallPopup(installPopup);
-        this.listenForInstallPrompt(installPopup);
-        this.handleInstallButtonClick(installPopup);
-        this.handleDismissButtonClick(installPopup);
+    init() {
+        const installPopup = document.getElementById('installPopup') as HTMLElement | null;
+        if (!installPopup) { Logger.Error('Install popup element not found.', 'PWAHandler'); return; }
+        this.installPopupEl = installPopup;
+        this.hideInstallPopup();
+        this.listenForInstallPrompt();
         this.listenForAppInstalled();
+        this.registerDocumentClickHandler();
         this.registerServiceWorker();
-    }
+    },
 
-    static hideInstallPopup(installPopup: HTMLElement) {
-        installPopup.style.display = 'none';
-        Logger.log('Install popup hidden.', 'PWAHandler', LogType.INFO);
-    }
+    hideInstallPopup() { if (!this.installPopupEl) return; this.installPopupEl.style.display = 'none'; Logger.Info('Install popup hidden.', 'PWAHandler'); },
 
-    static listenForInstallPrompt(installPopup: HTMLElement) {
-        window.addEventListener('beforeinstallprompt', (e: any) => {
-            e.preventDefault();
-            this.deferredPrompt = e;
+    listenForInstallPrompt() { window.addEventListener('beforeinstallprompt', (e: any) => { e.preventDefault(); this.deferredPrompt = e; if (this.installPopupEl) this.installPopupEl.style.display = 'block'; Logger.Info('Install prompt triggered and popup displayed.', 'PWAHandler'); }); },
 
-            installPopup.style.display = 'block';
-            Logger.log('Install prompt triggered and popup displayed.', 'PWAHandler', LogType.INFO);
-        });
-    }
-
-    static handleInstallButtonClick(installPopup: HTMLElement) {
-        document.addEventListener('click', async (e: any) => {
-            if (e.target.matches('[aria-label="install-app"]')) {
-                e.preventDefault();
-                if (this.deferredPrompt) {
-                    this.deferredPrompt.prompt();
-                    const result = await this.deferredPrompt.userChoice;
-                    if (result.outcome === 'accepted') {
-                        Logger.log('🎉 App install accepted by user.', 'PWAHandler', LogType.INFO);
-                        // Ask service worker to force precache now (best-effort)
-                        try {
-                            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                                const channel = new MessageChannel();
-                                channel.port1.onmessage = (e: any) => Logger.log('SW FORCE_PRECACHE_NOW result: ' + JSON.stringify(e.data), 'PWAHandler');
-                                navigator.serviceWorker.controller.postMessage({ type: 'FORCE_PRECACHE_NOW', limit: 0 }, [channel.port2]);
-                            }
-                        } catch (err) {
-                            Logger.warn('Failed to request FORCE_PRECACHE_NOW', 'PWAHandler');
-                        }
-                    } else {
-                        Logger.log('❌ App installation declined.', 'PWAHandler', LogType.ERROR);
-                    }
-                    this.deferredPrompt = null;
-                    installPopup.style.display = 'none';
-                }
-            }
-        });
-    }
-
-    static handleDismissButtonClick(installPopup: HTMLElement) {
-        document.addEventListener('click', (e: any) => {
-            if (e.target.matches('[aria-label="dismiss-install-popup"]')) {
-                e.preventDefault();
-                installPopup.style.display = 'none';
-                Logger.log('Install popup dismissed.', 'PWAHandler', LogType.WARN);
-            }
-        });
-    }
-
-    static listenForAppInstalled() {
-        window.addEventListener('appinstalled', () => {
-            Logger.log('🎉 App installed (appinstalled event). Triggering FORCE_PRECACHE_NOW', 'PWAHandler', LogType.INFO);
+    registerDocumentClickHandler() {
+        if (this.documentClickHandler) return;
+        this.documentClickHandler = async (ev: Event) => {
+            const e = ev as MouseEvent & { target: Element };
             try {
-                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                    const channel = new MessageChannel();
-                    channel.port1.onmessage = (e: any) => Logger.log('SW FORCE_PRECACHE_NOW result: ' + JSON.stringify(e.data), 'PWAHandler');
-                    navigator.serviceWorker.controller.postMessage({ type: 'FORCE_PRECACHE_NOW', limit: 0 }, [channel.port2]);
-                }
-            } catch (err) {
-                Logger.warn('Failed to request FORCE_PRECACHE_NOW after appinstall', 'PWAHandler');
-            }
-        });
-    }
+                if (!e.target) return;
+                const target = e.target as Element;
+                if (target.matches('[aria-label="install-app"]')) { ev.preventDefault(); await (this as any).handleInstallAction(); }
+                else if (target.matches('[aria-label="dismiss-install-popup"]')) { ev.preventDefault(); if (this.installPopupEl) this.installPopupEl.style.display = 'none'; Logger.Warn('Install popup dismissed.', 'PWAHandler'); }
+            } catch (err) { Logger.Warn('Error handling document click', 'PWAHandler'); }
+        };
+        document.addEventListener('click', this.documentClickHandler);
+    },
 
-    static registerServiceWorker() {
-        // Registration is handled centrally in ServiceWorkerHandler to manage scope and updates
-        return;
-    }
-}
+    async handleInstallAction() {
+        if (!this.deferredPrompt) return;
+        try {
+            this.deferredPrompt.prompt();
+            const result = await this.deferredPrompt.userChoice;
+            if (result && result.outcome === 'accepted') { Logger.Info('🎉 App install accepted by user.', 'PWAHandler'); this.requestForcePrecache(); }
+            else { Logger.Warn('❌ App installation declined.', 'PWAHandler'); }
+        } catch (err) { Logger.Error('Error during install flow', 'PWAHandler', err); }
+        finally { this.deferredPrompt = null; if (this.installPopupEl) this.installPopupEl.style.display = 'none'; }
+    },
+
+    listenForAppInstalled() { window.addEventListener('appinstalled', () => { Logger.Info('🎉 App installed (appinstalled event). Triggering FORCE_PRECACHE_NOW', 'PWAHandler'); this.requestForcePrecache(); }); },
+
+    requestForcePrecache() {
+        try {
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                const channel = new MessageChannel();
+                channel.port1.onmessage = (e: any) => Logger.Info('SW FORCE_PRECACHE_NOW result: ' + JSON.stringify(e.data), 'PWAHandler');
+                navigator.serviceWorker.controller.postMessage({ type: 'FORCE_PRECACHE_NOW', limit: 0 }, [channel.port2]);
+            }
+        } catch (err) { Logger.Warn('Failed to request FORCE_PRECACHE_NOW', 'PWAHandler'); }
+    },
+
+    registerServiceWorker() { return; }
+};
+
+export default PWAHandler;

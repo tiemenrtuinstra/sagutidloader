@@ -1,12 +1,13 @@
-import { PWAHandler } from './PWAHandler';
-import { ServiceWorkerHandler } from './ServiceWorkerHandler';
-import { MetaTagHandler } from './MetaTagHandler';
-import { CCommentHandler } from './CCommentHandler';
-import { HeaderHandler } from './HeaderHandler';
-import { PWAShareHandler } from './PWAShareHandler';
-import { DataLayerHandler } from './DataLayerHandler';
-import Material from './MaterialEnhancements';
-import { Logger, LogType } from './Util/Logger';
+import PWAHandler from './PWAHandler';
+import ServiceWorkerHandler from './ServiceWorkerHandler';
+import * as MetaTagHandlerMod from './MetaTagHandler';
+import * as CCommentHandlerMod from './CCommentHandler';
+import * as HeaderHandlerMod from './HeaderHandler';
+import PWAShareHandler from './PWAShareHandler';
+import * as DataLayerHandlerMod from './DataLayerHandler';
+import * as UXGuardHandlerMod from './UXGuardHandler';
+import * as MaterialMod from './MaterialEnhancements';
+import Logger, { LogType } from './Util/Logger';
 
 // Lazy-load Material Web only when needed to keep initial bundle small
 async function loadMaterialIfNeeded() {
@@ -28,7 +29,7 @@ async function loadMaterialIfNeeded() {
       (document as any).adoptedStyleSheets.push((typescaleStyles as any).styleSheet);
     }
   } catch (e) {
-    Logger?.log?.('Material load skipped: ' + e, undefined, 'sagutid.ts', LogType.WARN);
+    Logger.Log('Material load skipped: ' + e, 'sagutid.ts', LogType.WARN);
   }
 }
 
@@ -42,34 +43,41 @@ function initializeApp() {
   }
 
   // Log the debug mode status
-  Logger.log(`Debug mode: ${Logger.debugMode}`, 'sagutid.ts', LogType.INFO);
+  Logger.Log(`Debug mode: ${Logger.debugMode}`, 'sagutid.ts', LogType.INFO);
 
   // Always-on verification: echo the injected config value for quick debugging (not gated)
   try {
-    Logger.info('[Sagutid] injected SAGUTID_CONFIG.debugMode = ' + String((window as any).SAGUTID_CONFIG?.debugMode), 'sagutid.ts');
+    Logger.Info('[Sagutid] injected SAGUTID_CONFIG.debugMode = ' + String((window as any).SAGUTID_CONFIG?.debugMode), 'sagutid.ts');
   } catch (e) {
     // ignore
   }
 
-  const handlers = [
-    { condition: !!document.querySelector('#installPopup'), handler: PWAHandler },
-    { condition: 'serviceWorker' in navigator, handler: ServiceWorkerHandler },
-    { condition: true, handler: MetaTagHandler },
-    { condition: true, handler: CCommentHandler },
-    { condition: true, handler: HeaderHandler },
-    { condition: true, handler: PWAShareHandler },
-    { condition: true, handler: DataLayerHandler },
-    { condition: true, handler: Material }
-  ];
-
-  handlers.forEach(({ condition, handler }) => {
-    if (condition) {
-      try {
-        (handler as any).init();
-      } catch (error) {
-        Logger.error(`Error initializing ${(handler as any).name}: ${error}`, 'sagutid.ts');
-      }
+  // Helper: normalize various module shapes into an object exposing init() for legacy modules
+  const normalize = (mod: any) => {
+    if (!mod) return null;
+    if (mod.default && typeof mod.default.init === 'function') return mod.default;
+    if (typeof mod.init === 'function') return mod;
+    for (const k of Object.keys(mod)) {
+      if (mod[k] && typeof mod[k].init === 'function') return mod[k];
     }
+    return null;
+  };
+
+  // Directly initialize handlers that are now default singletons
+  try {
+    if (document.querySelector('#installPopup')) PWAHandler.init();
+  } catch (error) { Logger.Error(`Error initializing PWAHandler: ${error}`, 'sagutid.ts'); }
+
+  try {
+    if ('serviceWorker' in navigator) ServiceWorkerHandler.init();
+  } catch (error) { Logger.Error(`Error initializing ServiceWorkerHandler: ${error}`, 'sagutid.ts'); }
+
+  // Initialize remaining handlers (some modules still export named shapes)
+  const remaining: any[] = [MetaTagHandlerMod, CCommentHandlerMod, HeaderHandlerMod, PWAShareHandler, DataLayerHandlerMod, MaterialMod, UXGuardHandlerMod];
+  remaining.forEach((mod) => {
+    const h = normalize(mod) || (mod && (mod as any).init ? (mod as any) : null);
+    if (!h) return;
+    try { h.init(); } catch (err) { Logger.Error(`Error initializing handler: ${err}`, 'sagutid.ts'); }
   });
 }
 
