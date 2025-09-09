@@ -1,9 +1,14 @@
 import Logger from './Util/Logger';
 
 // Ensure TypeScript treats `self` as the ServiceWorker global scope
+
+import Logger from './Util/Logger';
+
+// Ensure TypeScript treats `self` as the ServiceWorker global scope
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
 const CACHE_NAME = `sagutid-v29.0.5`;
+const BASE_ORIGIN = (typeof self !== 'undefined' && 'location' in self) ? new URL(self.location.href).origin : location.origin;
 // Base path for plugin assets (derived from the SW script URL, not the scope)
 const SCRIPT_PATHNAME = (typeof self !== 'undefined' && 'location' in self) ? new URL(self.location.href).pathname : '/plugins/system/sagutidloader/assets/serviceworker.js';
 const ASSET_BASE = SCRIPT_PATHNAME.replace(/[^/]+$/, ''); // strip filename to get folder
@@ -255,7 +260,6 @@ class SagutidServiceWorker {
 
         if (data?.type === 'INIT_CONFIG') {
             (self as any).SAGUTID_CONFIG = data.config;
-            // Propagate debugMode into the Logger runtime for the service worker
             try {
                 (Logger as any).debugMode = !!(data.config && data.config.debugMode === true);
             } catch (e) {
@@ -271,59 +275,98 @@ class SagutidServiceWorker {
             try {
                 const cache = await caches.open(this.CACHE_NAME);
 
-                const limit = (typeof data?.limit === 'number' && data.limit > 0) ? Math.floor(data.limit) : 300;
+                const limit = (typeof data?.limit === 'number' && data.limit >= 0) ? Math.floor(data.limit) : 0; // 0 = unlimited
 
-                // Helper: parse a sitemap or sitemap index and collect up to `limit` URLs
-                const collectUrls = async (sitemapUrl: string, out: string[]) => {
-                    if (out.length >= limit) return;
-                    const res = await fetchWithTimeout(sitemapUrl);
-                    if (!res.ok) throw new Error(`Sitemap request failed: ${res.status}`);
-                    const xml = await res.text();
-
-                    // Simple, robust XML parsing without DOMParser: extract <url><loc> and <sitemap><loc>
-                    // 1) Find <url> entries and their <loc>
-                    const urlRegex = /<url\b[^>]*>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/url>/gi;
-                    let match: RegExpExecArray | null;
-                    let found = false;
-                    while (out.length < limit && (match = urlRegex.exec(xml))) {
-                        found = true;
-                        const u = match[1].trim();
-                        if (u) out.push(u);
-                        if (out.length >= limit) break;
-                    }
-                    if (found) return;
-
-                    // 2) If no <url> entries, treat as sitemapindex and recurse into <sitemap><loc>
-                    const sitemapRegex = /<sitemap\b[^>]*>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/sitemap>/gi;
-                    while (out.length < limit && (match = sitemapRegex.exec(xml))) {
-                        const sm = match[1].trim();
-                        if (!sm) continue;
-                        try {
-                            await collectUrls(sm, out);
-                        } catch (err) {
-                            Logger.warn(`SW: Error processing sitemap ${sm}: ${(err as any)?.message || err}`, 'ServiceWorker');
-                        }
-                        if (out.length >= limit) break;
-                    }
-                };
-
-                // Start from primary sitemap
+                // Collect page URLs using the class helper
                 const startSitemap = '/index.php?option=com_jmap&view=sitemap&format=xml';
                 const urls: string[] = [];
-                await collectUrls(startSitemap, urls);
+                await this.collectUrls(startSitemap, urls, limit);
 
                 let updateCount = 0;
+
+                // Helper: extract image urls from HTML
+                const extractImageUrls = (html: string, baseUrl: string) => {
+                    const out: string[] = [];
+                    const push = (u: string) => {
+                        if (!u) return;
+                        try { out.push(new URL(u, baseUrl).toString()); } catch (e) { /* ignore */ }
+                    };
+
+                    let m: RegExpExecArray | null;
+                    const imgSrcRegex = /<img\b[^>]*?\bsrc\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                    while ((m = imgSrcRegex.exec(html))) push(m[1]);
+
+                    const imgSrcsetRegex = /<img\b[^>]*?\bsrcset\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                    while ((m = imgSrcsetRegex.exec(html))) {
+                        const parts = m[1].split(',').map(s => s.trim().split(' ')[0]);
+                        parts.forEach(p => push(p));
+                    }
+
+                    const sourceSrcsetRegex = /<source\b[^>]*?\bsrcset\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                    while ((m = sourceSrcsetRegex.exec(html))) {
+                        const parts = m[1].split(',').map(s => s.trim().split(' ')[0]);
+                        parts.forEach(p => push(p));
+                    }
+
+                    const dataSrcRegex = /<(?:img|source)\b[^>]*?\bdata-src\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                    while ((m = dataSrcRegex.exec(html))) push(m[1]);
+
+                    const bgRegex = /background(?:-image)?\s*:\s*url\((?:['\"])?([^'\")]+)(?:['\"])?\)/gi;
+                    while ((m = bgRegex.exec(html))) push(m[1]);
+
+                    const linkImgRegex = /<link\b[^>]*?rel\s*=\s*['\"](?:image_src|preload)['\"][^>]*?href\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                    while ((m = linkImgRegex.exec(html))) push(m[1]);
+
+                    return Array.from(new Set(out));
+                };
+
+                // Helper: fetch page and cache page + discovered images
+                const cachePageAndImages = async (pageUrl: string) => {
+                    try {
+                        const res = await fetchWithTimeout(pageUrl, {}, 10000);
+                        if (!res.ok) return false;
+                        await cache.put(pageUrl, res.clone());
+
+                        const contentType = res.headers.get('content-type') || '';
+                        if (!/text\//i.test(contentType)) return true;
+
+                        const text = await res.text();
+                        const imgs = extractImageUrls(text, pageUrl);
+
+                        // 0 = unlimited images per page
+                        const maxImagesPerPage = 0;
+                        const toCache = (maxImagesPerPage > 0 ? imgs.slice(0, maxImagesPerPage) : imgs).filter(u => {
+                            try { const uu = new URL(u); return uu.origin === BASE_ORIGIN; } catch (e) { return false; }
+                        });
+
+                        const imgConcurrency = 6;
+                        let j = 0;
+                        const imgWorker = async () => {
+                            while (j < toCache.length) {
+                                const idx = j++;
+                                const imgUrl = toCache[idx];
+                                try {
+                                    const r = await fetchWithTimeout(imgUrl, {}, 8000);
+                                    if (r.ok) await cache.put(imgUrl, r.clone());
+                                } catch (e) { /* ignore */ }
+                            }
+                        };
+                        const workers = [];
+                        for (let w = 0; w < imgConcurrency; w++) workers.push(imgWorker());
+                        await Promise.all(workers);
+                        return true;
+                    } catch (err) { return false; }
+                };
+
                 for (const url of urls) {
                     try {
-                        const res = await fetchWithTimeout(url);
-                        if (res.ok) {
-                            await cache.put(url, res.clone());
-                            updateCount++;
-                        }
+                        const ok = await cachePageAndImages(url);
+                        if (ok) updateCount++;
                     } catch (err) {
                         Logger.log(`SW: Failed to update ${url}: ${(err as any)?.message || err}`, 'ServiceWorker');
                     }
                 }
+
                 Logger.log(`SW: Updated ${updateCount} URLs (limit ${limit})`, 'ServiceWorker');
                 event.ports[0]?.postMessage({ success: true, count: updateCount });
             } catch (err) {
@@ -350,7 +393,7 @@ class SagutidServiceWorker {
                 const u = match[1].trim();
                 if (u) out.push(u);
             }
-            if (out.length >= limit && limit > 0) return;
+            if (limit > 0 && out.length >= limit) return;
 
             // 2) sitemapindex -> recurse into <sitemap><loc>
             const sitemapRegex = /<sitemap\b[^>]*>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/sitemap>/gi;
@@ -376,29 +419,86 @@ class SagutidServiceWorker {
             const urls: string[] = [];
             await this.collectUrls(startSitemap, urls, limit);
 
-            // Batch fetch and cache to avoid long-running single loops; use concurrency of 6
+            // Batch fetch and cache pages + images to avoid long-running single loops; use concurrency
             const concurrency = 6;
             let i = 0;
             const results = { success: 0, failed: 0 };
+
+            const extractImageUrls = (html: string, baseUrl: string) => {
+                const out: string[] = [];
+                const push = (u: string) => {
+                    if (!u) return;
+                    try { out.push(new URL(u, baseUrl).toString()); } catch (e) { /* ignore */ }
+                };
+                let m: RegExpExecArray | null;
+                const imgSrcRegex = /<img\b[^>]*?\bsrc\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                while ((m = imgSrcRegex.exec(html))) push(m[1]);
+                const imgSrcsetRegex = /<img\b[^>]*?\bsrcset\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                while ((m = imgSrcsetRegex.exec(html))) {
+                    const parts = m[1].split(',').map(s => s.trim().split(' ')[0]);
+                    parts.forEach(p => push(p));
+                }
+                const sourceSrcsetRegex = /<source\b[^>]*?\bsrcset\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                while ((m = sourceSrcsetRegex.exec(html))) {
+                    const parts = m[1].split(',').map(s => s.trim().split(' ')[0]);
+                    parts.forEach(p => push(p));
+                }
+                const dataSrcRegex = /<(?:img|source)\b[^>]*?\bdata-src\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                while ((m = dataSrcRegex.exec(html))) push(m[1]);
+                const bgRegex = /background(?:-image)?\s*:\s*url\((?:['\"])?([^'\")]+)(?:['\"])?\)/gi;
+                while ((m = bgRegex.exec(html))) push(m[1]);
+                const linkImgRegex = /<link\b[^>]*?rel\s*=\s*['\"](?:image_src|preload)['\"][^>]*?href\s*=\s*['\"]([^'\"]+)['\"]/gi;
+                while ((m = linkImgRegex.exec(html))) push(m[1]);
+                return Array.from(new Set(out));
+            };
+
+            const cachePageAndImages = async (pageUrl: string) => {
+                try {
+                    const res = await fetchWithTimeout(pageUrl, {}, 10000);
+                    if (!res.ok) return false;
+                    await cache.put(pageUrl, res.clone());
+                    const contentType = res.headers.get('content-type') || '';
+                    if (!/text\//i.test(contentType)) return true;
+                    const text = await res.text();
+                    const imgs = extractImageUrls(text, pageUrl);
+
+                    // 0 = unlimited images per page
+                    const maxImagesPerPage = 0;
+                    const toCache = (maxImagesPerPage > 0 ? imgs.slice(0, maxImagesPerPage) : imgs).filter(u => {
+                        try { const uu = new URL(u); return uu.origin === BASE_ORIGIN; } catch (e) { return false; }
+                    });
+
+                    const imgConcurrency = 6;
+                    let j = 0;
+                    const imgWorker = async () => {
+                        while (j < toCache.length) {
+                            const idx = j++;
+                            const imgUrl = toCache[idx];
+                            try {
+                                const r = await fetchWithTimeout(imgUrl, {}, 8000);
+                                if (r.ok) await cache.put(imgUrl, r.clone());
+                            } catch (e) { /* ignore */ }
+                        }
+                    };
+                    const workers = [];
+                    for (let w = 0; w < imgConcurrency; w++) workers.push(imgWorker());
+                    await Promise.all(workers);
+                    return true;
+                } catch (err) { return false; }
+            };
+
             const worker = async () => {
                 while (i < urls.length) {
                     const idx = i++;
                     const u = urls[idx];
                     try {
-                        const res = await fetchWithTimeout(u, {}, 10000);
-                        if (res.ok) {
-                            await cache.put(u, res.clone());
-                            results.success++;
-                        } else {
-                            results.failed++;
-                        }
-                    } catch (err) {
-                        results.failed++;
-                    }
+                        const ok = await cachePageAndImages(u);
+                        if (ok) results.success++; else results.failed++;
+                    } catch (err) { results.failed++; }
                 }
             };
 
-            const workers = [];
+            const workers: Promise<any>[] = [];
             for (let w = 0; w < concurrency; w++) workers.push(worker());
             await Promise.all(workers);
             Logger.info(`SW: precacheFromSitemap done. Success: ${results.success}, Failed: ${results.failed}`, 'ServiceWorker');
