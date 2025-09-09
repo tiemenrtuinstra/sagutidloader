@@ -1,0 +1,6 @@
+// Material Web styles — imported from node_modules. This provides Material CSS tokens
+// and component styles which can be used to style or extend UIkit elements.
+// Importing whole package can increase bundle size; consider importing specific component
+// CSS if you only need a subset.
+
+@import '@material/web/all.css';
