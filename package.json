@@ -1,6 +1,6 @@
 {
   "name": "sagutidloader",
-  "version": "31.0.0",
+  "version": "31.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
