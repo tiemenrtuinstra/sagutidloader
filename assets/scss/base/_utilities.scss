@@ -13,7 +13,7 @@
 // Quick button helpers
 .u-btn-primary { @include button-variant($color-primary); }
 .u-btn-success { @include button-variant($color-success); }
-.u-btn-outline { background: transparent; border: 1px solid rgba(0,0,0,0.08); }
+.u-btn-outline { background: transparent; border: 1px solid alpha(#000,0.08); }
 
 // Social button helper
 .u-social { display: inline-flex; align-items: center; justify-content: center; }

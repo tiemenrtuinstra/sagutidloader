@@ -14,11 +14,11 @@
 
     & .uk-panel {
         padding: 12.5px;
-    @include blur-panel($color: rgba(50, 50, 50, 0.5), $shadow: $shadow);
-    color: color-contrast(#fff) !important;
+        @include blur-panel($color: alpha($color-dark, 0.5), $shadow: $shadow);
+        color: color-contrast(alpha($color-dark, 0.5)) !important;
         a {
             .uk-icon-link {
-        color: color-contrast(#fff) !important;
+            color: color-contrast(alpha($color-dark, 0.5)) !important;
             }
         }
     }

@@ -122,6 +122,16 @@ $transition-safe-props: (
     @include box-shadow($shadow);
 }
 
+// Helper: return a color with the given alpha, accepts color or variable
+@function alpha($color, $a) {
+    @if meta.type-of($color) == 'string' {
+        $color: unquote($color);
+        $color: #{$color};
+    }
+    @if meta.type-of($color) != 'color' { @return rgba(0,0,0,$a) }
+    @return rgba(color.red($color), color.green($color), color.blue($color), $a);
+}
+
 // ----------------------- Useful shared mixins -----------------------
 
 // Return readable text color (black or white) based on luminance

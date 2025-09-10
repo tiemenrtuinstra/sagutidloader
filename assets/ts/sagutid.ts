@@ -8,6 +8,7 @@ import DataLayerHandler from './DataLayerHandler';
 import UXGuardHandler from './UXGuardHandler';
 import Material from './MaterialEnhancements';
 import Logger, { LogType } from './Util/Logger';
+import SpeechReader from './SpeechReader';
 
 // Lazy-load Material Web only when needed to keep initial bundle small
 async function loadMaterialIfNeeded() {
@@ -66,6 +67,9 @@ function initializeApp() {
     if (!h) return;
     try { if (typeof h.init === 'function') h.init(); } catch (err) { Logger.Error(`Error initializing handler: ${err}`, 'sagutid.ts'); }
   });
+
+  // Initialize optional speech reader for buttons with .speech-reader-button
+  try { SpeechReader.init(); } catch (e) { Logger.Warn('SpeechReader init failed: ' + e); }
 }
 
 initializeApp();
