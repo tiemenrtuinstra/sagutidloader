@@ -141,7 +141,7 @@ $transition-safe-props: (
 @mixin button-variant($bg-color, $padding: 0.6rem 1rem, $radius: $border-radius-main) {
     $text: color-contrast($bg-color);
     background: $bg-color;
-    color: $text;
+    color: $text !important;
     padding: $padding;
     border-radius: $radius;
     border: 1px solid rgba(color.red($bg-color), color.green($bg-color), color.blue($bg-color), 0.15);
@@ -157,7 +157,7 @@ $transition-safe-props: (
         @include focus-ring();
     }
     & .uk-icon-link {
-        color: $text;
+        color: $text !important;
     }
 }
 
