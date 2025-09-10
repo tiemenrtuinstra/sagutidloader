@@ -1,5 +1,4 @@
-@use "../base/variables" as *;
-@use "../base/mixins" as *;
+@use "../base/globals" as *;
 
 .uk-offcanvas-bar {
     @include blur-panel($shadow: $shadow);
@@ -16,9 +15,11 @@
     & .uk-panel {
         padding: 12.5px;
         @include blur-panel($color: rgba(50, 50, 50, 0.5), $shadow: $shadow);
-        color: #fff;
+        color: #fff !important;
         a {
-            color: #fff;
+            .uk-icon-link {
+                color: #fff !important;
+            }
         }
     }
 }

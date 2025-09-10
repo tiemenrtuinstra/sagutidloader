@@ -1,0 +1,7 @@
+@forward "variables";
+@forward "mixins";
+@forward "utilities";
+@forward "keyframes";
+
+// Convenience wrapper forwarding the core base modules.
+// Import this with `@use "base/globals" as *;` in component partials to reduce repetition.

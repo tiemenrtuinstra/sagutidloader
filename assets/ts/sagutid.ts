@@ -1,12 +1,12 @@
 import PWAHandler from './PWAHandler';
 import ServiceWorkerHandler from './ServiceWorkerHandler';
-import * as MetaTagHandlerMod from './MetaTagHandler';
-import * as CCommentHandlerMod from './CCommentHandler';
-import * as HeaderHandlerMod from './HeaderHandler';
+import MetaTagHandler from './MetaTagHandler';
+import CCommentHandler from './CCommentHandler';
+import HeaderHandler from './HeaderHandler';
 import PWAShareHandler from './PWAShareHandler';
-import * as DataLayerHandlerMod from './DataLayerHandler';
-import * as UXGuardHandlerMod from './UXGuardHandler';
-import * as MaterialMod from './MaterialEnhancements';
+import DataLayerHandler from './DataLayerHandler';
+import UXGuardHandler from './UXGuardHandler';
+import Material from './MaterialEnhancements';
 import Logger, { LogType } from './Util/Logger';
 
 // Lazy-load Material Web only when needed to keep initial bundle small
@@ -52,18 +52,7 @@ function initializeApp() {
     // ignore
   }
 
-  // Helper: normalize various module shapes into an object exposing init() for legacy modules
-  const normalize = (mod: any) => {
-    if (!mod) return null;
-    if (mod.default && typeof mod.default.init === 'function') return mod.default;
-    if (typeof mod.init === 'function') return mod;
-    for (const k of Object.keys(mod)) {
-      if (mod[k] && typeof mod[k].init === 'function') return mod[k];
-    }
-    return null;
-  };
-
-  // Directly initialize handlers that are now default singletons
+  // Initialize handlers (all handlers are exported as default singletons)
   try {
     if (document.querySelector('#installPopup')) PWAHandler.init();
   } catch (error) { Logger.Error(`Error initializing PWAHandler: ${error}`, 'sagutid.ts'); }
@@ -72,12 +61,10 @@ function initializeApp() {
     if ('serviceWorker' in navigator) ServiceWorkerHandler.init();
   } catch (error) { Logger.Error(`Error initializing ServiceWorkerHandler: ${error}`, 'sagutid.ts'); }
 
-  // Initialize remaining handlers (some modules still export named shapes)
-  const remaining: any[] = [MetaTagHandlerMod, CCommentHandlerMod, HeaderHandlerMod, PWAShareHandler, DataLayerHandlerMod, MaterialMod, UXGuardHandlerMod];
-  remaining.forEach((mod) => {
-    const h = normalize(mod) || (mod && (mod as any).init ? (mod as any) : null);
+  const handlers: any[] = [MetaTagHandler, CCommentHandler, HeaderHandler, PWAShareHandler, DataLayerHandler, Material, UXGuardHandler];
+  handlers.forEach((h) => {
     if (!h) return;
-    try { h.init(); } catch (err) { Logger.Error(`Error initializing handler: ${err}`, 'sagutid.ts'); }
+    try { if (typeof h.init === 'function') h.init(); } catch (err) { Logger.Error(`Error initializing handler: ${err}`, 'sagutid.ts'); }
   });
 }
 

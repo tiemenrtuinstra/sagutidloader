@@ -1,5 +1,4 @@
-@use "../base/variables" as *;
-@use "../base/mixins" as *;
+@use "../base/globals" as *;
 
 .tm-page {
     .tm-toolbar {
@@ -24,8 +23,8 @@
                 background: $header-img center top / cover no-repeat;
                 border: 0px;
             }
-            .uk-navbar-toggle {
-                color: $color-secondary;
+            .uk-navbar-toggle.uk-icon-link {
+                color: $color-secondary !important;
                 font-size: 2em;
             }
         }
@@ -60,7 +59,7 @@
                                 1px -1px #fff,
                                 -1px 1px #fff;
                             font-size: 1.6em;
-                            color: #e0ad10;
+                            color: #e0ad10 !important;
                         }
                     }
                     & > a {
@@ -79,7 +78,7 @@
                                 1px -1px #fff,
                                 -1px 1px #fff;
                             font-size: 1.6em;
-                            color: #e0ad10;
+                            color: #e0ad10 !important;
                         }
                     }
                 }

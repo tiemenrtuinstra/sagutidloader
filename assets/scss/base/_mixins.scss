@@ -1,6 +1,7 @@
 @use "sass:list";
 @use "sass:map";
 @use "sass:meta";
+@use "sass:string" as string;
 @use "sass:color";
 @use "variables" as *;
 
@@ -92,17 +93,154 @@ $transition-safe-props: (
     }
 }
 
-@mixin blur-panel($color: rgba(255, 255, 255, 0.4), $shadow) {
+@mixin blur-panel($color: rgba(255, 255, 255, 0.4), $shadow: null) {
+    // If caller passed a color as a string like "#0b9444" or "rgb(11,148,68)", try to coerce it
     @if meta.type-of($color) == "string" {
-        $color: unquote($color);
+        $raw: unquote($color);
+        $lower: string.to-lower-case($raw);
+        // If it looks like a hex, rgb/rgba or hsl/hsla value, interpolate to coerce into a color
+        @if string.index($lower, "#") == 1 or string.index($lower, "rgb") == 1 or string.index($lower, "hsl") == 1 {
+            $color: #{$raw};
+        } @else {
+            // leave as-is; will fall back to default below
+            $color: $raw;
+        }
     }
+
+    // If still not a color value, fall back to the default translucent white
     @if meta.type-of($color) != "color" {
         $color: rgba(255, 255, 255, 0.4);
     }
-    $color: rgba(color.red($color), color.green($color), color.blue($color), 0.4) !default;
+
+    // Ensure alpha is 0.4 while preserving RGB components
+    $color: rgba(color.red($color), color.green($color), color.blue($color), 0.4);
+
     border-radius: $border-radius-main;
     background: $color;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     @include box-shadow($shadow);
+}
+
+// ----------------------- Useful shared mixins -----------------------
+
+// Return readable text color (black or white) based on luminance
+@function color-contrast($bg, $dark: #000000, $light: #ffffff) {
+    @if meta.type-of($bg) == "string" {
+        $bg: unquote($bg);
+        $bg: #{$bg};
+    }
+    @if meta.type-of($bg) != "color" {
+        @return $dark;
+    }
+    $luma: (0.2126 * (color.red($bg) / 255) + 0.7152 * (color.green($bg) / 255) + 0.0722 * (color.blue($bg) / 255));
+    @return if($luma > 0.5, $dark, $light);
+}
+
+// Generate a button variant from a base color
+@mixin button-variant($bg-color, $padding: 0.6rem 1rem, $radius: $border-radius-main) {
+    $text: color-contrast($bg-color);
+    background: $bg-color;
+    color: $text;
+    padding: $padding;
+    border-radius: $radius;
+    border: 1px solid rgba(color.red($bg-color), color.green($bg-color), color.blue($bg-color), 0.15);
+    cursor: pointer;
+    @include transition-props((background-color, color, box-shadow));
+    &:hover {
+        filter: brightness(0.95);
+    }
+    &:active {
+        transform: translateY(1px);
+    }
+    &:focus {
+        @include focus-ring();
+    }
+    & .uk-icon-link {
+        color: $text;
+    }
+}
+
+// Visually hidden (accessible) helper
+%visually-hidden {
+    border: 0 !important;
+    clip: rect(1px, 1px, 1px, 1px) !important;
+    clip-path: inset(50%) !important;
+    height: 1px !important;
+    width: 1px !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    position: absolute !important;
+    white-space: nowrap !important;
+}
+
+@mixin clearfix() {
+    &::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+}
+
+// Maintain aspect ratio for media
+@mixin aspect-ratio($ratio: 16/9) {
+    position: relative;
+    &::before {
+        content: "";
+        display: block;
+        padding-top: (1 / $ratio) * 100%;
+    }
+    > * {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+}
+
+// Focus ring helper
+@mixin focus-ring($color: $color-primary, $width: 3px) {
+    outline: none;
+    box-shadow: 0 0 0 $width rgba(color.red($color), color.green($color), color.blue($color), 0.18);
+}
+
+// Truncate text with ellipsis
+@mixin truncate($lines: 1) {
+    @if $lines == 1 {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    } @else {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: $lines;
+        overflow: hidden;
+    }
+}
+
+// Elevation presets
+@mixin elevation($level: 1) {
+    @if $level == 0 {
+        box-shadow: none;
+    } @else if $level == 1 {
+        box-shadow: $shadow-light;
+    } @else if $level == 2 {
+        box-shadow: $shadow;
+    } @else if $level >= 3 {
+        box-shadow: $shadow-dark;
+    }
+}
+
+// Social button using $social-style map defined in _variables
+@mixin social-button($type) {
+    $cfg: map.get($social-style, $type);
+    @if $cfg {
+        $bg: map.get($cfg, bg);
+        $color: map.get($cfg, color);
+        background: $bg;
+        color: $color;
+        border: 1px solid map.get($cfg, border, transparent);
+    }
 }

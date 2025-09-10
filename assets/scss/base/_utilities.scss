@@ -1,0 +1,19 @@
+@use "mixins" as *;
+@use "variables" as *;
+
+// Utility classes wrapping common mixins
+.u-visually-hidden { @extend %visually-hidden; }
+.u-truncate { @include truncate(1); }
+.u-truncate-2 { @include truncate(2); }
+.u-elev-1 { @include elevation(1); }
+.u-elev-2 { @include elevation(2); }
+.u-elev-3 { @include elevation(3); }
+.u-focus-ring { @include focus-ring(); }
+
+// Quick button helpers
+.u-btn-primary { @include button-variant($color-primary); }
+.u-btn-success { @include button-variant($color-success); }
+.u-btn-outline { background: transparent; border: 1px solid rgba(0,0,0,0.08); }
+
+// Social button helper
+.u-social { display: inline-flex; align-items: center; justify-content: center; }
