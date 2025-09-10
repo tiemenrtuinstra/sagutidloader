@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>plg_system_sagutidloader</name>
-        <description><![CDATA[Sagutid Loader
-
-- feat: Add SpeechReader class for text-to-speech functionality and integrate it into the app initialization (Tiemen Reinder Tuinstra) - fix: Apply !important to text color in button-variant mixin for consistency (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v31.1.0 (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
