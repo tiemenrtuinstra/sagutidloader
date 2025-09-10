@@ -265,7 +265,7 @@ function Show-LatestReleaseAssetUrl([string]$AssetName) {
     catch { Write-Warning 'Failed to query latest release info.' }
 }
 
-function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion) {
+function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [string]$ReleaseNotes) {
     [xml]$manifest = Get-Content $ManifestPath
     # Read group from the manifest's extension element attribute (fallback to 'system')
     $group = $null
@@ -287,18 +287,24 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion) {
     if (-not (Test-Path $updatesDir)) { New-Item -ItemType Directory -Path $updatesDir | Out-Null }
     $updatesFile = Join-Path $updatesDir 'sagutidloader_updates.xml'
 
+    # Build description: include provided release notes inside CDATA if present
+    $desc = 'Sagutid Loader'
+    if ($ReleaseNotes) { $desc = "$desc`n`n$ReleaseNotes" }
+    $changelogUrl = "https://github.com/$repo/releases/tag/$tag"
+
     $xml = @"
 <?xml version="1.0" encoding="utf-8"?>
 <updates>
     <update>
         <name>plg_${group}_${pluginName}</name>
-        <description>Sagutid Loader</description>
+        <description><![CDATA[${desc}]]></description>
         <element>${pluginName}</element>
         <type>plugin</type>
         <folder>${group}</folder>
         <version>${NewVersion}</version>
         <downloads>
             <downloadurl type="full" format="zip">${downloadUrl}</downloadurl>
+            <changelogurl>${changelogUrl}</changelogurl>
         </downloads>
         <targetplatform name="joomla" version=">=4.0.0" />
     </update>
@@ -404,8 +410,18 @@ if ($PublishPlay) {
     }
 }
 
+# Generate release notes from git between current tag and HEAD
+$prevTag = ("v$CurrentVersion")
+$releaseNotes = $null
+try {
+    $gitRange = "$prevTag..HEAD"
+    $log = git --no-pager log --pretty=format:"- %s (%an)" $gitRange 2>$null
+    if ($LASTEXITCODE -eq 0 -and $log) { $releaseNotes = $log }
+}
+catch { }
+
 # Generate/update update server XML now (referencing the soon-to-exist release asset)
-$null = Write-UpdateServerXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion
+$null = Write-UpdateServerXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion -ReleaseNotes $releaseNotes
 
 $pkg = Package-Plugin -ManifestPath $manifestRef.Path
 
