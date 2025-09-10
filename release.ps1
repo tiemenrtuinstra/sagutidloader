@@ -127,44 +127,55 @@ function Run-Build([switch]$SkipBuild) {
 
 function Package-Plugin([string]$ManifestPath) {
     [xml]$manifest = Get-Content $ManifestPath
-    $pluginName = $null; $pluginPhp = $null
-    $fileNodes = $manifest.extension.files.filename
-    if ($fileNodes) {
-        foreach ($node in $fileNodes) {
-            if ($node.plugin) { $pluginName = [string]$node.plugin }
-            if (-not $pluginPhp) { $pluginPhp = [string]$node.'#text' }
-        }
-    }
-    if (-not $pluginName) { $pluginName = [IO.Path]::GetFileNameWithoutExtension($ManifestPath); Write-Warning "Could not read <filename plugin=...>. Falling back to: $pluginName" }
+    $pluginName = $manifest.extension.files.filename | Where-Object { $_.plugin } | Select-Object -First 1 | ForEach-Object { [string]$_.plugin }
+    if (-not $pluginName) { $pluginName = [IO.Path]::GetFileNameWithoutExtension($ManifestPath) }
 
     $buildRoot = Join-Path (Get-Location) 'build'
     $stageDir = Join-Path $buildRoot $pluginName
     if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
     New-Item -ItemType Directory -Path $stageDir | Out-Null
 
-    $manifestName = Split-Path $ManifestPath -Leaf
-    Copy-Item $ManifestPath (Join-Path $stageDir $manifestName) -Force
+    # Always include the manifest
+    Copy-Item $ManifestPath (Join-Path $stageDir (Split-Path $ManifestPath -Leaf)) -Force
 
-    if ($pluginPhp -and (Test-Path (Join-Path (Get-Location) $pluginPhp))) {
-        Copy-Item (Join-Path (Get-Location) $pluginPhp) $stageDir -Force
-    }
-    else {
-        $fallbackPhp = Get-ChildItem -Path (Get-Location) -Filter "$pluginName*.php" -File -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($fallbackPhp) { Copy-Item $fallbackPhp.FullName $stageDir -Force }
-        else { Write-Warning 'Could not find plugin PHP file to copy.' }
+    # Process all <filename>, <file> and <folder> entries from the manifest
+    $nodes = @()
+    $filesNode = $manifest.extension.files
+    if ($filesNode) { $nodes = $filesNode.ChildNodes }
+    foreach ($node in $nodes) {
+        $tag = $node.Name.ToLower()
+        $text = [string]$node.'#text'
+        switch ($tag) {
+            'filename' {
+                $src = Join-Path (Get-Location) $text
+                if (Test-Path $src) { Copy-Item $src (Join-Path $stageDir (Split-Path $text -Leaf)) -Force }
+                else { Write-Warning "Missing file: $text" }
+            }
+            'file' {
+                $src = Join-Path (Get-Location) $text
+                if (Test-Path $src) {
+                    $dest = Join-Path $stageDir $text
+                    $parent = Split-Path $dest -Parent
+                    if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+                    Copy-Item $src $dest -Force
+                }
+                else { Write-Warning "Missing file: $text" }
+            }
+            'folder' {
+                $src = Join-Path (Get-Location) $text
+                $dest = Join-Path $stageDir $text
+                if (Test-Path $src) { Copy-Item $src $dest -Recurse -Force }
+                else { Write-Warning "Missing folder: $text" }
+            }
+            default { }
+        }
     }
 
-    foreach ($folder in @('assets', 'language')) {
-        $src = Join-Path (Get-Location) $folder
-        if (Test-Path $src) { Copy-Item $src (Join-Path $stageDir $folder) -Recurse -Force }
-    }
-
-    # If an assetlinks file was prepared earlier, include it under .well-known so it can be deployed with the plugin
+    # Include generated assetlinks.json if present
     if ($global:AssetLinksFilePath -and (Test-Path $global:AssetLinksFilePath)) {
         $wellKnownDir = Join-Path $stageDir '.well-known'
         if (-not (Test-Path $wellKnownDir)) { New-Item -ItemType Directory -Path $wellKnownDir | Out-Null }
         Copy-Item $global:AssetLinksFilePath (Join-Path $wellKnownDir 'assetlinks.json') -Force
-        Write-Host "Included assetlinks.json for Play Store under $wellKnownDir"
     }
 
     $ZipName = "$pluginName.zip"
