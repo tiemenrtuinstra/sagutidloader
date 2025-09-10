@@ -9,16 +9,26 @@
             color: #444 !important;
         }
     }
+    &.uk-label-default {
+        background: transparent;
+        border: 1px solid rgba($color-secondary, 0.18);
+        color: readable-text($color-secondary);
+        @include blur-panel($shadow: none, $color: transparent);
+        & > a {
+            color: color-contrast($color-secondary);
+        }
+    }
 }
 
 // Collapse color variant blocks into a map for maintainability
 // (keeps generated CSS identical to explicit declarations)
 $__label_color_variants: (
-    secondary: $color-secondary,
-    success: $color-success,
-    info: $color-info,
-    warning: $color-warning,
-    danger: $color-danger
+    primary: rgba($color-primary, 0.9),
+    secondary: rgba($color-secondary, 0.9),
+    success: rgba($color-success, 0.9),
+    info: rgba($color-info, 0.9),
+    warning: rgba($color-warning, 0.9),
+    danger: rgba($color-danger, 0.9)
 );
 
 @each $name, $col in $__label_color_variants {
@@ -26,9 +36,9 @@ $__label_color_variants: (
         &.uk-label {
             &-#{$name} {
                 @include blur-panel($color: $col, $shadow: $shadow);
-                color: #fff;
+                color: color-contrast($col);
                 & > a {
-                    color: #fff;
+                    color: color-contrast($col);
                 }
             }
         }
@@ -40,7 +50,7 @@ $__label_color_variants: (
     flex-wrap: wrap;
     gap: 2.5;
     row-gap: 5px;
-    
+
     .uk-label {
         margin: 0;
     }

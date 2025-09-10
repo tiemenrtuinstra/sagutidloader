@@ -46,7 +46,7 @@
     @each $name, $col in $__uk_tile_variants {
         &.uk-tile-#{$name} {
             @include blur-panel($color: $col, $shadow: $shadow);
-            color: #fff;
+            color: color-contrast(#fff);
         }
     }
 }

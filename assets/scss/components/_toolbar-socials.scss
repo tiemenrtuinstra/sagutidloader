@@ -62,7 +62,7 @@
         border: 2px solid transparent;
         border-radius: 50%;
         background: transparent;
-        color: #fff;
+        color: color-contrast(#fff);
         line-height: 1;
         filter: drop-shadow(0 3px 5px rgb(0 0 0 / 85%));
         transition:
@@ -74,7 +74,7 @@
         &:focus,
         &:hover,
         &:active {
-            color: #fff !important;
+            color: color-contrast(#fff) !important;
         }
         &:focus-visible {
             outline: 2px solid currentcolor;
