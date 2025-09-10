@@ -124,11 +124,13 @@ $transition-safe-props: (
 
 // Helper: return a color with the given alpha, accepts color or variable
 @function alpha($color, $a) {
-    @if meta.type-of($color) == 'string' {
+    @if meta.type-of($color) == "string" {
         $color: unquote($color);
         $color: #{$color};
     }
-    @if meta.type-of($color) != 'color' { @return rgba(0,0,0,$a) }
+    @if meta.type-of($color) != "color" {
+        @return rgba(0, 0, 0, $a);
+    }
     @return rgba(color.red($color), color.green($color), color.blue($color), $a);
 }
 
@@ -166,8 +168,11 @@ $transition-safe-props: (
     &:focus {
         @include focus-ring();
     }
-    & .uk-icon-link {
-        color: $text !important;
+    & .uk-icon {
+        fill: #fff !important;
+        &.uk-icon-link {
+            color: #fff !important;
+        }
     }
 }
 

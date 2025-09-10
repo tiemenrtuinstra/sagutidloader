@@ -42,15 +42,17 @@
         }
     }
 
-    ul.uk-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        justify-content: center;
-        align-items: center;
-        list-style: none;
-        margin: 0;
-        padding: 0;
+    ul {
+        .uk-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
     }
 
     .el-overlay [uk-icon],
@@ -83,18 +85,20 @@
     }
 }
 
-body.homepage {
-    .socials,
-    .tm-toolbar,
-    .tm-socials {
-        .el-overlay [uk-icon],
-        [uk-icon],
-        a img {
-            color: $color-primary;
+body {
+    .homepage {
+        .socials,
+        .tm-toolbar,
+        .tm-socials {
+            .el-overlay [uk-icon],
+            [uk-icon],
+            a img {
+                color: $color-primary;
+            }
         }
-    }
-    .tm-toolbar {
-        color: #444;
+        .tm-toolbar {
+            color: #444;
+        }
     }
 }
 

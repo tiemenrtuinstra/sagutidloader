@@ -35,7 +35,7 @@
         height: 12px;
         left: 50%;
         top: 50%;
-    background: alpha(#ffffff, 0.18);
+        background: alpha(#ffffff, 0.18);
         transition:
             transform 420ms cubic-bezier(0.22, 0.61, 0.36, 1),
             opacity 420ms;
@@ -74,9 +74,27 @@
 
     border: 0;
     @extend %uk-md-base;
+    // Ensure generic hover/focus styles are declared BEFORE the per-variant rules
+    // so that variant-specific hover styles (declared later) take precedence.
+    &:hover,
+    &:active,
+    &:focus {
+        border-radius: 4px;
+        background: unset;
+        background-color: $color-primary;
+        box-shadow: none !important;
+        outline: none;
+    }
+    &:focus-visible {
+        outline: none;
+        border-radius: 4px;
+        box-shadow: 0 0 0 4px alpha($color-primary, 0.12);
+    }
 
     // Generate color variants via a map to keep source concise while preserving output
     $__button_color_variants: (
+        primary: $color-primary,
+        secondary: $color-secondary,
         success: $color-success,
         info: $color-info,
         warning: $color-warning,
@@ -84,8 +102,26 @@
     );
 
     @each $variant, $bg in $__button_color_variants {
+        // Emit the variant for the button container (e.g. .btn.uk-button-primary / .uk-button.uk-button-primary)
         &.uk-button-#{$variant} {
             @include button-variant($bg);
+        }
+
+        // Also emit a root-level utility variant (.u-btn-<variant>) to match the runtime/compiled classnames
+        @at-root .u-btn-#{$variant} {
+            @include button-variant($bg);
+        }
+    }
+
+    &.uk-button-default {
+        background-color: #fff;
+        color: $color-primary;
+        box-shadow: unset;
+        & .uk-icon {
+            fill: $color-primary !important;
+            &.uk-icon-link {
+                color: $color-primary !important;
+            }
         }
     }
 
@@ -93,8 +129,11 @@
         background: none;
         background-color: #f26522;
         color: #fff !important;
-        & .uk-icon-link {
-            color: #fff !important;
+        & .uk-icon {
+            fill: #fff !important;
+            &.uk-icon-link {
+                color: #fff !important;
+            }
         }
         &:hover,
         &:active,
@@ -117,11 +156,11 @@
         }
     }
     &--elevated {
-    @include box-shadow(0 3px 6px alpha(#151515, 0.12), 0 1px 3px alpha(#151515, 0.08));
+        @include box-shadow(0 3px 6px alpha(#151515, 0.12), 0 1px 3px alpha(#151515, 0.08));
     }
     &--outlined {
         background: transparent;
-    border: 1px solid alpha(#000, 0.08);
+        border: 1px solid alpha(#000, 0.08);
         box-shadow: none;
         color: inherit;
     }
@@ -151,18 +190,5 @@
         }
     }
 
-    &:hover,
-    &:active,
-    &:focus {
-        border-radius: 4px;
-        background: unset;
-        background-color: $color-primary;
-        box-shadow: none !important;
-        outline: none;
-    }
-    &:focus-visible {
-        outline: none;
-        border-radius: 4px;
-    box-shadow: 0 0 0 4px alpha($color-primary, 0.12);
-    }
+    // ...existing code... (generic hover/focus moved above so variants can override it)
 }
