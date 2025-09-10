@@ -92,24 +92,65 @@
     }
 
     // Generate color variants via a map to keep source concise while preserving output
+    // Variants may be specified as a simple color value OR a map with keys `bg` and optional `text`:
+    // primary: $color-primary
+    // danger: (bg: $color-danger, text: #000)
     $__button_color_variants: (
-        primary: $color-primary,
-        secondary: $color-secondary,
-        success: $color-success,
-        info: $color-info,
-        warning: $color-warning,
-        danger: $color-danger
+        primary: (
+            bg: $color-primary
+        ),
+        secondary: (
+            bg: $color-secondary,
+            text-override: #fff
+        ),
+        success: (
+            bg: $color-success
+        ),
+        info: (
+            bg: $color-info
+        ),
+        warning: (
+            bg: $color-warning
+        ),
+        danger: (
+            bg: $color-danger
+        )
     );
 
-    @each $variant, $bg in $__button_color_variants {
+    @each $variant, $entry in $__button_color_variants {
+        // Support either a bare color or a map with {bg: <color>, text: <color>}.
+        $bg: null;
+        $text-override: null;
+        @if meta.type-of($entry) == "map" {
+            $bg: map.get($entry, bg);
+            @if map.has-key($entry, text) {
+                $text-override: map.get($entry, text);
+            }
+        } @else {
+            $bg: $entry;
+        }
+
+        // Fallback guard
+        @if $bg == null {
+            $bg: $color-primary;
+        }
+
         // Emit the variant for the button container (e.g. .btn.uk-button-primary / .uk-button.uk-button-primary)
         &.uk-button-#{$variant} {
-            @include button-variant($bg);
+            @if $text-override != null {
+                @include button-variant($bg, $text-override);
+            } @else {
+                @include button-variant($bg);
+            }
         }
 
         // Also emit a root-level utility variant (.u-btn-<variant>) to match the runtime/compiled classnames
         @at-root .u-btn-#{$variant} {
-            @include button-variant($bg);
+            @if $text-override != null {
+                @include button-variant($bg, $text-override);
+            } @else {
+                @include button-variant($bg);
+            }
         }
     }
 

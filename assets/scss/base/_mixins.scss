@@ -150,8 +150,10 @@ $transition-safe-props: (
 }
 
 // Generate a button variant from a base color
-@mixin button-variant($bg-color, $padding: 0.6rem 1rem, $radius: $border-radius-main) {
-    $text: color-contrast($bg-color);
+// Optional $text-color: if provided it is used as the button text/icon color,
+// otherwise we fall back to `color-contrast($bg-color)` to compute a readable color.
+@mixin button-variant($bg-color, $text-color: null, $padding: 0.6rem 1rem, $radius: $border-radius-main) {
+    $text: if($text-color != null, $text-color, color-contrast($bg-color));
     background: $bg-color;
     color: $text !important;
     padding: $padding;
