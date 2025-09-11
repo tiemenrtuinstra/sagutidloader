@@ -18,6 +18,7 @@ body {
             @include blur-panel($color: alpha($color-dark, 0.5), $shadow: $shadow);
             color: #fff !important;
             a {
+                color: #fff !important;
                 .uk-icon-link {
                     color: #fff !important;
                 }
@@ -32,7 +33,7 @@ body {
         }
     }
 
-    .uk-offcanvas-container {
+    &.uk-offcanvas-container {
         &::after {
             @include blur-panel($color: alpha(#000, 0.6), $shadow: none);
             border-radius: 0px;
