@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>plg_system_sagutidloader</name>
-        <description><![CDATA[Sagutid Loader
-
-- style(icons): replace color-contrast function with direct color values for consistency style(offcanvas): update color references to use direct color values for clarity (Tiemen Reinder Tuinstra) - style(header): simplify selector for icon link in header (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v31.4.1 (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
