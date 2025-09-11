@@ -8,7 +8,6 @@ body {
         top: 12.5px;
         height: 480px;
         position: fixed;
-        width: calc(100vw - 39px);
         margin: 0px 12.5px;
         overflow: hidden;
         z-index: 9999;
@@ -17,6 +16,13 @@ body {
             padding: 12.5px;
             @include blur-panel($color: alpha($color-dark, 0.5), $shadow: $shadow);
             color: #fff !important;
+            .uk-nav-default {
+                > li {
+                    > a {
+                        color: #fff !important;
+                    }
+                }
+            }
             a {
                 color: #fff !important;
                 .uk-icon-link {
@@ -42,7 +48,7 @@ body {
             left: 0px;
             width: 100vw;
             height: 100vh;
-            content: "";
+            content: " ";
             z-index: 999;
         }
     }
