@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>plg_system_sagutidloader</name>
-        <description><![CDATA[Sagutid Loader
-
-- chore(styles): remove unused Material Web styles from SCSS (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v31.4.5 (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
