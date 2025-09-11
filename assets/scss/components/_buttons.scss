@@ -145,15 +145,6 @@
                 @include button-variant($bg);
             }
         }
-
-        // Also emit a root-level utility variant (.u-btn-<variant>) to match the runtime/compiled classnames
-        @at-root .u-btn-#{$variant} {
-            @if $text-override != null {
-                @include button-variant($bg, $text-override);
-            } @else {
-                @include button-variant($bg);
-            }
-        }
     }
 
     &.uk-button-default {
