@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>plg_system_sagutidloader</name>
-        <description><![CDATA[Sagutid Loader
-
-- style(buttons): remove unnecessary whitespace and ensure icon color inheritance (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v31.4.0 (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
