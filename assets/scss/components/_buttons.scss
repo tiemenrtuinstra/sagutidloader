@@ -1,3 +1,5 @@
+@use "sass:meta";
+@use "sass:map";
 @use "../base/globals" as *;
 
 %uk-md-base {
@@ -158,7 +160,7 @@
         background-color: #fff;
         color: $color-primary;
         box-shadow: unset;
-        & .uk-icon {
+        .uk-icon {
             fill: $color-primary !important;
             &.uk-icon-link {
                 color: $color-primary !important;
@@ -170,7 +172,7 @@
         background: none;
         background-color: #f26522;
         color: #fff !important;
-        & .uk-icon {
+        .uk-icon {
             fill: #fff !important;
             &.uk-icon-link {
                 color: #fff !important;
@@ -230,6 +232,38 @@
             background: alpha(#000, 0.18);
         }
     }
+}
 
-    // ...existing code... (generic hover/focus moved above so variants can override it)
+.speech-reader-button {
+    a.uk-button {
+        &.uk-button-default {
+            background: transparent;
+            color: #fff;
+            .uk-icon {
+                fill: #fff !important;
+                &.uk-icon-link {
+                    color: #fff !important;
+                }
+            }
+        }
+    }
+
+    &.is-speaking {
+        a.uk-button {
+            &.uk-button-default {
+                &:hover,
+                &:active,
+                &:focus {
+                    background: #fff;
+                    color: $color-primary !important;
+                    .uk-icon {
+                        fill: $color-primary !important;
+                        &.uk-icon-link {
+                            color: $color-primary !important;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
