@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>plg_system_sagutidloader</name>
-        <description><![CDATA[Sagutid Loader
-
-- style(utilities): format utility classes for improved readability (Tiemen Reinder Tuinstra) - refactor(buttons): remove deprecated button-variant mixin and associated styles (Tiemen Reinder Tuinstra) - fix(buttons): ensure consistent background color handling in button-variant mixin (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
