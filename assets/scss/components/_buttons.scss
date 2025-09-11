@@ -25,7 +25,6 @@
         outline: none;
         box-shadow: 0 0 0 4px alpha($color-primary, 0.12);
     }
-
     &::after {
         content: "";
         position: absolute;
@@ -47,13 +46,18 @@
         opacity: 0;
         transition: none;
     }
-
     .uk-button__icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 20px;
         height: 20px;
+    }
+    .uk-icon {
+        color: inherit !important;
+        &.uk-icon-link {
+            color: inherit !important;
+        }
     }
 }
 
