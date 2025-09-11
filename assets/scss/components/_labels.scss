@@ -11,7 +11,7 @@
     }
     &.uk-label-default {
         background: transparent;
-        border: 1px solid alpha($color-secondary, 0.18);
+        border: 1px solid rgba($color-secondary, 0.18);
         color: readable-text($color-secondary);
         @include blur-panel($shadow: none, $color: transparent);
         & > a {
@@ -23,12 +23,12 @@
 // Collapse color variant blocks into a map for maintainability
 // (keeps generated CSS identical to explicit declarations)
 $__label_color_variants: (
-    primary: alpha($color-primary, 0.9),
-    secondary: alpha($color-secondary, 0.9),
-    success: alpha($color-success, 0.9),
-    info: alpha($color-info, 0.9),
-    warning: alpha($color-warning, 0.9),
-    danger: alpha($color-danger, 0.9)
+    primary: rgba($color-primary, 0.9),
+    secondary: rgba($color-secondary, 0.9),
+    success: rgba($color-success, 0.9),
+    info: rgba($color-info, 0.9),
+    warning: rgba($color-warning, 0.9),
+    danger: rgba($color-danger, 0.9)
 );
 
 @each $name, $col in $__label_color_variants {

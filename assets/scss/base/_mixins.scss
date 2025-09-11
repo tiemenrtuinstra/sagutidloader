@@ -112,26 +112,23 @@ $transition-safe-props: (
         $color: rgba(255, 255, 255, 0.4);
     }
 
-    // Ensure alpha is 0.4 while preserving RGB components
-    $color: rgba(color.red($color), color.green($color), color.blue($color), 0.4);
-
+    // Preserve an existing alpha channel; if none present, apply default alpha 0.4
+    @if meta.type-of($color) == "color" {
+        @if color.alpha($color) < 1 {
+            // color already has transparency — keep as-is
+        } @else {
+            $r: color.channel($color, "red",  $space: rgb);
+            $g: color.channel($color, "green",$space: rgb);
+            $b: color.channel($color, "blue", $space: rgb);
+            $color: rgba($r, $g, $b, 0.4);
+        }
+    }
+    
     border-radius: $border-radius-main;
     background: $color;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     @include box-shadow($shadow);
-}
-
-// Helper: return a color with the given alpha, accepts color or variable
-@function alpha($color, $a) {
-    @if meta.type-of($color) == "string" {
-        $color: unquote($color);
-        $color: #{$color};
-    }
-    @if meta.type-of($color) != "color" {
-        @return rgba(0, 0, 0, $a);
-    }
-    @return rgba(color.red($color), color.green($color), color.blue($color), $a);
 }
 
 // ----------------------- Useful shared mixins -----------------------

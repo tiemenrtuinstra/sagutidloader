@@ -14,7 +14,7 @@ body {
 
         .uk-panel {
             padding: 12.5px;
-            @include blur-panel($color: alpha($color-dark, 0.5), $shadow: $shadow);
+            @include blur-panel($color: rgba($color-dark, 0.7), $shadow: $shadow);
             color: #fff !important;
             .uk-nav-default {
                 > li {
@@ -41,7 +41,7 @@ body {
 
     &.uk-offcanvas-container {
         &::after {
-            @include blur-panel($color: alpha(#000, 0.6), $shadow: none);
+            @include blur-panel($color: rgba(#000, 0.6), $shadow: none);
             border-radius: 0px;
             position: fixed;
             top: 0px;
