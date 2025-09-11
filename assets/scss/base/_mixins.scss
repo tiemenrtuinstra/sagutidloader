@@ -149,32 +149,6 @@ $transition-safe-props: (
     @return if($luma > 0.5, $dark, $light);
 }
 
-// Generate a button variant from a base color
-// Optional $text-color: if provided it is used as the button text/icon color,
-// otherwise we fall back to `color-contrast($bg-color)` to compute a readable color.
-@mixin button-variant($bg-color, $text-color: null, $padding: 0.6rem 1rem, $radius: $border-radius-main) {
-    $text: if($text-color != null, $text-color, color-contrast($bg-color));
-    background-color: $bg-color !important;
-    background: $bg-color !important;
-    color: $text !important;
-    padding: $padding;
-    border-radius: $radius;
-    border: 1px solid rgba(color.red($bg-color), color.green($bg-color), color.blue($bg-color), 0.15);
-    cursor: pointer;
-    @include transition-props((background-color, color, box-shadow));
-    &:hover,
-    &:active,
-    &:focus {
-        @include focus-ring();
-    }
-    & .uk-icon {
-        fill: $text !important;
-        &.uk-icon-link {
-            color: $text !important;
-        }
-    }
-}
-
 // Visually hidden (accessible) helper
 %visually-hidden {
     border: 0 !important;

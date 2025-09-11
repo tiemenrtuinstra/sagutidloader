@@ -76,88 +76,6 @@
 
     border: 0;
     @extend %uk-md-base;
-    // Ensure generic hover/focus styles are declared BEFORE the per-variant rules
-    // so that variant-specific hover styles (declared later) take precedence.
-    &:hover,
-    &:active,
-    &:focus {
-        border-radius: 4px;
-        background: unset;
-        background-color: $color-primary;
-        box-shadow: none !important;
-        outline: none;
-    }
-    &:focus-visible {
-        outline: none;
-        border-radius: 4px;
-        box-shadow: 0 0 0 4px alpha($color-primary, 0.12);
-    }
-
-    // Generate color variants via a map to keep source concise while preserving output
-    // Variants may be specified as a simple color value OR a map with keys `bg` and optional `text`:
-    // primary: $color-primary
-    // danger: (bg: $color-danger, text: #000)
-    $__button_color_variants: (
-        primary: (
-            bg: $color-primary
-        ),
-        secondary: (
-            bg: $color-secondary,
-            text-override: #fff
-        ),
-        success: (
-            bg: $color-success
-        ),
-        info: (
-            bg: $color-info
-        ),
-        warning: (
-            bg: $color-warning
-        ),
-        danger: (
-            bg: $color-danger
-        )
-    );
-
-    @each $variant, $entry in $__button_color_variants {
-        // Support either a bare color or a map with {bg: <color>, text: <color>}.
-        $bg: null;
-        $text-override: null;
-        @if meta.type-of($entry) == "map" {
-            $bg: map.get($entry, bg);
-            @if map.has-key($entry, text) {
-                $text-override: map.get($entry, text);
-            }
-        } @else {
-            $bg: $entry;
-        }
-
-        // Fallback guard
-        @if $bg == null {
-            $bg: $color-primary;
-        }
-
-        // Emit the variant for the button container (e.g. .btn.uk-button-primary / .uk-button.uk-button-primary)
-        &.uk-button-#{$variant} {
-            @if $text-override != null {
-                @include button-variant($bg, $text-override);
-            } @else {
-                @include button-variant($bg);
-            }
-        }
-    }
-
-    &.uk-button-default {
-        background-color: #fff;
-        color: $color-primary;
-        box-shadow: unset;
-        .uk-icon {
-            fill: $color-primary !important;
-            &.uk-icon-link {
-                color: $color-primary !important;
-            }
-        }
-    }
 
     &[aria-label="RSS feed"] {
         background: none;
@@ -179,48 +97,6 @@
                 rgba(243, 129, 40, 1) 50%,
                 rgba(242, 101, 34, 1) 80%
             );
-        }
-    }
-
-    &--clickable {
-        cursor: pointer;
-        &:active {
-            transform: translateY(1px);
-            @include box-shadow(0 4px 10px alpha(#151515, 0.12));
-        }
-    }
-    &--elevated {
-        @include box-shadow(0 3px 6px alpha(#151515, 0.12), 0 1px 3px alpha(#151515, 0.08));
-    }
-    &--outlined {
-        background: transparent;
-        border: 1px solid alpha(#000, 0.08);
-        box-shadow: none;
-        color: inherit;
-    }
-    &--dense {
-        padding: 0.25rem 0.5rem;
-        border-radius: 3px;
-        font-size: 0.875rem;
-    }
-    &--icon {
-        padding: 0.375rem;
-        width: 36px;
-        height: 36px;
-        justify-content: center;
-        border-radius: 50%;
-    }
-    &.uk-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 20px;
-        height: 20px;
-    }
-
-    &--dark {
-        &::after {
-            background: alpha(#000, 0.18);
         }
     }
 }
