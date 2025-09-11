@@ -7,7 +7,7 @@
     text-decoration: none;
     -webkit-user-select: none;
     user-select: none;
-    color: color-contrast(#fff);
+    color: #fff;
     background: transparent;
     border: 2px solid transparent;
     box-shadow: none;
@@ -18,10 +18,10 @@
     &:hover,
     &:active,
     &:focus {
-    color: color-contrast(#fff);
-    background-color: $color-dark;
-    @include box-shadow($shadow);
-    border: 2px solid color-contrast(#fff);
+        color: #fff;
+        background-color: $color-dark;
+        @include box-shadow($shadow);
+        border: 2px solid #fff;
         animation: hoverAnimation 0.5s ease-in-out;
         border-radius: $border-radius-main;
     }

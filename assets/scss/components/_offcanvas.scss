@@ -1,32 +1,48 @@
 @use "../base/globals" as *;
 
-.uk-offcanvas-bar {
-    @include blur-panel($shadow: $shadow);
-    left: 0;
-    right: 0;
-    top: 12.5px;
-    bottom: 142.5px;
-    position: fixed;
-    width: calc(100vw - 39px);
-    margin: 0px 12.5px;
-    overflow: hidden;
-    z-index: 9999;
+body {
+    .uk-offcanvas-bar {
+        @include blur-panel($shadow: $shadow);
+        left: 0;
+        right: 0;
+        top: 12.5px;
+        height: 480px;
+        position: fixed;
+        width: calc(100vw - 39px);
+        margin: 0px 12.5px;
+        overflow: hidden;
+        z-index: 9999;
 
-    .uk-panel {
-        padding: 12.5px;
-        @include blur-panel($color: alpha($color-dark, 0.5), $shadow: $shadow);
-        color: color-contrast(alpha($color-dark, 0.5)) !important;
-        a {
-            .uk-icon-link {
-            color: color-contrast(alpha($color-dark, 0.5)) !important;
+        .uk-panel {
+            padding: 12.5px;
+            @include blur-panel($color: alpha($color-dark, 0.5), $shadow: $shadow);
+            color: #fff !important;
+            a {
+                .uk-icon-link {
+                    color: #fff !important;
+                }
             }
         }
     }
-}
-a {
-    .uk-navbar-toggle[aria-expanded="true"] {
-        [uk-navbar-toggle-icon] {
-            display: none;
+    a {
+        .uk-navbar-toggle[aria-expanded="true"] {
+            [uk-navbar-toggle-icon] {
+                display: none;
+            }
+        }
+    }
+
+    .uk-offcanvas-container {
+        &::after {
+            @include blur-panel($color: alpha(#000, 0.6), $shadow: none);
+            border-radius: 0px;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100vw;
+            height: 100vh;
+            content: "";
+            z-index: 999;
         }
     }
 }
