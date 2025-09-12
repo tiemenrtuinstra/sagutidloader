@@ -47,6 +47,36 @@ $currentVersion = $manifest.extension.version
 
 Write-Host "Current version: $currentVersion" -ForegroundColor Yellow
 
+# Clean and parse version - handle various formats
+$cleanVersion = $currentVersion -replace '[^\d\.]', '' -replace '\.+', '.'
+$cleanVersion = $cleanVersion.Trim('.')
+
+Write-Host "Cleaned version: $cleanVersion" -ForegroundColor Cyan
+
+# Try to extract semantic version parts
+$versionParts = $cleanVersion -split '\.'
+if ($versionParts.Count -ge 3) {
+    $major = [int]$versionParts[0]
+    $minor = [int]$versionParts[1] 
+    $patch = [int]$versionParts[2]
+} elseif ($versionParts.Count -eq 2) {
+    $major = [int]$versionParts[0]
+    $minor = [int]$versionParts[1]
+    $patch = 0
+} elseif ($versionParts.Count -eq 1) {
+    $major = [int]$versionParts[0]
+    $minor = 0
+    $patch = 0
+} else {
+    # Fallback for completely non-standard versions
+    Write-Warning "Cannot parse version '$currentVersion', using 1.0.0 as base"
+    $major = 1
+    $minor = 0  
+    $patch = 0
+}
+
+Write-Host "Parsed as: $major.$minor.$patch" -ForegroundColor Cyan
+
 # Calculate new version
 if ($ReleaseType -eq 'custom') {
     if (!$CustomVersion) {
@@ -54,23 +84,13 @@ if ($ReleaseType -eq 'custom') {
     }
     $newVersion = $CustomVersion
 } else {
-    # Parse semantic version
-    if ($currentVersion -match '^(\d+)\.(\d+)\.(\d+)') {
-        $major = [int]$matches[1]
-        $minor = [int]$matches[2]
-        $patch = [int]$matches[3]
-        
-        switch ($ReleaseType) {
-            'major' { $major++; $minor = 0; $patch = 0 }
-            'minor' { $minor++; $patch = 0 }
-            'patch' { $patch++ }
-        }
-        
-        $newVersion = "$major.$minor.$patch"
-    } else {
-        Write-Error "Cannot parse current version: $currentVersion"
-        exit 1
+    switch ($ReleaseType) {
+        'major' { $major++; $minor = 0; $patch = 0 }
+        'minor' { $minor++; $patch = 0 }
+        'patch' { $patch++ }
     }
+    
+    $newVersion = "$major.$minor.$patch"
 }
 
 Write-Host "New version: $newVersion" -ForegroundColor Green
@@ -100,27 +120,51 @@ if ($status) {
 }
 
 try {
-    # Update manifest
+    # Update manifest - find and update version node properly
     Write-Host "Updating $manifestPath..." -ForegroundColor Cyan
-    $manifest.extension.version = $newVersion
-    $manifest.Save((Resolve-Path $manifestPath).Path)
+    
+    $versionNode = $manifest.extension.SelectSingleNode('version')
+    if ($versionNode) {
+        $versionNode.InnerText = $newVersion
+    } else {
+        # Create version node if it doesn't exist
+        $versionElement = $manifest.CreateElement('version')
+        $versionElement.InnerText = $newVersion
+        $manifest.extension.AppendChild($versionElement) | Out-Null
+    }
+    
+    # Save with proper formatting
+    $xmlSettings = New-Object System.Xml.XmlWriterSettings
+    $xmlSettings.Indent = $true
+    $xmlSettings.IndentChars = "    "
+    $xmlSettings.Encoding = [System.Text.UTF8Encoding]::new($false) # UTF8 without BOM
+    
+    $xmlWriter = [System.Xml.XmlWriter]::Create($manifestPath, $xmlSettings)
+    try {
+        $manifest.Save($xmlWriter)
+        Write-Host "Updated manifest version to $newVersion" -ForegroundColor Green
+    } finally {
+        $xmlWriter.Close()
+    }
     
     # Update package.json if it exists
     $packagePath = 'package.json'
     if (Test-Path $packagePath) {
         Write-Host "Updating $packagePath..." -ForegroundColor Cyan
-        $package = Get-Content $packagePath | ConvertFrom-Json
+        $package = Get-Content $packagePath -Encoding UTF8 | ConvertFrom-Json
         $package.version = $newVersion
-        $package | ConvertTo-Json -Depth 10 | Set-Content $packagePath
+        $package | ConvertTo-Json -Depth 10 | Set-Content $packagePath -Encoding UTF8
+        Write-Host "Updated package.json version to $newVersion" -ForegroundColor Green
     }
     
     # Update service worker version
     $swPath = 'assets/ts/serviceworker.ts'
     if (Test-Path $swPath) {
         Write-Host "Updating service worker version..." -ForegroundColor Cyan
-        $content = Get-Content $swPath -Raw
+        $content = Get-Content $swPath -Raw -Encoding UTF8
         $content = $content -replace "const VERSION = '[^']*'", "const VERSION = '$newVersion'"
-        Set-Content $swPath $content -NoNewline
+        Set-Content $swPath $content -NoNewline -Encoding UTF8
+        Write-Host "Updated service worker version to $newVersion" -ForegroundColor Green
     }
     
     # Git operations
@@ -142,7 +186,17 @@ try {
     
     Write-Host "`n✅ Release initiated!" -ForegroundColor Green
     Write-Host "Tag $tagName has been pushed and will trigger the GitHub Actions release workflow." -ForegroundColor Green
-    Write-Host "`nMonitor progress at: https://github.com/$(git config --get remote.origin.url -replace '.*github\.com[:/](.+?)(?:\.git)?$', '$1')/actions" -ForegroundColor Cyan
+    
+    # Get repository URL for actions link
+    try {
+        $remoteUrl = git config --get remote.origin.url
+        if ($remoteUrl -match 'github\.com[:/](.+?)(?:\.git)?$') {
+            $repoPath = $matches[1]
+            Write-Host "`nMonitor progress at: https://github.com/$repoPath/actions" -ForegroundColor Cyan
+        }
+    } catch {
+        Write-Host "`nCheck GitHub Actions for build progress." -ForegroundColor Cyan
+    }
     
 } catch {
     Write-Error "Failed to bump version: $($_.Exception.Message)"
