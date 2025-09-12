@@ -125,7 +125,8 @@
                 &:hover,
                 &:active,
                 &:focus {
-                    background: #fff;
+                    background: #e0ad10;
+                    background: radial-gradient(circle, rgba(224, 173, 16, 1) 100%, rgba(252, 234, 167, 0.68) 0%);
                     color: $color-primary !important;
                     .uk-icon {
                         fill: $color-primary !important;
