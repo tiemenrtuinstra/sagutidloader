@@ -195,6 +195,11 @@ function Git-Commit-Push-Tag([string]$NewVersion, [bool]$DidBuild, [string]$XmlF
     if (Test-Path $ServiceWorkerFile) { $null = git add $ServiceWorkerFile }
     if ($DidBuild -eq $true -and (Test-Path -LiteralPath 'assets/dist')) { $null = git add -- 'assets/dist' }
 
+    # Ensure package-lock.json is included in version commits
+    if (Test-Path 'package-lock.json') {
+        git add package-lock.json
+    }
+
     # Stage update server XML if present (force add in case folder is ignored)
     $updatesFile = Join-Path 'updates' 'sagutidloader_updates.xml'
     if (Test-Path $updatesFile) { $null = git add -f -- $updatesFile }
