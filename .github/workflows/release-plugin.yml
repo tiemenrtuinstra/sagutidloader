@@ -303,22 +303,81 @@ jobs:
         Write-Host "Generated update server XML: $updateFile"
         Write-Host "Download URL: $downloadUrl"
     
-    - name: Commit and push updated files
+    - name: Update version files on main branch via GitHub API
       shell: pwsh
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        # Files to update on main branch (from bump-version.ps1)
+        $filesToUpdate = @(
+          @{ path = "updates/sagutidloader_updates.xml"; message = "Update XML with checksums and metadata" },
+          @{ path = "sagutidloader.xml"; message = "Bump version in manifest" },
+          @{ path = "package.json"; message = "Bump version in package.json" },
+          @{ path = "assets/ts/serviceworker.ts"; message = "Bump version in service worker" }
+        )
         
-        # Check if there are any changes to commit
-        $status = git status --porcelain
-        if ($status) {
-          Write-Host "Changes detected, committing..."
-          git add updates/sagutidloader_updates.xml
-          git commit -m "Release ${{ env.TAG_NAME }}: Update XML with checksums and metadata"
-          git push origin main
-          Write-Host "Changes committed and pushed to main branch"
-        } else {
-          Write-Host "No changes to commit"
+        $headers = @{
+            "Authorization" = "token ${{ secrets.GITHUB_TOKEN }}"
+            "Accept" = "application/vnd.github.v3+json"
+        }
+        
+        foreach ($fileInfo in $filesToUpdate) {
+          $filePath = $fileInfo.path
+          $commitMessage = $fileInfo.message
+          
+          Write-Host "Updating $filePath on main branch..."
+          
+          # Check if file exists locally
+          if (-not (Test-Path $filePath)) {
+            Write-Host "File $filePath not found locally, skipping..."
+            continue
+          }
+          
+          $fileContent = Get-Content $filePath -Raw -Encoding UTF8
+          $base64Content = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($fileContent))
+          
+          # Get current file SHA from main branch
+          $apiUrl = "https://api.github.com/repos/${{ github.repository }}/contents/$filePath"
+          
+          try {
+            $currentFile = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method GET
+            $currentSha = $currentFile.sha
+            Write-Host "Current SHA for $filePath: $currentSha"
+            
+            # Check if content is different to avoid unnecessary commits
+            $currentContent = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($currentFile.content.Replace("`n", "").Replace("`r", "")))
+            if ($currentContent.Trim() -eq $fileContent.Trim()) {
+              Write-Host "Content for $filePath unchanged, skipping update"
+              continue
+            }
+          } catch {
+            Write-Host "File $filePath doesn't exist on main branch yet"
+            $currentSha = $null
+          }
+          
+          # Update file on main branch
+          $updateBody = @{
+            message = "Release ${{ github.ref_name }}: $commitMessage"
+            content = $base64Content
+            branch = "main"
+          }
+          
+          if ($currentSha) {
+            $updateBody.sha = $currentSha
+          }
+          
+          $updateJson = $updateBody | ConvertTo-Json -Depth 10
+          
+          try {
+            $result = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method PUT -Body $updateJson -ContentType "application/json"
+            Write-Host "Successfully updated $filePath on main branch"
+            Write-Host "New commit SHA: $($result.commit.sha)"
+          } catch {
+            Write-Host "Failed to update $filePath`: $_"
+            if ($_.Exception.Response) {
+              $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+              $responseBody = $reader.ReadToEnd()
+              Write-Host "Response body: $responseBody"
+            }
+          }
         }
     
     - name: Create GitHub Release
@@ -339,6 +398,7 @@ jobs:
           Update server URL: `https://raw.githubusercontent.com/${{ github.repository }}/main/updates/sagutidloader_updates.xml`
         files: |
           ${{ env.ZIP_PATH }}
+          updates/sagutidloader_updates.xml
         draft: false
         prerelease: false
       env:
