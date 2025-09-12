@@ -292,25 +292,31 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [stri
     if ($ReleaseNotes) { $desc = "$desc`n`n$ReleaseNotes" }
     $changelogUrl = "https://github.com/$repo/releases/tag/$tag"
 
-    $xml = @"
-<?xml version="1.0" encoding="utf-8"?>
-<updates>
-    <update>
-        <name>plg_${group}_${pluginName}</name>
-        <description><![CDATA[${desc}]]></description>
-        <element>${pluginName}</element>
-        <type>plugin</type>
-        <folder>${group}</folder>
-        <version>${NewVersion}</version>
-        <downloads>
-            <downloadurl type="full" format="zip">${downloadUrl}</downloadurl>
-            <changelogurl>${changelogUrl}</changelogurl>
-        </downloads>
-        <targetplatform name="joomla" version=">=4.0.0" />
-    </update>
-</updates>
-"@
-    Set-Content -Path $updatesFile -Value $xml -Encoding UTF8
+    # Build XML content line by line to ensure proper formatting
+    $xmlLines = @(
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<updates>',
+        '    <update>',
+        "        <name>plg_${group}_${pluginName}</name>",
+        "        <description><![CDATA[${desc}]]></description>",
+        "        <element>${pluginName}</element>",
+        '        <type>plugin</type>',
+        "        <folder>${group}</folder>",
+        '        <client>0</client>',
+        "        <version>${NewVersion}</version>",
+        "        <infourl title=`"Plugin Info`">${changelogUrl}</infourl>",
+        '        <downloads>',
+        "            <downloadurl type=`"full`" format=`"zip`">${downloadUrl}</downloadurl>",
+        '        </downloads>',
+        "        <changelogurl>${changelogUrl}</changelogurl>",
+        '        <targetplatform name="joomla" version="4.*" />',
+        '        <targetplatform name="joomla" version="5.*" />',
+        '        <php_minimum>7.4</php_minimum>',
+        '    </update>',
+        '</updates>'
+    )
+    
+    $xmlLines | Set-Content -Path $updatesFile -Encoding UTF8
     return $updatesFile
 }
 
