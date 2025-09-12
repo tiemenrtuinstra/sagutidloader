@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>plg_system_sagutidloader</name>
-        <description><![CDATA[Sagutid Loader
-
-- fix(write-update-server-xml): improve XML generation by building content line by line and adding additional fields (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
