@@ -307,6 +307,7 @@ jobs:
       uses: peter-evans/create-pull-request@v5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        base: main
         commit-message: "Release ${{ env.TAG_NAME }}: Update version and build assets"
         title: "🚀 Release ${{ env.RELEASE_VERSION }}"
         body: |
