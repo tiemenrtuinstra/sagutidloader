@@ -3,7 +3,7 @@
   <!-- Removed client="site" -->
   <name>PLG_SYSTEM_SAGUTIDLOADER</name>
   <author>Tiemen R Tuinstra</author>
-  <version>33.4.0</version>
+  <version>33.5.0</version>
   <description>PLG_SYSTEM_SAGUTIDLOADER_XML_DESCRIPTION</description>
   <files>
     <filename plugin="sagutidloader">sagutidloader.php</filename>
