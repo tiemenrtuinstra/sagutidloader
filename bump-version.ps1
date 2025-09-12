@@ -42,7 +42,7 @@ if (!(Test-Path $manifestPath)) {
     exit 1
 }
 
-[xml]$manifest = Get-Content $manifestPath
+[xml]$manifest = Get-Content $manifestPath -Encoding UTF8
 $currentVersion = $manifest.extension.version
 
 Write-Host "Current version: $currentVersion" -ForegroundColor Yellow
@@ -200,5 +200,7 @@ try {
     
 } catch {
     Write-Error "Failed to bump version: $($_.Exception.Message)"
+    Write-Host "Stack trace:" -ForegroundColor Red
+    Write-Host $_.ScriptStackTrace -ForegroundColor Red
     exit 1
 }
