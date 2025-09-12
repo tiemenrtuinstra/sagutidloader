@@ -292,6 +292,31 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [stri
     if ($ReleaseNotes) { $desc = "$desc`n`n$ReleaseNotes" }
     $changelogUrl = "https://github.com/$repo/releases/tag/$tag"
 
+    # Calculate checksums if ZIP file exists
+    $zipPath = Join-Path (Get-Location) $zip
+    $sha256Hash = ''
+    $sha1Hash = ''
+    $md5Hash = ''
+    $fileSize = 0
+    
+    if (Test-Path $zipPath) {
+        Write-Host "Calculating checksums for $zipPath..."
+        try {
+            $sha256Hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLower()
+            $sha1Hash = (Get-FileHash -Path $zipPath -Algorithm SHA1).Hash.ToLower()
+            $md5Hash = (Get-FileHash -Path $zipPath -Algorithm MD5).Hash.ToLower()
+            $fileSize = (Get-Item $zipPath).Length
+            Write-Host "SHA256: $sha256Hash"
+            Write-Host "SHA1: $sha1Hash"
+            Write-Host "MD5: $md5Hash"
+            Write-Host "Size: $fileSize bytes"
+        } catch {
+            Write-Warning "Failed to calculate checksums: $_"
+        }
+    } else {
+        Write-Warning "ZIP file not found at $zipPath - checksums will be empty"
+    }
+
     # Build XML content line by line to ensure proper formatting
     $xmlLines = @(
         '<?xml version="1.0" encoding="utf-8"?>',
@@ -305,8 +330,17 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [stri
         '        <client>0</client>',
         "        <version>${NewVersion}</version>",
         "        <infourl title=`"Plugin Info`">${changelogUrl}</infourl>",
-        '        <downloads>',
-        "            <downloadurl type=`"full`" format=`"zip`">${downloadUrl}</downloadurl>",
+        '        <downloads>'
+    )
+    
+    # Add download URL with checksums and size if available
+    if ($sha256Hash) {
+        $xmlLines += "            <downloadurl type=`"full`" format=`"zip`" size=`"${fileSize}`" sha256=`"${sha256Hash}`" sha1=`"${sha1Hash}`" md5=`"${md5Hash}`">${downloadUrl}</downloadurl>"
+    } else {
+        $xmlLines += "            <downloadurl type=`"full`" format=`"zip`">${downloadUrl}</downloadurl>"
+    }
+    
+    $xmlLines += @(
         '        </downloads>',
         "        <changelogurl>${changelogUrl}</changelogurl>",
         '        <targetplatform name="joomla" version="4.*" />',

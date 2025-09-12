@@ -1,0 +1,5 @@
+2025-09-12T14:30:15+02:00 [INFO] general - Plugin initialized successfully | origin=sagutid.ts ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+2025-09-12T14:30:16+02:00 [SUCCESS] general - Service worker registered | origin=ServiceWorkerHandler.ts ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+2025-09-12T14:30:17+02:00 [INFO] general - UXGuardHandler initialized | origin=UXGuardHandler.ts ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+2025-09-12T14:31:22+02:00 [WARN] general - Context menu blocked by UXGuard | origin=UXGuardHandler.ts ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+2025-09-12T14:31:45+02:00 [INFO] general - Text selection prevented | origin=UXGuardHandler.ts ua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36

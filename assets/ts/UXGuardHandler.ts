@@ -16,6 +16,16 @@ const UXGuardHandler = {
             disableTextSelection: true,
             disableContextMenu: true
         });
+        
+        // Log initialization for testing
+        try {
+            const Logger = (window as any).Logger;
+            if (Logger) {
+                Logger.Success('UXGuardHandler initialized with text selection and context menu protection', 'UXGuardHandler.ts');
+            }
+        } catch (e) {
+            // Logger not available yet, ignore
+        }
     },
 
     attach(root: Document | HTMLElement = document, opts: UXGuardOptions = {}) {
@@ -32,6 +42,13 @@ const UXGuardHandler = {
                     try { 
                         e.preventDefault(); 
                         e.stopPropagation();
+                        
+                        // Log text selection prevention
+                        const Logger = (globalThis as any)?.Logger;
+                        if (Logger) {
+                            Logger.Info('Text selection prevented by UXGuard', 'UXGuardHandler.ts');
+                        }
+                        
                         return false;
                     } catch (_) { /* ignore */ } 
                 };
@@ -75,6 +92,13 @@ const UXGuardHandler = {
                     try { 
                         e.preventDefault(); 
                         e.stopPropagation();
+                        
+                        // Log context menu blocking
+                        const Logger = (globalThis as any)?.Logger;
+                        if (Logger) {
+                            Logger.Info('Context menu blocked by UXGuard', 'UXGuardHandler.ts');
+                        }
+                        
                         return false;
                     } catch (_) { /* ignore */ } 
                 };

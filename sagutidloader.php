@@ -243,6 +243,82 @@ class PlgSystemSagutidloader extends CMSPlugin
     }
 
     /**
+     * Get log entries from the logs directory (for admin panel display)
+     *
+     * @return string HTML with recent log entries
+     */
+    public function getLogEntries()
+    {
+        try {
+            $pluginBase = defined('JPATH_PLUGINS') ? JPATH_PLUGINS . '/system/sagutidloader/' : __DIR__ . '/';
+            $logsDir = $pluginBase . 'logs/';
+            
+            if (!is_dir($logsDir)) {
+                return '<p><em>Geen logbestanden gevonden. Logs directory bestaat nog niet.</em></p>';
+            }
+            
+            $logFiles = glob($logsDir . '*.log');
+            if (empty($logFiles)) {
+                return '<p><em>Geen logbestanden gevonden in ' . htmlspecialchars($logsDir) . '</em></p>';
+            }
+            
+            // Sort by modification time, newest first
+            usort($logFiles, function($a, $b) {
+                return filemtime($b) - filemtime($a);
+            });
+            
+            $output = '<div style="max-height: 400px; overflow-y: auto; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 12px;">';
+            
+            foreach (array_slice($logFiles, 0, 3) as $logFile) { // Show max 3 most recent files
+                $filename = basename($logFile);
+                $output .= '<h4 style="margin: 0 0 10px 0; color: #333;">📄 ' . htmlspecialchars($filename) . '</h4>';
+                
+                if (!is_readable($logFile)) {
+                    $output .= '<p style="color: #999;">Bestand niet leesbaar</p>';
+                    continue;
+                }
+                
+                $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                if ($lines === false) {
+                    $output .= '<p style="color: #999;">Kon bestand niet lezen</p>';
+                    continue;
+                }
+                
+                // Show last 10 lines
+                $recentLines = array_slice($lines, -10);
+                foreach ($recentLines as $line) {
+                    $line = htmlspecialchars($line);
+                    
+                    // Color code by log level
+                    if (strpos($line, '[ERROR]') !== false) {
+                        $color = '#d32f2f';
+                    } elseif (strpos($line, '[WARN]') !== false) {
+                        $color = '#f57c00';
+                    } elseif (strpos($line, '[SUCCESS]') !== false) {
+                        $color = '#388e3c';
+                    } else {
+                        $color = '#666';
+                    }
+                    
+                    $output .= '<div style="margin: 2px 0; color: ' . $color . '; white-space: pre-wrap;">' . $line . '</div>';
+                }
+                
+                $totalLines = count($lines);
+                if ($totalLines > 10) {
+                    $output .= '<p style="margin: 10px 0 0 0; color: #999; font-style: italic;">... en ' . ($totalLines - 10) . ' oudere entries</p>';
+                }
+                $output .= '<hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">';
+            }
+            
+            $output .= '</div>';
+            return $output;
+            
+        } catch (\Throwable $e) {
+            return '<p style="color: #d32f2f;">Fout bij het laden van logbestanden: ' . htmlspecialchars($e->getMessage()) . '</p>';
+        }
+    }
+
+    /**
      * Diagnostics: Check if assets are loaded (for admin panel display)
      *
      * @return string HTML with asset status
@@ -332,11 +408,16 @@ class PlgSystemSagutidloader extends CMSPlugin
             }
 
             $diagnostics = $this->getDiagnosticsStatus();
+            $logEntries = $this->getLogEntries();
 
             // Set the value into the params group if the field exists
             if (method_exists($form, 'getField') && $form->getField('diagnostics_status', 'params')) {
                 // setValue(name, group, value)
                 $form->setValue('diagnostics_status', 'params', $diagnostics);
+            }
+            
+            if (method_exists($form, 'getField') && $form->getField('log_entries', 'params')) {
+                $form->setValue('log_entries', 'params', $logEntries);
             }
         } catch (\Throwable $e) {
             // Swallow errors to avoid breaking the admin UI
