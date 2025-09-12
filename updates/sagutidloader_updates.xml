@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <updates>
     <update>
-        <name>plg_system_sagutidloader</name>
+        <name>PLG_SYSTEM_SAGUTIDLOADER</name>
         <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>

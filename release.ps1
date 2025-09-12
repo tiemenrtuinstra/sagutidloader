@@ -297,7 +297,7 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [stri
         '<?xml version="1.0" encoding="utf-8"?>',
         '<updates>',
         '    <update>',
-        "        <name>plg_${group}_${pluginName}</name>",
+        "        <name>PLG_SYSTEM_SAGUTIDLOADER</name>",
         "        <description><![CDATA[${desc}]]></description>",
         "        <element>${pluginName}</element>",
         '        <type>plugin</type>',
