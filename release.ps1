@@ -45,7 +45,8 @@ function Get-Manifest() {
             if ($xml.extension -and $xml.extension.type -eq 'plugin') {
                 return [pscustomobject]@{ Path = $xmlFile; Xml = $xml }
             }
-        } catch { }
+        }
+        catch { }
     }
     return $null
 }
@@ -81,20 +82,25 @@ function Update-VersionFiles([string]$XmlFile, [string]$NewVersion, [string]$Pac
 function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewCacheName) {
     $sw = Get-Content $ServiceWorkerFile -Raw
     $patterns = @(
-        '(const\s+CACHE_NAME\s*=\s*`)sagutid-v[^`]+(`;?)',
-        '(const\s+CACHE_NAME\s*=\s*'')sagutid-v[^'']+('';?)',
-        '(const\s+CACHE_NAME\s*=\s*"')sagutid-v[^"']+(";?)'
+        '(const\s+CACHE_NAME\s*=\s*`")sagutid-v[^`"]+(`";?)',   # backtick+double quote
+        "(const\s+CACHE_NAME\s*=\s*')sagutid-v[^']+(';?)",      # single quote
+        '(const\s+CACHE_NAME\s*=\s*")sagutid-v[^"]+(";?)'       # double quote
     )
-    # Use the patterns for some operation here
     $matched = $false
     foreach ($p in $patterns) {
         if ($sw -match $p) {
             $sw = [regex]::Replace($sw, $p, "`$1$NewCacheName`$2")
-            $matched = $true; break
+            $matched = $true
+            break
         }
     }
-    if (-not $matched) { Write-Warning "CACHE_NAME pattern not found in $ServiceWorkerFile" }
-    else { Set-Content -Path $ServiceWorkerFile -Value $sw -Encoding UTF8; Write-Host "Updated cache name in $ServiceWorkerFile" }
+    if (-not $matched) {
+        Write-Warning "CACHE_NAME pattern not found in $ServiceWorkerFile"
+    }
+    else {
+        Set-Content -Path $ServiceWorkerFile -Value $sw -Encoding UTF8
+        Write-Host "Updated cache name in $ServiceWorkerFile"
+    }
 }
 
 function Run-Build([switch]$SkipBuild) {
@@ -319,10 +325,12 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [stri
             Write-Host "SHA1: $sha1Hash"
             Write-Host "MD5: $md5Hash"
             Write-Host "Size: $fileSize bytes"
-        } catch {
+        }
+        catch {
             Write-Warning "Failed to calculate checksums: $_"
         }
-    } else {
+    }
+    else {
         Write-Warning "ZIP file not found at $zipPath - checksums will be empty"
     }
 
@@ -345,7 +353,8 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [stri
     # Add download URL with checksums and size if available
     if ($sha256Hash) {
         $xmlLines += "            <downloadurl type=`"full`" format=`"zip`" size=`"${fileSize}`" sha256=`"${sha256Hash}`" sha1=`"${sha1Hash}`" md5=`"${md5Hash}`">${downloadUrl}</downloadurl>"
-    } else {
+    }
+    else {
         $xmlLines += "            <downloadurl type=`"full`" format=`"zip`">${downloadUrl}</downloadurl>"
     }
     
