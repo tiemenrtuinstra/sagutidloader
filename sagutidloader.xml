@@ -1,42 +1,70 @@
-<extension type="plugin" group="system" version="4.0" method="upgrade">
-  <!-- Removed client="site" -->
-  <name>PLG_SYSTEM_SAGUTIDLOADER</name>
-  <author>Tiemen R Tuinstra</author>
-  <version>31.4.7</version>
-  <description>PLG_SYSTEM_SAGUTIDLOADER_XML_DESCRIPTION</description>
-  <files>
-    <filename plugin="sagutidloader">sagutidloader.php</filename>
-    <filename>sagutidlogger.php</filename>
-    <folder>assets</folder>
-    <file>assets/manifest.webmanifest</file>
-    <file>assets/offline.html</file>
-    <file>assets/.htaccess</file>
-    <folder>assets/dist</folder>
-    <file>assets/dist/serviceworker.js</file>
-    <file>assets/dist/main.bundle.js</file>
-    <file>assets/dist/vendors.js</file>
-    <file>assets/dist/styles.bundle.css</file>
-    <folder>language</folder>
-    <folder>scripts</folder>
-    <file>scripts/cleanup_logs.php</file>
-  </files>
-  <languages>
-    <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.ini</language>
-    <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.sys.ini</language>
-    <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.ini</language>
-    <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.sys.ini</language>
-  </languages>
-  <updateservers>
-    <server type="extension" name="Sagutid Loader Update Server" priority="1">https://raw.githubusercontent.com/tiemenrtuinstra/sagutidloader/main/updates/sagutidloader_updates.xml</server>
-  </updateservers>
-  <config>
-    <fields name="params">
-      <fieldset name="basic" label="PLG_SYSTEM_SAGUTIDLOADER_FIELDSET_BASIC" class="sagutidloader">
-        <field name="debug" type="checkbox" default="0" label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_SAGUTIDLOADER_LABEL_DEBUG" description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_SAGUTIDLOADER_DESC_DEBUG" />
-        <field name="debug_allowed_ips" type="textarea" default="" label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_DEBUG_ALLOWED_IPS" description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_DEBUG_ALLOWED_IPS_DESC" filter="raw" />
-        <field name="force_reregister" type="checkbox" default="0" label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_FORCE_REREGISTER" description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_FORCE_REREGISTER_DESC" />
-        <field name="diagnostics_status" type="custom" label="PLG_SYSTEM_SAGUTIDLOADER_DIAGNOSTICS_LABEL" description="PLG_SYSTEM_SAGUTIDLOADER_DIAGNOSTICS_DESC" readonly="true" filter="raw" default="" />
-      </fieldset>
-    </fields>
-  </config>
+<extension type="plugin"
+           group="system"
+           version="4.0"
+           method="upgrade">
+    <!-- Removed client="site" -->
+    <name>PLG_SYSTEM_SAGUTIDLOADER</name>
+    <author>Tiemen R Tuinstra</author>
+    <version>31.4.7</version>
+    <description>PLG_SYSTEM_SAGUTIDLOADER_XML_DESCRIPTION</description>
+    <files>
+        <filename plugin="sagutidloader">sagutidloader.php</filename>
+        <filename>sagutidlogger.php</filename>
+        <folder>assets</folder>
+        <file>assets/manifest.webmanifest</file>
+        <file>assets/offline.html</file>
+        <file>assets/.htaccess</file>
+        <folder>assets/dist</folder>
+        <file>assets/dist/serviceworker.js</file>
+        <file>assets/dist/main.bundle.js</file>
+        <file>assets/dist/vendors.js</file>
+        <file>assets/dist/styles.bundle.css</file>
+        <folder>language</folder>
+        <folder>scripts</folder>
+        <file>scripts/cleanup_logs.php</file>
+    </files>
+    <languages>
+        <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.ini</language>
+        <language tag="en-GB">language/en-GB/en-GB.plg_system_sagutidloader.sys.ini</language>
+        <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.ini</language>
+        <language tag="nl-NL">language/nl-NL/nl-NL.plg_system_sagutidloader.sys.ini</language>
+    </languages>
+    <updateservers>
+        <server type="extension"
+                priority="1"
+                name="Sagutid Loader Updates">            
+            https://raw.githubusercontent.com/tiemenrtuinstra/sagutidloader/main/updates/sagutidloader_updates.xml
+        </server>
+    </updateservers>
+    <config>
+        <fields name="params">
+            <fieldset name="basic"
+                      label="PLG_SYSTEM_SAGUTIDLOADER_FIELDSET_BASIC"
+                      class="sagutidloader">
+                <field name="debug"
+                       type="checkbox"
+                       default="0"
+                       label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_SAGUTIDLOADER_LABEL_DEBUG"
+                       description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_SAGUTIDLOADER_DESC_DEBUG" />
+                <field name="debug_allowed_ips"
+                       type="textarea"
+                       default=""
+                       label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_DEBUG_ALLOWED_IPS"
+                       description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_DEBUG_ALLOWED_IPS_DESC"
+                       filter="raw" />
+                <field name="force_reregister"
+                       type="checkbox"
+                       default="0"
+                       label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_FORCE_REREGISTER"
+                       description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_FORCE_REREGISTER_DESC" />
+                <field name="diagnostics_status"
+                       type="custom"
+                       label="PLG_SYSTEM_SAGUTIDLOADER_DIAGNOSTICS_LABEL"
+                       description="PLG_SYSTEM_SAGUTIDLOADER_DIAGNOSTICS_DESC"
+                       readonly="true"
+                       filter="raw"
+                       default="" />
+            </fieldset>
+        </fields>
+    </config>
 </extension>

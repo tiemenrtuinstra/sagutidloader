@@ -1,0 +1,335 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.2.3
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Extract version from tag
+      shell: pwsh
+      run: |
+        $tagName = "${{ github.ref_name }}"
+        $version = $tagName -replace '^v', ''
+        Write-Output "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+        Write-Output "TAG_NAME=$tagName" >> $env:GITHUB_ENV
+    
+    - name: Generate release notes from PRs
+      shell: pwsh
+      run: |
+        $tagName = "${{ env.TAG_NAME }}"
+        
+        # Find previous tag
+        $allTags = git tag --sort=-version:refname
+        $currentIndex = $allTags.IndexOf($tagName)
+        $previousTag = if ($currentIndex -lt ($allTags.Count - 1)) { $allTags[$currentIndex + 1] } else { $null }
+        
+        # Get commits between tags
+        $commits = @()
+        if ($previousTag) {
+            $commits = git log --oneline "$previousTag..$tagName"
+        } else {
+            $commits = git log --oneline -10
+        }
+        
+        # Extract PR numbers and fetch PR descriptions
+        $prNumbers = @()
+        $changelog = @()
+        
+        foreach ($commit in $commits) {
+            if ($commit -match '#(\d+)') {
+                $prNumbers += $matches[1]
+            } else {
+                # Non-PR commit
+                $changelog += "- $commit"
+            }
+        }
+        
+        # Fetch PR details from GitHub API
+        $headers = @{
+            'Authorization' = 'token ${{ secrets.GITHUB_TOKEN }}'
+            'Accept' = 'application/vnd.github.v3+json'
+        }
+        
+        foreach ($prNumber in ($prNumbers | Sort-Object -Unique)) {
+            try {
+                $prUrl = "https://api.github.com/repos/${{ github.repository }}/pulls/$prNumber"
+                $response = Invoke-RestMethod -Uri $prUrl -Headers $headers -Method Get
+                
+                $title = $response.title
+                $body = $response.body
+                $user = $response.user.login
+                
+                # Format PR entry
+                $prEntry = "- **$title** (#$prNumber by @$user)"
+                if ($body -and $body.Trim()) {
+                    $prEntry += "`n  " + ($body -split "`n" | Select-Object -First 2 | Join-String -Separator "`n  ")
+                }
+                $changelog += $prEntry
+            } catch {
+                $changelog += "- PR #$prNumber"
+            }
+        }
+        
+        if ($changelog.Count -eq 0) {
+            $changelog = @("- Initial release")
+        }
+        
+        $changelogText = $changelog -join "`n"
+        Write-Output "CHANGELOG<<EOF" >> $env:GITHUB_ENV
+        Write-Output $changelogText >> $env:GITHUB_ENV
+        Write-Output "EOF" >> $env:GITHUB_ENV
+    
+    - name: Update version files
+      shell: pwsh
+      run: |
+        $version = "${{ env.RELEASE_VERSION }}"
+        
+        # Update manifest XML
+        $manifestPath = "sagutidloader.xml"
+        if (Test-Path $manifestPath) {
+            [xml]$manifest = Get-Content $manifestPath -Encoding UTF8
+            $manifest.extension.version = $version
+            $manifest.Save((Resolve-Path $manifestPath).Path)
+            Write-Host "Updated manifest version to $version"
+        }
+        
+        # Update package.json
+        $packagePath = "package.json"
+        if (Test-Path $packagePath) {
+            $package = Get-Content $packagePath -Encoding UTF8 | ConvertFrom-Json
+            $package.version = $version
+            $package | ConvertTo-Json -Depth 10 | Set-Content $packagePath -Encoding UTF8
+            Write-Host "Updated package.json version to $version"
+        }
+        
+        # Update service worker version
+        $swPath = "assets/ts/serviceworker.ts"
+        if (Test-Path $swPath) {
+            $content = Get-Content $swPath -Raw -Encoding UTF8
+            $content = $content -replace "const VERSION = '[^']*'", "const VERSION = '$version'"
+            Set-Content $swPath $content -NoNewline -Encoding UTF8
+            Write-Host "Updated service worker version to $version"
+        }
+    
+    - name: Build production assets
+      run: npm run build:prod
+    
+    - name: Package plugin
+      shell: pwsh
+      run: |
+        $manifestPath = "sagutidloader.xml"
+        [xml]$manifest = Get-Content $manifestPath -Encoding UTF8
+        $pluginName = "sagutidloader"
+        
+        # Create clean staging directory
+        $stageDir = "build/$pluginName"
+        if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
+        New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+        
+        # Copy manifest first
+        Copy-Item $manifestPath "$stageDir/" -Force
+        Write-Host "Copied manifest: $manifestPath"
+        
+        # Process files from manifest
+        $filesNode = $manifest.extension.files
+        if ($filesNode) {
+            Write-Host "Processing manifest files section..."
+            foreach ($node in $filesNode.ChildNodes) {
+                if ($node.NodeType -eq [System.Xml.XmlNodeType]::Element) {
+                    $tag = $node.Name.ToLower()
+                    $text = [string]$node.InnerText
+                    
+                    if ([string]::IsNullOrWhiteSpace($text)) { continue }
+                    
+                    switch ($tag) {
+                        'filename' {
+                            if (Test-Path $text) {
+                                Copy-Item $text "$stageDir/" -Force
+                                Write-Host "Copied filename: $text"
+                            } else {
+                                Write-Warning "Missing filename: $text"
+                            }
+                        }
+                        'file' {
+                            if (Test-Path $text) {
+                                $dest = "$stageDir/$text"
+                                $parent = Split-Path $dest -Parent
+                                if (-not (Test-Path $parent)) { 
+                                    New-Item -ItemType Directory -Path $parent -Force | Out-Null 
+                                }
+                                Copy-Item $text $dest -Force
+                                Write-Host "Copied file: $text"
+                            } else {
+                                Write-Warning "Missing file: $text"
+                            }
+                        }
+                        'folder' {
+                            if (Test-Path $text) {
+                                Copy-Item $text "$stageDir/$text" -Recurse -Force
+                                Write-Host "Copied folder: $text"
+                            } else {
+                                Write-Warning "Missing folder: $text"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        # Add .well-known/assetlinks.json if generated
+        $assetLinksPath = ".well-known/assetlinks.json"
+        if (Test-Path $assetLinksPath) {
+            $wellKnownDir = "$stageDir/.well-known"
+            if (-not (Test-Path $wellKnownDir)) {
+                New-Item -ItemType Directory -Path $wellKnownDir -Force | Out-Null
+            }
+            Copy-Item $assetLinksPath "$wellKnownDir/" -Force
+            Write-Host "Copied assetlinks.json"
+        }
+        
+        # Create ZIP
+        $zipPath = "$pluginName.zip"
+        if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+        
+        Push-Location $stageDir
+        try {
+            Compress-Archive -Path * -DestinationPath "../../$zipPath" -Force
+            Write-Host "Created ZIP: $zipPath"
+        } finally {
+            Pop-Location
+        }
+        
+        # Verify ZIP contents
+        Write-Host "`nZIP Contents:"
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zipPath).Path)
+        try {
+            $zip.Entries | ForEach-Object { Write-Host "  $($_.FullName)" }
+        } finally {
+            $zip.Dispose()
+        }
+        
+        Write-Output "ZIP_PATH=$zipPath" >> $env:GITHUB_ENV
+    
+    - name: Generate update server XML
+      shell: pwsh
+      run: |
+        $version = "${{ env.RELEASE_VERSION }}"
+        $zipPath = "${{ env.ZIP_PATH }}"
+        $changelog = "${{ env.CHANGELOG }}"
+        
+        # Create updates directory
+        $updatesDir = "updates"
+        if (-not (Test-Path $updatesDir)) {
+            New-Item -ItemType Directory -Path $updatesDir | Out-Null
+        }
+        
+        # Generate URLs
+        $downloadUrl = "https://github.com/${{ github.repository }}/releases/download/${{ env.TAG_NAME }}/$zipPath"
+        $changelogUrl = "https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG_NAME }}"
+        
+        # Read manifest for accurate metadata
+        $manifestPath = "sagutidloader.xml"
+        [xml]$manifest = Get-Content $manifestPath -Encoding UTF8
+        
+        $pluginName = $manifest.extension.name
+        $element = $manifest.extension.SelectSingleNode('files/filename[contains(., ".php")]')?.InnerText -replace '\.php$', ''
+        if (-not $element) { $element = "sagutidloader" }
+        
+        # Generate update XML
+        $xml = @"
+<?xml version="1.0" encoding="utf-8"?>
+<updates>
+    <update>
+        <name>$pluginName</name>
+        <description><![CDATA[$changelog]]></description>
+        <element>$element</element>
+        <type>plugin</type>
+        <folder>system</folder>
+        <client>0</client>
+        <version>$version</version>
+        <infourl title="Plugin Info">$changelogUrl</infourl>
+        <downloads>
+            <downloadurl type="full" format="zip">$downloadUrl</downloadurl>
+        </downloads>
+        <changelogurl>$changelogUrl</changelogurl>
+        <targetplatform name="joomla" version="4.*" />
+        <targetplatform name="joomla" version="5.*" />
+        <php_minimum>7.4</php_minimum>
+    </update>
+</updates>
+"@
+        
+        $updateFile = "$updatesDir/sagutidloader_updates.xml"
+        $xml | Set-Content $updateFile -Encoding UTF8
+        Write-Host "Generated update server XML: $updateFile"
+        Write-Host "Download URL: $downloadUrl"
+    
+    - name: Create version bump PR
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "Release ${{ env.TAG_NAME }}: Update version and build assets"
+        title: "🚀 Release ${{ env.RELEASE_VERSION }}"
+        body: |
+          ## Automated Release PR
+          
+          This PR contains the automated changes for release `${{ env.TAG_NAME }}`:
+          
+          ### Changes
+          ${{ env.CHANGELOG }}
+          
+          ### Files Updated
+          - `sagutidloader.xml` - Version bumped to ${{ env.RELEASE_VERSION }}
+          - `package.json` - Version bumped to ${{ env.RELEASE_VERSION }}
+          - `assets/ts/serviceworker.ts` - Service worker version updated
+          - `assets/dist/` - Rebuilt production assets
+          - `updates/sagutidloader_updates.xml` - Update server XML
+          
+          ---
+          *This PR was automatically created by the release workflow.*
+        branch: release/${{ env.RELEASE_VERSION }}
+        delete-branch: true
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ env.TAG_NAME }}
+        name: "Release ${{ env.RELEASE_VERSION }}"
+        body: |
+          ## 🎉 What's New
+          ${{ env.CHANGELOG }}
+          
+          ## 📦 Installation
+          Download `${{ env.ZIP_PATH }}` and install via Joomla's Extension Manager.
+          
+          ## 🔄 Automatic Updates
+          This release updates the update server XML for automatic plugin updates in Joomla.
+          
+          Update server URL: `https://raw.githubusercontent.com/${{ github.repository }}/main/updates/sagutidloader_updates.xml`
+        files: |
+          ${{ env.ZIP_PATH }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
