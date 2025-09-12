@@ -162,7 +162,7 @@ try {
     if (Test-Path $swPath) {
         Write-Host "Updating service worker version..." -ForegroundColor Cyan
         $content = Get-Content $swPath -Raw -Encoding UTF8
-        $content = $content -replace "const CACHE_NAME = `"sagutid-v[^`"]*`"", "const CACHE_NAME = `"sagutid-v$newVersion`""
+        $content = $content -replace "const CACHE_NAME = ``sagutid-v[^``]*``", "const CACHE_NAME = ``sagutid-v$newVersion``"
         Set-Content $swPath $content -NoNewline -Encoding UTF8
         Write-Host "Updated service worker version to $newVersion" -ForegroundColor Green
     }
