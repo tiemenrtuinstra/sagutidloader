@@ -303,32 +303,23 @@ jobs:
         Write-Host "Generated update server XML: $updateFile"
         Write-Host "Download URL: $downloadUrl"
     
-    - name: Create version bump PR
-      uses: peter-evans/create-pull-request@v5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        base: main
-        commit-message: "Release ${{ env.TAG_NAME }}: Update version and build assets"
-        title: "🚀 Release ${{ env.RELEASE_VERSION }}"
-        body: |
-          ## Automated Release PR
-          
-          This PR contains the automated changes for release `${{ env.TAG_NAME }}`:
-          
-          ### Changes
-          ${{ env.CHANGELOG }}
-          
-          ### Files Updated
-          - `sagutidloader.xml` - Version bumped to ${{ env.RELEASE_VERSION }}
-          - `package.json` - Version bumped to ${{ env.RELEASE_VERSION }}
-          - `assets/ts/serviceworker.ts` - Service worker version updated
-          - `assets/dist/` - Rebuilt production assets
-          - `updates/sagutidloader_updates.xml` - Update server XML
-          
-          ---
-          *This PR was automatically created by the release workflow.*
-        branch: release/${{ env.RELEASE_VERSION }}
-        delete-branch: true
+    - name: Commit and push updated files
+      shell: pwsh
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Check if there are any changes to commit
+        $status = git status --porcelain
+        if ($status) {
+          Write-Host "Changes detected, committing..."
+          git add updates/sagutidloader_updates.xml
+          git commit -m "Release ${{ env.TAG_NAME }}: Update XML with checksums and metadata"
+          git push origin main
+          Write-Host "Changes committed and pushed to main branch"
+        } else {
+          Write-Host "No changes to commit"
+        }
     
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
