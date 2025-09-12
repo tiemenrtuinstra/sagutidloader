@@ -10,7 +10,7 @@ type Options = {
 
 const DEFAULTS: Required<Options> = {
     // target elements that will receive ripple behaviour
-    selector: '.uk-button--clickable, .uk-icon-link, .uk-chip--clickable, .uk-button.uk-chip--clickable',
+    selector: '.uk-button--clickable, .uk-icon-link, .uk-chip--clickable, .uk-button.uk-chip--clickable, .el-item a.uk-link-toggle',
     rippleClass: 'uk-ripple',
     rippleColor: 'rgba(255,255,255,0.18)',
     keyboard: true,
@@ -31,7 +31,7 @@ function ensureRippleStyle(className: string) {
     if (document.getElementById(id)) return;
     const style = document.createElement('style');
     style.id = id;
-        style.textContent = `.${className} {
+    style.textContent = `.${className} {
     position: absolute;
     left: 0; top: 0;
     width: 8px; height: 8px; border-radius: 50%;
