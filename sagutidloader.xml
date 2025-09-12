@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension type="plugin" group="system" version="4.0" method="upgrade">
+<extension type="plugin" group="system" method="upgrade">
     <!-- Removed client="site" -->
     <name>PLG_SYSTEM_SAGUTIDLOADER</name>
     <author>Tiemen R Tuinstra</author>
-    <version>5.0.0</version>
+    <version>32.0.0</version>
     <description>PLG_SYSTEM_SAGUTIDLOADER_XML_DESCRIPTION</description>
     <files>
         <filename plugin="sagutidloader">sagutidloader.php</filename>
