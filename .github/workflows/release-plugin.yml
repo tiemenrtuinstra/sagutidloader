@@ -253,35 +253,41 @@ jobs:
         [xml]$manifest = Get-Content $manifestPath -Encoding UTF8
         
         $pluginName = $manifest.extension.name
-        $element = $manifest.extension.SelectSingleNode('files/filename[contains(., ".php")]')?.InnerText -replace '\.php$', ''
-        if (-not $element) { $element = "sagutidloader" }
+        $phpFileNode = $manifest.extension.SelectSingleNode('files/filename[contains(., ".php")]')
+        if ($phpFileNode) {
+            $element = [string]$phpFileNode.InnerText -replace '\.php$', ''
+        } else {
+            $element = "sagutidloader"
+        }
         
-        # Generate update XML
-        $xml = @"
-<?xml version="1.0" encoding="utf-8"?>
-<updates>
-    <update>
-        <name>$pluginName</name>
-        <description><![CDATA[$changelog]]></description>
-        <element>$element</element>
-        <type>plugin</type>
-        <folder>system</folder>
-        <client>0</client>
-        <version>$version</version>
-        <infourl title="Plugin Info">$changelogUrl</infourl>
-        <downloads>
-            <downloadurl type="full" format="zip">$downloadUrl</downloadurl>
-        </downloads>
-        <changelogurl>$changelogUrl</changelogurl>
-        <targetplatform name="joomla" version="4.*" />
-        <targetplatform name="joomla" version="5.*" />
-        <php_minimum>7.4</php_minimum>
-    </update>
-</updates>
-"@
-        
+        # Create update XML content
         $updateFile = "$updatesDir/sagutidloader_updates.xml"
-        $xml | Set-Content $updateFile -Encoding UTF8
+        
+        # Build XML content line by line to avoid YAML multiline issues
+        $xmlLines = @(
+            '<?xml version="1.0" encoding="utf-8"?>',
+            '<updates>',
+            '    <update>',
+            "        <name>$pluginName</name>",
+            "        <description><![CDATA[$changelog]]></description>",
+            "        <element>$element</element>",
+            '        <type>plugin</type>',
+            '        <folder>system</folder>',
+            '        <client>0</client>',
+            "        <version>$version</version>",
+            "        <infourl title=`"Plugin Info`">$changelogUrl</infourl>",
+            '        <downloads>',
+            "            <downloadurl type=`"full`" format=`"zip`">$downloadUrl</downloadurl>",
+            '        </downloads>',
+            "        <changelogurl>$changelogUrl</changelogurl>",
+            '        <targetplatform name="joomla" version="4.*" />',
+            '        <targetplatform name="joomla" version="5.*" />',
+            '        <php_minimum>7.4</php_minimum>',
+            '    </update>',
+            '</updates>'
+        )
+        
+        $xmlLines | Set-Content $updateFile -Encoding UTF8
         Write-Host "Generated update server XML: $updateFile"
         Write-Host "Download URL: $downloadUrl"
     
