@@ -3,7 +3,7 @@
   <!-- Removed client="site" -->
   <name>PLG_SYSTEM_SAGUTIDLOADER</name>
   <author>Tiemen R Tuinstra</author>
-  <version>33.0.1</version>
+  <version>33.0.2</version>
   <description>PLG_SYSTEM_SAGUTIDLOADER_XML_DESCRIPTION</description>
   <files>
     <filename plugin="sagutidloader">sagutidloader.php</filename>
@@ -39,6 +39,7 @@
         <field name="debug_allowed_ips" type="textarea" default="" label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_DEBUG_ALLOWED_IPS" description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_DEBUG_ALLOWED_IPS_DESC" filter="raw" />
         <field name="force_reregister" type="checkbox" default="0" label="PLG_SYSTEM_SAGUTIDLOADER_FIELD_FORCE_REREGISTER" description="PLG_SYSTEM_SAGUTIDLOADER_FIELD_FORCE_REREGISTER_DESC" />
         <field name="diagnostics_status" type="custom" label="PLG_SYSTEM_SAGUTIDLOADER_DIAGNOSTICS_LABEL" description="PLG_SYSTEM_SAGUTIDLOADER_DIAGNOSTICS_DESC" readonly="true" filter="raw" default="" />
+        <field name="log_entries" type="custom" label="PLG_SYSTEM_SAGUTIDLOADER_LOGS_LABEL" description="PLG_SYSTEM_SAGUTIDLOADER_LOGS_DESC" readonly="true" filter="raw" default="" />
       </fieldset>
     </fields>
   </config>

@@ -2,17 +2,19 @@
 <updates>
     <update>
         <name>PLG_SYSTEM_SAGUTIDLOADER</name>
-        <description><![CDATA[Sagutid Loader]]></description>
+        <description><![CDATA[Sagutid Loader
+
+- fix(update-xml): standardize plugin name format in XML files (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v33.0.1 (Tiemen Reinder Tuinstra)]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
         <client>0</client>
-        <version>33.0.1</version>
-        <infourl title="Plugin Info">https://github.com/tiemenrtuinstra/sagutidloader/releases/tag/v33.0.1</infourl>
+        <version>33.0.2</version>
+        <infourl title="Plugin Info">https://github.com/tiemenrtuinstra/sagutidloader/releases/tag/v33.0.2</infourl>
         <downloads>
-            <downloadurl type="full" format="zip">https://github.com/tiemenrtuinstra/sagutidloader/releases/download/v33.0.1/sagutidloader.zip</downloadurl>
+            <downloadurl type="full" format="zip">https://github.com/tiemenrtuinstra/sagutidloader/releases/download/v33.0.2/sagutidloader.zip</downloadurl>
         </downloads>
-        <changelogurl>https://github.com/tiemenrtuinstra/sagutidloader/releases/tag/v33.0.1</changelogurl>
+        <changelogurl>https://github.com/tiemenrtuinstra/sagutidloader/releases/tag/v33.0.2</changelogurl>
         <targetplatform name="joomla" version="4.*" />
         <targetplatform name="joomla" version="5.*" />
         <php_minimum>7.4</php_minimum>
