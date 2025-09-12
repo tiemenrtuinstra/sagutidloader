@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>PLG_SYSTEM_SAGUTIDLOADER</name>
-        <description><![CDATA[Sagutid Loader
-
-- fix: improve error handling and formatting in release script (Tiemen Reinder Tuinstra) - fix: convert boolean values to '1'/'0' strings for Joomla compatibility in posted params (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v33.2.0 (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
@@ -12,7 +10,7 @@
         <version>33.3.0</version>
         <infourl title="Plugin Info">https://github.com/tiemenrtuinstra/sagutidloader/releases/tag/v33.3.0</infourl>
         <downloads>
-            <downloadurl type="full" format="zip" size="1031349" sha256="fb57b65e6c3def983028975fddc99b4cebd9806e1ca09b8e26863219a7facf04" sha1="4a60fe82424802e33e3799f9fe68e5c117effb60" md5="5096b29e691ddf7382a704197fd9000c">https://github.com/tiemenrtuinstra/sagutidloader/releases/download/v33.3.0/sagutidloader.zip</downloadurl>
+            <downloadurl type="full" format="zip" size="1033473" sha256="f9444d12e0ea25da263e323a98a62a859a8b9cd58ddbd6aab93c29d2d5b03fb2" sha1="8ce98eeffb36ea3a7e3c8dceaaf287fcd8505307" md5="2f3987bd6b69ff860a33d13957f2130a">https://github.com/tiemenrtuinstra/sagutidloader/releases/download/v33.3.0/sagutidloader.zip</downloadurl>
         </downloads>
         <changelogurl>https://github.com/tiemenrtuinstra/sagutidloader/releases/tag/v33.3.0</changelogurl>
         <targetplatform name="joomla" version="4.*" />
