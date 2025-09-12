@@ -1,13 +1,13 @@
+
+// Simpler SpeechReader with clear function separation
 class SpeechReader {
   private static instance: SpeechReader;
-  private synthesis: SpeechSynthesis | null = null;
+  private synthesis: SpeechSynthesis;
   private utterance: SpeechSynthesisUtterance | null = null;
-  private playingButton: Element | null = null;
+  private playingButton: HTMLElement | null = null;
 
   private constructor() {
-    if ('speechSynthesis' in window) {
-      this.synthesis = window.speechSynthesis;
-    }
+    this.synthesis = window.speechSynthesis;
     document.addEventListener('click', (e) => this.handleClick(e as MouseEvent));
   }
 
@@ -18,52 +18,62 @@ class SpeechReader {
 
   private handleClick(e: MouseEvent) {
     const target = e.target as Element;
-    const container = target.closest('.speech-reader-button') as HTMLElement | null;
+    const container = this.getSpeechButton(target);
     if (!container) return;
     e.preventDefault();
 
-    // Prefer an anchor inside the control as the source of speech text
-    const anchor = (target.closest('a') as HTMLElement | null) || (container.querySelector('a') as HTMLElement | null);
-    const source = anchor || container;
-    const text = this.extractText(source);
+    const source = this.getSpeechSource(target, container);
+    const { language, text } = this.extractLanguageAndText(source);
     if (!text) return;
-    if (!this.synthesis) return;
 
-    // Keep playingButton as the outer container so styles remain consistent
     if (this.synthesis.speaking && this.playingButton === container) {
       this.stop();
       return;
     }
+    this.play(text, container, source, language);
+  }
 
-    this.play(text, container, source);
+  private getSpeechButton(target: Element): HTMLElement | null {
+    return target.closest('.speech-reader-button') as HTMLElement | null;
+  }
+
+  private getSpeechSource(target: Element, container: HTMLElement): HTMLElement {
+    return (target.closest('a') as HTMLElement | null) || (container.querySelector('a') as HTMLElement | null) || container;
+  }
+
+  private extractLanguageAndText(source: HTMLElement): { language: string, text: string | null } {
+    const raw = this.extractText(source);
+    if (raw && raw.includes(';')) {
+      const [langPart, ...textParts] = raw.split(';');
+      return {
+        language: langPart.trim() || 'en-GB',
+        text: textParts.join(';').trim()
+      };
+    }
+    return {
+      language: this.extractLanguage(source),
+      text: raw
+    };
   }
 
   private extractText(el: HTMLElement): string | null {
-    // Prefer data-speech, then aria-label, then href/text
     const ds = el.getAttribute('data-speech');
     if (ds && ds.trim().length) return ds.trim();
     const al = el.getAttribute('aria-label');
     if (al && al.trim().length) return al.trim();
-
-    const href = (el.getAttribute && el.getAttribute('href')) || null;
+    const href = el.getAttribute && el.getAttribute('href');
     if (href && href.trim().length) {
-      // If href contains HTML-encoded content, decode and strip tags
       try {
         const decoded = href.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-        // If it looks like HTML, parse it
         if (decoded.indexOf('<') !== -1) {
           const parser = new DOMParser();
           const doc = parser.parseFromString(decoded, 'text/html');
           const txt = doc.body.textContent || '';
           if (txt.trim().length) return txt.trim();
         }
-      } catch (e) {
-        // fall back
-      }
+      } catch (e) {}
       return href.trim();
     }
-
-    // If the element contains text nodes, join them
     const txt = Array.from(el.childNodes)
       .filter((n) => n.nodeType === Node.TEXT_NODE)
       .map((n) => n.textContent?.trim())
@@ -72,13 +82,15 @@ class SpeechReader {
     return txt || null;
   }
 
-  private play(text: string, container: HTMLElement, source: HTMLElement) {
-    if (!this.synthesis) return;
+  private extractLanguage(source: HTMLElement): string {
+    return source.getAttribute('data-language') || 'en-GB';
+  }
+
+  private play(text: string, container: HTMLElement, source: HTMLElement, language: string) {
     this.stop();
     this.utterance = new SpeechSynthesisUtterance(text);
-    // simple defaults: let browser choose voice; prefer lang on source (anchor) then container
-    const lang = (source.getAttribute && source.getAttribute('data-speech-lang')) || container.getAttribute('data-speech-lang');
-    if (lang) this.utterance.lang = lang;
+    const lang = source.getAttribute('data-speech-lang') || container.getAttribute('data-speech-lang');
+    this.utterance.lang = lang || language;
     this.utterance.onend = () => this.onEnd();
     this.utterance.onerror = () => this.onEnd();
     this.synthesis.speak(this.utterance);
@@ -87,7 +99,7 @@ class SpeechReader {
   }
 
   private stop() {
-    if (this.synthesis && this.synthesis.speaking) {
+    if (this.synthesis.speaking) {
       this.synthesis.cancel();
     }
     if (this.playingButton) {

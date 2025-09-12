@@ -11,12 +11,21 @@ const instances = new WeakMap<Document | HTMLElement, {
 
 const UXGuardHandler = {
     init() {
-        // Initialize with default protection against text selection and context menu
+        // If debugMode is enabled, do not block menus or selection
+        let debugMode = false;
+        try {
+            // Try to use Logger.debugMode if available
+            const Logger = (window as any).Logger;
+            if (Logger && typeof Logger.debugMode === 'boolean') {
+                debugMode = Logger.debugMode;
+            }
+        } catch (e) { /* ignore */ }
+
         this.attach(document, {
-            disableTextSelection: true,
-            disableContextMenu: true
+            disableTextSelection: !debugMode,
+            disableContextMenu: !debugMode
         });
-        
+
         // Log initialization for testing
         try {
             const Logger = (window as any).Logger;
@@ -30,6 +39,21 @@ const UXGuardHandler = {
 
     attach(root: Document | HTMLElement = document, opts: UXGuardOptions = {}) {
         try {
+            // If debugMode is enabled, skip all protections
+            let debugMode = false;
+            try {
+                const Logger = (window as any).Logger;
+                if (Logger && typeof Logger.debugMode === 'boolean') {
+                    debugMode = Logger.debugMode;
+                }
+            } catch (e) { /* ignore */ }
+
+            if (debugMode) {
+                // In debug mode, detach any existing protections and skip
+                this.detach(root);
+                return;
+            }
+
             const doc = root as Document;
             // ensure we start from a clean state
             this.detach(root);
@@ -42,24 +66,20 @@ const UXGuardHandler = {
                     try { 
                         e.preventDefault(); 
                         e.stopPropagation();
-                        
                         // Log text selection prevention
                         const Logger = (globalThis as any)?.Logger;
                         if (Logger) {
                             Logger.Info('Text selection prevented by UXGuard', 'UXGuardHandler.ts');
                         }
-                        
                         return false;
                     } catch (_) { /* ignore */ } 
                 };
-                
                 const dragStartHandler = (e: Event) => { 
                     try { 
                         e.preventDefault(); 
                         return false;
                     } catch (_) { /* ignore */ } 
                 };
-
                 const keyDownHandler = (e: KeyboardEvent) => {
                     try {
                         // Prevent Ctrl+A (select all), Ctrl+C (copy), Ctrl+X (cut)
@@ -69,15 +89,12 @@ const UXGuardHandler = {
                         }
                     } catch (_) { /* ignore */ }
                 };
-
                 doc.addEventListener('selectstart', selectStartHandler, { passive: false });
                 doc.addEventListener('dragstart', dragStartHandler, { passive: false });
                 doc.addEventListener('keydown', keyDownHandler, { passive: false });
-                
                 state.selectStartHandler = selectStartHandler;
                 state.dragStartHandler = dragStartHandler;
                 state.keyDownHandler = keyDownHandler;
-                
                 try {
                     state.originalUserSelect = (document.documentElement.style as any).userSelect || '';
                     (document.documentElement.style as any).userSelect = 'none';
@@ -92,13 +109,11 @@ const UXGuardHandler = {
                     try { 
                         e.preventDefault(); 
                         e.stopPropagation();
-                        
                         // Log context menu blocking
                         const Logger = (globalThis as any)?.Logger;
                         if (Logger) {
                             Logger.Info('Context menu blocked by UXGuard', 'UXGuardHandler.ts');
                         }
-                        
                         return false;
                     } catch (_) { /* ignore */ } 
                 };

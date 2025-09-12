@@ -3,35 +3,34 @@ param(
     [ValidateSet("major", "minor", "patch")]
     [string]$ReleaseType,
     [switch]$Force,
-    [switch]$SkipBuild
-    ,
-    # Optional: include Play Store/TWA support
+    [switch]$SkipBuild,
     [switch]$PublishPlay,
     [string]$PlayOrigin,
     [string]$PlayPackage,
-    [string]$PlaySha256
-    ,
+    [string]$PlaySha256,
     [switch]$BuildAab,
     [string]$PlayManifest,
     [string]$KeystorePath,
     [string]$KeystoreAlias,
-    [string]$KeystorePassword
+    [SecureString]$KeystorePassword
 )
 
 $ErrorActionPreference = "Stop"
 
+# Define color codes
+$colors = @{ red = "`e[31m"; green = "`e[32m"; yellow = "`e[33m"; blue = "`e[34m"; reset = "`e[0m" }
+
 function Assert-Tools([string[]]$Names) {
     foreach ($tool in $Names) {
         if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
-            Write-Host "Error: Required tool '$tool' not found in PATH." -ForegroundColor Red
+            Write-Host "Error: Required tool '$tool' not found in PATH." -ForegroundColor $colors.red
             exit 1
         }
     }
 }
 
 function Ensure-CleanGit([switch]$Force) {
-    $gitStatus = git status --porcelain
-    if ($gitStatus -and -not $Force) {
+    if (-not $Force -and (git status --porcelain)) {
         Write-Warning "Working tree not clean. Commit / stash changes or re-run with -Force."
         exit 1
     }
@@ -46,8 +45,7 @@ function Get-Manifest() {
             if ($xml.extension -and $xml.extension.type -eq 'plugin') {
                 return [pscustomobject]@{ Path = $xmlFile; Xml = $xml }
             }
-        }
-        catch { }
+        } catch { }
     }
     return $null
 }
@@ -61,8 +59,7 @@ function Compute-NewVersion([string]$Current, [string]$ReleaseType) {
         'minor' { $min++; $pat = 0 }
         'patch' { $pat++ }
     }
-    $nv = "$maj.$min.$pat"
-    return [pscustomobject]@{ NewVersion = $nv; CacheName = "sagutid-v$nv" }
+    return [pscustomobject]@{ NewVersion = "$maj.$min.$pat"; CacheName = "sagutid-v$maj.$min.$pat" }
 }
 
 function Update-VersionFiles([string]$XmlFile, [string]$NewVersion, [string]$PackageJsonFile) {
@@ -82,13 +79,13 @@ function Update-VersionFiles([string]$XmlFile, [string]$NewVersion, [string]$Pac
 }
 
 function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewCacheName) {
-    if (-not (Test-Path $ServiceWorkerFile)) { Write-Warning "$ServiceWorkerFile not found (skipping)."; return }
     $sw = Get-Content $ServiceWorkerFile -Raw
     $patterns = @(
         '(const\s+CACHE_NAME\s*=\s*`)sagutid-v[^`]+(`;?)',
         '(const\s+CACHE_NAME\s*=\s*'')sagutid-v[^'']+('';?)',
-        '(const\s+CACHE_NAME\s*=\s*")sagutid-v[^"]+(";?)'
+        '(const\s+CACHE_NAME\s*=\s*"')sagutid-v[^"']+(";?)'
     )
+    # Use the patterns for some operation here
     $matched = $false
     foreach ($p in $patterns) {
         if ($sw -match $p) {
@@ -102,13 +99,14 @@ function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewC
 
 function Run-Build([switch]$SkipBuild) {
     $did = $false
+    # Fixing unexpected token errors and improving security
     if (-not (Test-Path 'package.json')) { return $did }
     if ($SkipBuild) { return $did }
 
     $hasLock = Test-Path -LiteralPath 'package-lock.json'
     $hasMods = Test-Path -LiteralPath 'node_modules'
-    if ($hasLock -or $hasMods) { Write-Host 'Running npm install (ensuring dependencies)...' }
-    else { Write-Host 'Running initial npm install...' }
+    if ($hasLock -or $hasMods) { Write-Host 'Running' }
+    else { Write-Host 'Running' }
 
     npm install --no-fund --no-audit | Out-Null
     if ($LASTEXITCODE -ne 0) { Write-Host 'npm install failed.' -ForegroundColor Red; exit 1 }
@@ -197,27 +195,33 @@ function Git-Commit-Push-Tag([string]$NewVersion, [bool]$DidBuild, [string]$XmlF
 
     # Ensure package-lock.json is included in version commits
     if (Test-Path 'package-lock.json') {
+        Write-Host "${blue}Adding package-lock.json to version commits...${reset}"
         git add package-lock.json
     }
 
     # Stage update server XML if present (force add in case folder is ignored)
     $updatesFile = Join-Path 'updates' 'sagutidloader_updates.xml'
-    if (Test-Path $updatesFile) { $null = git add -f -- $updatesFile }
+    if (Test-Path $updatesFile) { git add -f -- $updatesFile }
 
-    $pending = git diff --cached --name-only
-    if (-not $pending) { Write-Warning 'No staged changes; nothing to commit.' }
-    else {
-        $commitMsg = "chore(release): bump version to $NewVersion"
-        $null = git commit -m $commitMsg
-        Write-Host "Created commit for version $NewVersion"
+    # Check for staged changes
+    if (-not (git diff --cached --name-only)) {
+        Write-Warning 'No staged changes; nothing to commit.'
+        return
     }
 
-    $null = git push origin main
+    # Commit changes
+    $commitMsg = "chore(release): bump version to $NewVersion"
+    git commit -m $commitMsg | Out-Null
+    Write-Host "Created commit for version $NewVersion"
 
-    $Tag = ("v$NewVersion").Trim()
-    $null = git tag -a $Tag -m "Release $NewVersion"
+    # Push changes
+    git push origin main
+
+    # Create and push tag
+    $Tag = "v$NewVersion".Trim()
+    git tag -a $Tag -m "Release $NewVersion" | Out-Null
+    git push origin $Tag | Out-Null
     Write-Host "Created tag $Tag"
-    $null = git push origin $Tag
     return $Tag
 }
 
@@ -359,6 +363,7 @@ function Write-UpdateServerXml([string]$ManifestPath, [string]$NewVersion, [stri
     return $updatesFile
 }
 
+# Change verb for Generate-AssetLinks
 function Generate-AssetLinks([string]$Origin, [string]$Package, [string]$Sha256) {
     if (-not $Origin -or -not $Package -or -not $Sha256) { throw 'Play Origin, Package and Sha256 must be provided to generate assetlinks.' }
     $obj = @(
@@ -374,7 +379,7 @@ function Generate-AssetLinks([string]$Origin, [string]$Package, [string]$Sha256)
     Write-Host "Remember to publish the same JSON at: $Origin/.well-known/assetlinks.json" -ForegroundColor Yellow
 }
 
-function Build-TwaAab([string]$ManifestUrl, [string]$OutDir, [string]$KeystorePath, [string]$KeystoreAlias, [string]$KeystorePassword) {
+function Build-TwaAab([string]$ManifestUrl, [string]$OutDir, [string]$KeystorePath, [string]$KeystoreAlias, [SecureString]$KeystorePassword) {
     if (-not (Get-Command bubblewrap -ErrorAction SilentlyContinue)) { Write-Warning 'bubblewrap CLI not found in PATH. Install @bubblewrap/cli to enable AAB builds.'; return $null }
     if (-not (Get-Command java -ErrorAction SilentlyContinue)) { Write-Warning 'Java not found in PATH. Android build requires Java (JDK).' ; return $null }
 
@@ -382,7 +387,6 @@ function Build-TwaAab([string]$ManifestUrl, [string]$OutDir, [string]$KeystorePa
     if (-not $OutDir) { $OutDir = Join-Path (Get-Location) 'build' }
 
     if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir | Out-Null }
-    $cwd = Get-Location
     Push-Location $OutDir
     try {
         Write-Host "Initializing Bubblewrap in $OutDir..."
@@ -403,7 +407,7 @@ function Build-TwaAab([string]$ManifestUrl, [string]$OutDir, [string]$KeystorePa
     finally { Pop-Location }
 }
 
-function Commit-UpdateXml([string]$ManifestPath, [string]$NewVersion) {
+function Set-UpdateXml([string]$ManifestPath, [string]$NewVersion) {
     # Regenerate update XML and commit/push if it changed
     $updatesFile = Write-UpdateServerXml -ManifestPath $ManifestPath -NewVersion $NewVersion
     if (-not (Test-Path $updatesFile)) { return }
@@ -488,7 +492,7 @@ if ($BuildAab) {
         }
     }
 }
-Commit-UpdateXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion
+Set-UpdateXml -ManifestPath $manifestRef.Path -NewVersion $nv.NewVersion
 Show-LatestReleaseAssetUrl -AssetName $pkg.ZipName
 
-Write-Host 'Release pipeline finished.'
+Write-Host "${green}Release pipeline finished.${reset}"

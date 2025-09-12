@@ -106,36 +106,33 @@
 }
 
 .speech-reader-button {
-    a.uk-button {
-        &.uk-button-default {
-            background: transparent;
-            color: #fff;
-            .uk-icon {
-                fill: #fff !important;
-                &.uk-icon-link {
-                    color: #fff !important;
-                }
-            }
+    .uk-button {
+        &:hover,
+        &:active,
+        &:focus {
+            @extend %is-speaking-alt;
         }
     }
 
     &.is-speaking {
-        a.uk-button {
-            &.uk-button-default {
-                &:hover,
-                &:active,
-                &:focus {
-                    background: #e0ad10;
-                    background: radial-gradient(circle, rgba(224, 173, 16, 1) 100%, rgba(252, 234, 167, 0.68) 0%);
-                    color: $color-primary !important;
-                    .uk-icon {
-                        fill: $color-primary !important;
-                        &.uk-icon-link {
-                            color: $color-primary !important;
-                        }
-                    }
-                }
+        .uk-button {
+            &:hover,
+            &:active,
+            &:focus {
+                @extend %is-speaking-alt;
             }
+        }
+    }
+}
+
+%is-speaking-alt {
+    background: #e0ad10;
+    background: radial-gradient(circle, rgba(224, 173, 16, 1) 100%, rgba(252, 234, 167, 0.68) 0%);
+    color: $color-primary !important;
+    .uk-icon {
+        fill: $color-primary !important;
+        &.uk-icon-link {
+            color: $color-primary !important;
         }
     }
 }

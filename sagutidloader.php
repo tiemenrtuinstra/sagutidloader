@@ -473,9 +473,16 @@ class PlgSystemSagutidloader extends CMSPlugin
                 return;
             }
 
+
             $posted = [];
             if (!empty($_POST['jform']['params']) && is_array($_POST['jform']['params'])) {
                 $posted = $_POST['jform']['params'];
+                // Convert boolean values to '1'/'0' strings for Joomla compatibility
+                foreach ($posted as $k => $v) {
+                    if ($v === true || $v === false) {
+                        $posted[$k] = $v ? '1' : '0';
+                    }
+                }
             }
 
             // If params were posted, serialize them onto the extension table so Joomla saves them
