@@ -323,11 +323,11 @@ jobs:
           $filePath = $fileInfo.path
           $commitMessage = $fileInfo.message
           
-          Write-Host "Updating $filePath on main branch..."
+          Write-Host "Updating ${filePath} on main branch..."
           
           # Check if file exists locally
           if (-not (Test-Path $filePath)) {
-            Write-Host "File $filePath not found locally, skipping..."
+            Write-Host "File ${filePath} not found locally, skipping..."
             continue
           }
           
@@ -340,16 +340,16 @@ jobs:
           try {
             $currentFile = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method GET
             $currentSha = $currentFile.sha
-            Write-Host "Current SHA for $filePath: $currentSha"
+            Write-Host "Current SHA for ${filePath}: $currentSha"
             
             # Check if content is different to avoid unnecessary commits
             $currentContent = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($currentFile.content.Replace("`n", "").Replace("`r", "")))
             if ($currentContent.Trim() -eq $fileContent.Trim()) {
-              Write-Host "Content for $filePath unchanged, skipping update"
+              Write-Host "Content for ${filePath} unchanged, skipping update"
               continue
             }
           } catch {
-            Write-Host "File $filePath doesn't exist on main branch yet"
+            Write-Host "File ${filePath} doesn't exist on main branch yet"
             $currentSha = $null
           }
           
@@ -368,10 +368,10 @@ jobs:
           
           try {
             $result = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method PUT -Body $updateJson -ContentType "application/json"
-            Write-Host "Successfully updated $filePath on main branch"
+            Write-Host "Successfully updated ${filePath} on main branch"
             Write-Host "New commit SHA: $($result.commit.sha)"
           } catch {
-            Write-Host "Failed to update $filePath`: $_"
+            Write-Host "Failed to update ${filePath}: $_"
             if ($_.Exception.Response) {
               $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
               $responseBody = $reader.ReadToEnd()
