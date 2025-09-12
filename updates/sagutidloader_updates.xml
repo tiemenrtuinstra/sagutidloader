@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>PLG_SYSTEM_SAGUTIDLOADER</name>
-        <description><![CDATA[Sagutid Loader
-
-- fix(update-xml): standardize plugin name format in XML files (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v33.0.1 (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
