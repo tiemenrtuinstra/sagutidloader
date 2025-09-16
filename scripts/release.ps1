@@ -78,9 +78,9 @@ function Update-VersionFiles([string]$XmlFile, [string]$NewVersion, [string]$Pac
         Write-Host "Updated $PackageJsonFile"
     }
 }
-
 function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewCacheName) {
-    $sw = Get-Content (Join-Path ../ $ServiceWorkerFile) -Raw
+    $pluginRoot = Resolve-Path ../
+    $sw = Get-Content (Join-Path $pluginRoot $ServiceWorkerFile) -Raw
     $patterns = @(
         '(const\s+CACHE_NAME\s*=\s*`")sagutid-v[^`"]+(`";?)',   # backtick+double quote
         "(const\s+CACHE_NAME\s*=\s*')sagutid-v[^']+(';?)",      # single quote
@@ -98,9 +98,10 @@ function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewC
         Write-Warning "CACHE_NAME pattern not found in $ServiceWorkerFile"
     }
     else {
-    Set-Content -Path (Join-Path ../ $ServiceWorkerFile) -Value $sw -Encoding UTF8
+        Set-Content -Path (Join-Path ../ $ServiceWorkerFile) -Value $sw -Encoding UTF8
         Write-Host "Updated cache name in $ServiceWorkerFile"
     }
+    Set-Content -Path (Join-Path $pluginRoot $ServiceWorkerFile) -Value $sw -Encoding UTF8
 }
 
 function Run-Build([switch]$SkipBuild) {
@@ -130,11 +131,8 @@ function Run-Build([switch]$SkipBuild) {
 }
 
 function Package-Plugin([string]$ManifestPath) {
-    [xml]$manifest = Get-Content $ManifestPath
-    $pluginName = $manifest.extension.files.filename | Where-Object { $_.plugin } | Select-Object -First 1 | ForEach-Object { [string]$_.plugin }
-    if (-not $pluginName) { $pluginName = [IO.Path]::GetFileNameWithoutExtension($ManifestPath) }
-
-    $buildRoot = Join-Path (Get-Location) '../build'
+    $pluginRoot = Resolve-Path ../
+    $buildRoot = Join-Path $pluginRoot 'build'
     $stageDir = Join-Path $buildRoot $pluginName
     if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
     New-Item -ItemType Directory -Path $stageDir | Out-Null
@@ -151,12 +149,12 @@ function Package-Plugin([string]$ManifestPath) {
         $text = [string]$node.'#text'
         switch ($tag) {
             'filename' {
-                $src = Join-Path (Get-Location) $text
+                $src = Join-Path $pluginRoot $text
                 if (Test-Path $src) { Copy-Item $src (Join-Path $stageDir (Split-Path $text -Leaf)) -Force }
                 else { Write-Warning "Missing file: $text" }
             }
             'file' {
-                $src = Join-Path (Get-Location) $text
+                $src = Join-Path $pluginRoot $text
                 if (Test-Path $src) {
                     $dest = Join-Path $stageDir $text
                     $parent = Split-Path $dest -Parent
@@ -166,7 +164,7 @@ function Package-Plugin([string]$ManifestPath) {
                 else { Write-Warning "Missing file: $text" }
             }
             'folder' {
-                $src = Join-Path (Get-Location) $text
+                $src = Join-Path $pluginRoot $text
                 $dest = Join-Path $stageDir $text
                 if (Test-Path $src) { Copy-Item $src $dest -Recurse -Force }
                 else { Write-Warning "Missing folder: $text" }
@@ -174,23 +172,6 @@ function Package-Plugin([string]$ManifestPath) {
             default { }
         }
     }
-
-    # Include generated assetlinks.json if present
-    if ($global:AssetLinksFilePath -and (Test-Path $global:AssetLinksFilePath)) {
-        $wellKnownDir = Join-Path $stageDir '.well-known'
-        if (-not (Test-Path $wellKnownDir)) { New-Item -ItemType Directory -Path $wellKnownDir | Out-Null }
-        Copy-Item $global:AssetLinksFilePath (Join-Path $wellKnownDir 'assetlinks.json') -Force
-    }
-
-    $ZipName = "$pluginName.zip"
-    $ZipPath = Join-Path (Get-Location) $ZipName
-    if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
-    Push-Location $stageDir
-    try { Compress-Archive -Path * -DestinationPath $ZipPath | Out-Null }
-    finally { Pop-Location }
-    Write-Host "Created package: $ZipPath" -ForegroundColor Green
-
-    return [pscustomobject]@{ PluginName = $pluginName; StageDir = $stageDir; ZipPath = $ZipPath; ZipName = $ZipName }
 }
 
 function Git-Commit-Push-Tag([string]$NewVersion, [bool]$DidBuild, [string]$XmlFile, [string]$PackageJsonFile, [string]$ServiceWorkerFile) {
