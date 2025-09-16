@@ -453,7 +453,7 @@ if ($confirm -ne 'yes') { Write-Host 'Aborted.'; exit 0 }
 $PackageJsonFile = 'package.json'
 Update-VersionFiles -XmlFile $XmlFile -NewVersion $nv.NewVersion -PackageJsonFile $PackageJsonFile
 
-$ServiceWorkerFile = Join-Path 'assets' 'ts\serviceworker.ts'
+$ServiceWorkerFile = Join-Path 'assets' 'ts\serviceworker\serviceworker.ts'
 Update-ServiceWorkerCacheName -ServiceWorkerFile $ServiceWorkerFile -NewCacheName $nv.CacheName
 
 $DidBuild = Run-Build -SkipBuild:$SkipBuild
