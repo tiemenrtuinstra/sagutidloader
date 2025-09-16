@@ -4,8 +4,8 @@ import Logger from '../Logger/Logger';
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
 // Update this version string to force clients to refresh cache after deploy
-const CACHE_VERSION = 'v33.5.1';
-const CACHE_NAME = `sagutid-${CACHE_VERSION}`;
+
+const CACHE_NAME = `sagutid-v33.5.1`;
 const BASE_ORIGIN = (typeof self !== 'undefined' && 'location' in self) ? new URL(self.location.href).origin : location.origin;
 // Base path for plugin assets (derived from the SW script URL, not the scope)
 const SCRIPT_PATHNAME = (typeof self !== 'undefined' && 'location' in self) ? new URL(self.location.href).pathname : '/plugins/system/sagutidloader/assets/serviceworker.js';
