@@ -2,9 +2,7 @@
 <updates>
     <update>
         <name>PLG_SYSTEM_SAGUTIDLOADER</name>
-        <description><![CDATA[Sagutid Loader
-
-- chore(release): update version to 37.0.0 in package.json, package-lock.json, and sagutidloader.xml (Tiemen Reinder Tuinstra) - chore(update-site): update update XML for v37.0.0 (Tiemen Reinder Tuinstra)]]></description>
+        <description><![CDATA[Sagutid Loader]]></description>
         <element>sagutidloader</element>
         <type>plugin</type>
         <folder>system</folder>
