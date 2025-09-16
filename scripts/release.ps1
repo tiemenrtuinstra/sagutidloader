@@ -38,7 +38,7 @@ function Ensure-CleanGit([switch]$Force) {
 }
 
 function Get-Manifest() {
-    $candidates = Get-ChildItem -File -Filter *.xml | ForEach-Object { $_.FullName }
+    $candidates = Get-ChildItem -File -Path ../ -Filter *.xml | ForEach-Object { $_.FullName }
     foreach ($xmlFile in $candidates) {
         try {
             [xml]$xml = Get-Content $xmlFile -ErrorAction Stop
@@ -64,23 +64,23 @@ function Compute-NewVersion([string]$Current, [string]$ReleaseType) {
 }
 
 function Update-VersionFiles([string]$XmlFile, [string]$NewVersion, [string]$PackageJsonFile) {
-    [xml]$xml = Get-Content $XmlFile
+    [xml]$xml = Get-Content (Join-Path ../ $XmlFile)
     $node = $xml.SelectSingleNode("//extension/version")
     if (-not $node) { throw "Could not find <version> node in $XmlFile" }
     $node.InnerText = $NewVersion
     $xml.Save($XmlFile)
     Write-Host "Updated $XmlFile"
 
-    if (Test-Path $PackageJsonFile) {
-        $pkg = Get-Content $PackageJsonFile -Raw | ConvertFrom-Json
+    if (Test-Path (Join-Path ../ $PackageJsonFile)) {
+        $pkg = Get-Content (Join-Path ../ $PackageJsonFile) -Raw | ConvertFrom-Json
         $pkg.version = $NewVersion
-        $pkg | ConvertTo-Json -Depth 32 | Set-Content $PackageJsonFile -Encoding UTF8
+        $pkg | ConvertTo-Json -Depth 32 | Set-Content (Join-Path ../ $PackageJsonFile) -Encoding UTF8
         Write-Host "Updated $PackageJsonFile"
     }
 }
 
 function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewCacheName) {
-    $sw = Get-Content $ServiceWorkerFile -Raw
+    $sw = Get-Content (Join-Path ../ $ServiceWorkerFile) -Raw
     $patterns = @(
         '(const\s+CACHE_NAME\s*=\s*`")sagutid-v[^`"]+(`";?)',   # backtick+double quote
         "(const\s+CACHE_NAME\s*=\s*')sagutid-v[^']+(';?)",      # single quote
@@ -98,7 +98,7 @@ function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewC
         Write-Warning "CACHE_NAME pattern not found in $ServiceWorkerFile"
     }
     else {
-        Set-Content -Path $ServiceWorkerFile -Value $sw -Encoding UTF8
+    Set-Content -Path (Join-Path ../ $ServiceWorkerFile) -Value $sw -Encoding UTF8
         Write-Host "Updated cache name in $ServiceWorkerFile"
     }
 }
@@ -106,21 +106,21 @@ function Update-ServiceWorkerCacheName([string]$ServiceWorkerFile, [string]$NewC
 function Run-Build([switch]$SkipBuild) {
     $did = $false
     # Fixing unexpected token errors and improving security
-    if (-not (Test-Path 'package.json')) { return $did }
+    if (-not (Test-Path '../package.json')) { return $did }
     if ($SkipBuild) { return $did }
 
-    $hasLock = Test-Path -LiteralPath 'package-lock.json'
-    $hasMods = Test-Path -LiteralPath 'node_modules'
+    $hasLock = Test-Path -LiteralPath '../package-lock.json'
+    $hasMods = Test-Path -LiteralPath '../node_modules'
     if ($hasLock -or $hasMods) { Write-Host 'Running' }
     else { Write-Host 'Running' }
 
-    npm install --no-fund --no-audit | Out-Null
+    npm install --prefix ../ --no-fund --no-audit | Out-Null
     if ($LASTEXITCODE -ne 0) { Write-Host 'npm install failed.' -ForegroundColor Red; exit 1 }
 
     Write-Host 'Running build...'
     $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
     if ($npmCmd) {
-        npm run build:prod | Out-Null
+        npm run build:prod --prefix ../ | Out-Null
         if ($LASTEXITCODE -ne 0) { Write-Host 'Build failed.' -ForegroundColor Red; exit 1 }
         $did = $true
         Write-Host 'Build completed.'
@@ -134,7 +134,7 @@ function Package-Plugin([string]$ManifestPath) {
     $pluginName = $manifest.extension.files.filename | Where-Object { $_.plugin } | Select-Object -First 1 | ForEach-Object { [string]$_.plugin }
     if (-not $pluginName) { $pluginName = [IO.Path]::GetFileNameWithoutExtension($ManifestPath) }
 
-    $buildRoot = Join-Path (Get-Location) 'build'
+    $buildRoot = Join-Path (Get-Location) '../build'
     $stageDir = Join-Path $buildRoot $pluginName
     if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
     New-Item -ItemType Directory -Path $stageDir | Out-Null
