@@ -9,6 +9,8 @@ Sagu Tid Loader is a Joomla plugin designed to load custom Progressive Web App (
 - SCSS support for styling.
 - Webpack-based build system for optimized assets.
 - Joomla update service compatibility.
+- Modular architecture with dedicated helper classes.
+- Comprehensive debug and testing tools.
 
 ---
 
@@ -26,6 +28,23 @@ Sagu Tid Loader is a Joomla plugin designed to load custom Progressive Web App (
 1. Go to **Extensions** > **Plugins**.
 2. Search for `Sagu Tid Loader`.
 3. Enable the plugin.
+
+---
+
+## Testing & Debugging
+
+This plugin includes comprehensive testing and debugging tools located in the `/tests/` folder:
+
+### Debug Tools
+- **Parameter Debug**: `tests/parameter_debug.php` - Debug parameter saving issues in Joomla admin
+- **Unit Tests**: `tests/parameter_helper_test.php` - Standalone unit tests for helper classes
+
+### Usage
+1. Navigate to `http://yoursite.com/plugins/system/sagutidloader/tests/parameter_debug.php` to check plugin status
+2. Run unit tests at `http://yoursite.com/plugins/system/sagutidloader/tests/parameter_helper_test.php`
+3. Check debug files in `/tmp/` folder for detailed logging
+
+For more information, see `/tests/README.md`.
 
 ---
 

@@ -1,14 +1,14 @@
-import PWAHandler from './PWAHandler';
-import ServiceWorkerHandler from './ServiceWorkerHandler';
-import MetaTagHandler from './MetaTagHandler';
-import CCommentHandler from './CCommentHandler';
-import HeaderHandler from './HeaderHandler';
-import PWAShareHandler from './PWAShareHandler';
-import DataLayerHandler from './DataLayerHandler';
-import UXGuardHandler from './UXGuardHandler';
-import Material from './MaterialEnhancements';
-import Logger, { LogType } from './Util/Logger';
-import SpeechReader from './SpeechReader';
+import PWAHandler from './Domain/PWA/PWAHandler';
+import ServiceWorkerHandler from './Domain/ServiceWorker/ServiceWorkerHandler';
+import MetaTagHandler from './Domain/Meta/MetaTagHandler';
+import CCommentHandler from './Domain/Comments/CCommentHandler';
+import HeaderHandler from './Domain/Header/HeaderHandler';
+import PWAShareHandler from './Domain/PWA/PWAShareHandler';
+import DataLayerHandler from './Domain/Analytics/DataLayerHandler';
+import UXGuardHandler from './Domain/UX/UXGuardHandler';
+import Material from './Domain/Material/MaterialEnhancements';
+import Logger, { LogType } from './Domain/Util/Logger';
+import SpeechReader from './Domain/Speech/SpeechReader';
 
 // Lazy-load Material Web only when needed to keep initial bundle small
 async function loadMaterialIfNeeded() {

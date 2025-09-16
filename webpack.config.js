@@ -9,7 +9,7 @@ module.exports = {
     entry: {
         main: './assets/ts/sagutid.ts',
         styles: './assets/scss/sagutid.scss',
-        serviceworker: './assets/ts/serviceworker.ts'
+    serviceworker: './assets/ts/Domain/ServiceWorker/serviceworker.ts'
     },
 
     devtool: 'source-map',

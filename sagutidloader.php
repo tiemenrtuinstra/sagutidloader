@@ -1,12 +1,26 @@
 <?php
+
 defined('_JEXEC') or die;
 
+namespace PlgSystemSagutidloader;
+
 use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Uri\Uri;
-use Joomla\CMS\Plugin\PluginHelper;
-use Joomla\CMS\Application\CMSApplication;
-use Joomla\CMS\Document\HtmlDocument;
+use PlgSystemSagutidloader\Helper\DebugModeHelper;
+use PlgSystemSagutidloader\Helper\AssetManager;
+use PlgSystemSagutidloader\Helper\DiagnosticsService;
+use PlgSystemSagutidloader\Helper\PluginFormHelper;
+use PlgSystemSagutidloader\Helper\ParameterHelper;
+use PlgSystemSagutidloader\Helper\DocumentHelper;
+
+require_once __DIR__ . '/src/DebugModeHelper.php';
+require_once __DIR__ . '/src/AssetManager.php';
+require_once __DIR__ . '/src/DiagnosticsService.php';
+require_once __DIR__ . '/src/PluginFormHelper.php';
+require_once __DIR__ . '/src/ParameterHelper.php';
+require_once __DIR__ . '/src/DocumentHelper.php';
+require_once __DIR__ . '/src/FormValidationHelper.php';
+require_once __DIR__ . '/src/ParameterSaveHandler.php';
+require_once __DIR__ . '/src/DebugLogger.php';
 
 /**
  * System plugin to load Sagutid PWA assets and configuration.
@@ -26,12 +40,11 @@ class PlgSystemSagutidloader extends CMSPlugin
     protected $autoloadLanguage = true;
 
     /**
-     * Base URL (absolute) to this plugin's assets directory.
-     * Example: https://example.com/plugins/system/sagutidloader/assets/
+     * Debug mode helper instance
      *
-     * @var string
+     * @var DebugModeHelper
      */
-    private $assetUrl = '';
+    private $debugHelper;
 
     /**
      * Constructor.
@@ -39,75 +52,11 @@ class PlgSystemSagutidloader extends CMSPlugin
      * @param   object  $subject  The object to observe
      * @param   array   $config   Plugin configuration array
      */
+
     public function __construct(&$subject, $config)
     {
         parent::__construct($subject, $config);
-        $this->computeAssetUrl();
-    }
-
-    /**
-     * Get the client's IP address from server variables (IPv4/IPv6 aware).
-     *
-     * @return string|null
-     */
-    private function getClientIp()
-    {
-        $keys = [
-            'HTTP_CLIENT_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'REMOTE_ADDR',
-        ];
-        foreach ($keys as $key) {
-            if (!empty($_SERVER[$key])) {
-                // X-Forwarded-For may contain a comma-separated list; take the first
-                $val = $_SERVER[$key];
-                if (strpos($val, ',') !== false) {
-                    $val = trim(explode(',', $val)[0]);
-                }
-                return $val;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Check if an IP matches a rule. Rule may be a single IP, a CIDR (x.x.x.x/yy) or a prefix with wildcard.
-     *
-     * @param string|null $ip
-     * @param string $rule
-     * @return bool
-     */
-    private function ipMatchesRule($ip, string $rule): bool
-    {
-        if (empty($ip) || empty($rule)) {
-            return false;
-        }
-        $ip = trim($ip);
-        $rule = trim($rule);
-
-        // CIDR
-        if (strpos($rule, '/') !== false) {
-            list($subnet, $bits) = explode('/', $rule, 2) + [1 => null];
-            if (filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && is_numeric($bits)) {
-                $bits = (int) $bits;
-                $ipDecimal = ip2long($ip);
-                $subnetDecimal = ip2long($subnet);
-                if ($ipDecimal === false || $subnetDecimal === false) {
-                    return false;
-                }
-                $mask = -1 << (32 - $bits);
-                return (($ipDecimal & $mask) === ($subnetDecimal & $mask));
-            }
-        }
-
-        // Wildcard prefix, e.g. 192.168.*
-        if (strpos($rule, '*') !== false) {
-            $pattern = '#^' . str_replace('\*', '.*', preg_quote($rule, '#')) . '$#';
-            return (bool) preg_match($pattern, $ip);
-        }
-
-        // Exact match
-        return hash_equals($rule, $ip);
+        $this->debugHelper = new DebugModeHelper($this->params);
     }
 
     /**
@@ -125,256 +74,20 @@ class PlgSystemSagutidloader extends CMSPlugin
     public function onBeforeCompileHead(): void
     {
         try {
-            // Only run on the site front-end
-            $app = Factory::getApplication();
-            if (!$app->isClient('site')) {
+            // Check if we should inject assets (handles app/document validation)
+            if (!DocumentHelper::shouldInjectAssets()) {
                 return;
             }
 
-            $document = $app->getDocument();
-            if (!($document instanceof HtmlDocument) || $document->getType() !== 'html') {
-                return;
-            }
+            $debugMode = $this->debugHelper->isDebugModeEnabled();
 
-            // Build JS configuration object for front-end
-            $assetBase   = $this->assetUrl; // .../plugins/system/sagutidloader/assets/
-            $distBase    = $assetBase . 'dist/';
-            $scriptUrl   = $distBase . 'main.bundle.js';
-            $vendorsUrl  = $distBase . 'vendors.js';
-            $styleUrl    = $distBase . 'styles.bundle.css';
-            $manifestUrl = $assetBase . 'manifest.webmanifest';
-            // Prefer the bundled service worker output in dist if available
-            $swUrl       = $distBase . 'serviceworker.js';
-            $offlineUrl  = $assetBase . 'offline.html';
-            $imagesBase  = Uri::root() . 'images/';
+            // Generate and inject asset block using AssetManager (extracts params internally)
+            $block = AssetManager::generateAssetBlock($this->params, $debugMode);
+            DocumentHelper::addCustomBlock($block);
 
-            // Defensive access to plugin params: some static analysis tools warn about $this->params
-            $debugParam = false;
-            $forceReregisterParam = false;
-            try {
-                if (property_exists($this, 'params') && isset($this->params) && method_exists($this->params, 'get')) {
-                    $debugParam = (bool) $this->params->get('debug', 0);
-                    $forceReregisterParam = (bool) $this->params->get('force_reregister', 0);
-                    $allowedIpsRaw = (string) $this->params->get('debug_allowed_ips', '');
-                }
-            } catch (\Throwable $e) {
-                // leave defaults
-            }
-
-            // Determine whether debug mode should be enabled for this client based on allowed IPs
-            $debugMode = false;
-            try {
-                if ($debugParam) {
-                    $allowedIps = array_filter(array_map('trim', preg_split('/\r?\n/', (string) ($allowedIpsRaw ?? ''))));
-                    // If no allowed IPs are configured, allow debug for all when debugParam is true
-                    if (empty($allowedIps)) {
-                        $debugMode = true;
-                    } else {
-                        $clientIp = $this->getClientIp();
-                        foreach ($allowedIps as $rule) {
-                            if ($this->ipMatchesRule($clientIp, $rule)) {
-                                $debugMode = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                $debugMode = (bool) $debugParam;
-            }
-
-            $config = [
-                'serviceWorkerPath' => $swUrl,
-                'joomlaLogoPath'    => $imagesBase . 'Logo',
-                'assetPath'         => $assetBase,
-                'serviceWorker'     => $swUrl,
-                'script'            => $scriptUrl,
-                'style'             => $styleUrl,
-                'manifest'          => $manifestUrl,
-                // Use plugin parameters (defensive): debug flag and optional forced re-register
-                'debugMode'         => $debugMode,
-                'forceReregister'   => $forceReregisterParam,
-                'offlineUrl'        => $offlineUrl,
-            ];
-            $configJson = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-
-            $block  = "\n<!-- Sagutid Loader -->\n";
-            $block .= '<script type="text/javascript">window.SAGUTID_CONFIG = ' . $configJson . ';</script>' . "\n";
-            $block .= '<link rel="manifest" href="' . htmlspecialchars($manifestUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
-            $block .= '<link rel="stylesheet" type="text/css" href="' . htmlspecialchars($styleUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
-            // Properly close the external script tag without escaping the slash
-            // Include vendors chunk first so shared runtime is available
-            $block .= '<script defer type="text/javascript" src="' . htmlspecialchars($vendorsUrl, ENT_QUOTES, 'UTF-8') . '"></script>' . "\n";
-            $block .= '<script defer type="text/javascript" src="' . htmlspecialchars($scriptUrl, ENT_QUOTES, 'UTF-8') . '"></script>' . "\n";
-            $block .= "<!-- END Sagutid Loader -->\n";
-
-            $document->addCustomTag($block);
         } catch (\Exception $e) {
-            $msg = 'Error in Sagutid loader: ' . $e->getMessage();
-            $doc = Factory::getApplication()->getDocument();
-            if ($doc instanceof HtmlDocument) {
-                // Keep error reporting minimal and avoid stray IIFE remnants in the markup
-                $doc->addScriptDeclaration(
-                    'try{console.error("[Sagutid Loader] " + ' .
-                        json_encode($msg, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) .
-                        ');}catch(e){}'
-                );
-            }
-        }
-    }
-
-    /**
-     * Compute the absolute URL to the plugin assets folder.
-     */
-    private function computeAssetUrl(): void
-    {
-        // Resolve plugin group/element reliably
-        $group = 'system';
-        $element = 'sagutidloader';
-        try {
-            $plugin = PluginHelper::getPlugin($group, $element);
-            if ($plugin && isset($plugin->name) && is_string($plugin->name)) {
-                $element = $plugin->name;
-            }
-        } catch (\Throwable $e) {
-            // Fallback keeps defaults
-        }
-        $this->assetUrl = Uri::root() . 'plugins/' . $group . '/' . $element . '/assets/';
-    }
-
-    /**
-     * Get log entries from the logs directory (for admin panel display)
-     *
-     * @return string HTML with recent log entries
-     */
-    public function getLogEntries()
-    {
-        try {
-            $pluginBase = defined('JPATH_PLUGINS') ? JPATH_PLUGINS . '/system/sagutidloader/' : __DIR__ . '/';
-            $logsDir = $pluginBase . 'logs/';
-            
-            if (!is_dir($logsDir)) {
-                return '<p><em>Geen logbestanden gevonden. Logs directory bestaat nog niet.</em></p>';
-            }
-            
-            $logFiles = glob($logsDir . '*.log');
-            if (empty($logFiles)) {
-                return '<p><em>Geen logbestanden gevonden in ' . htmlspecialchars($logsDir) . '</em></p>';
-            }
-            
-            // Sort by modification time, newest first
-            usort($logFiles, function($a, $b) {
-                return filemtime($b) - filemtime($a);
-            });
-            
-            $output = '<div style="max-height: 400px; overflow-y: auto; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 12px;">';
-            
-            foreach (array_slice($logFiles, 0, 3) as $logFile) { // Show max 3 most recent files
-                $filename = basename($logFile);
-                $output .= '<h4 style="margin: 0 0 10px 0; color: #333;">📄 ' . htmlspecialchars($filename) . '</h4>';
-                
-                if (!is_readable($logFile)) {
-                    $output .= '<p style="color: #999;">Bestand niet leesbaar</p>';
-                    continue;
-                }
-                
-                $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                if ($lines === false) {
-                    $output .= '<p style="color: #999;">Kon bestand niet lezen</p>';
-                    continue;
-                }
-                
-                // Show last 10 lines
-                $recentLines = array_slice($lines, -10);
-                foreach ($recentLines as $line) {
-                    $line = htmlspecialchars($line);
-                    
-                    // Color code by log level
-                    if (strpos($line, '[ERROR]') !== false) {
-                        $color = '#d32f2f';
-                    } elseif (strpos($line, '[WARN]') !== false) {
-                        $color = '#f57c00';
-                    } elseif (strpos($line, '[SUCCESS]') !== false) {
-                        $color = '#388e3c';
-                    } else {
-                        $color = '#666';
-                    }
-                    
-                    $output .= '<div style="margin: 2px 0; color: ' . $color . '; white-space: pre-wrap;">' . $line . '</div>';
-                }
-                
-                $totalLines = count($lines);
-                if ($totalLines > 10) {
-                    $output .= '<p style="margin: 10px 0 0 0; color: #999; font-style: italic;">... en ' . ($totalLines - 10) . ' oudere entries</p>';
-                }
-                $output .= '<hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">';
-            }
-            
-            $output .= '</div>';
-            return $output;
-            
-        } catch (\Throwable $e) {
-            return '<p style="color: #d32f2f;">Fout bij het laden van logbestanden: ' . htmlspecialchars($e->getMessage()) . '</p>';
-        }
-    }
-
-    /**
-     * Diagnostics: Check if assets are loaded (for admin panel display)
-     *
-     * @return string HTML with asset status
-     */
-    public function getDiagnosticsStatus()
-    {
-        // Only show in admin
-        $app = Factory::getApplication();
-        if (!$app->isClient('administrator')) {
-            return '';
-        }
-        // Check files on disk under the plugin's assets folder for a reliable package diagnostic
-        try {
-            $pluginBase = defined('JPATH_PLUGINS') ? JPATH_PLUGINS . '/system/sagutidloader/assets/' : null;
-
-            $distBase = $pluginBase ? $pluginBase . 'dist/' : null;
-            $files = [
-                'vendors.js' => $distBase ? $distBase . 'vendors.js' : null,
-                'main.bundle.js' => $distBase ? $distBase . 'main.bundle.js' : null,
-                'styles.bundle.css' => $distBase ? $distBase . 'styles.bundle.css' : null,
-                'manifest.webmanifest' => $pluginBase ? $pluginBase . 'manifest.webmanifest' : null,
-            ];
-
-            $output = '<ul style="list-style:none;padding:0;margin:0;">';
-            foreach ($files as $name => $path) {
-                $ok = $path && is_file($path) && is_readable($path);
-                $icon = $ok ? '✅' : '❌';
-                $size = '';
-                if ($ok) {
-                    $bytes = filesize($path);
-                    if ($bytes !== false) {
-                        $size = ' (' . round($bytes / 1024, 1) . ' KiB)';
-                    }
-                }
-                $output .= "<li>$icon $name$size</li>";
-            }
-
-            // Show plugin param states
-            $debug = false;
-            $force = false;
-            try {
-                if (property_exists($this, 'params') && isset($this->params) && method_exists($this->params, 'get')) {
-                    $debug = (bool) $this->params->get('debug', 0);
-                    $force = (bool) $this->params->get('force_reregister', 0);
-                }
-            } catch (\Throwable $e) {
-                // ignore and show defaults
-            }
-
-            $output .= "<li>Debug mode: " . ($debug ? 'ON' : 'OFF') . "</li>";
-            $output .= "<li>Force re-register: " . ($force ? 'ON' : 'OFF') . "</li>";
-
-            $output .= '</ul>';
-            return $output;
-        } catch (\Throwable $e) {
-            return '<p>Diagnostics unavailable</p>';
+            // Log error using DocumentHelper
+            DocumentHelper::addErrorLogging('Error in Sagutid loader: ' . $e->getMessage());
         }
     }
 
@@ -390,38 +103,7 @@ class PlgSystemSagutidloader extends CMSPlugin
      */
     public function onContentPrepareForm($form, $data = null): void
     {
-        try {
-            $app = Factory::getApplication();
-            if (!$app->isClient('administrator')) {
-                return;
-            }
-
-            // Be defensive: ensure we have a Form object
-            if (!is_object($form) || !method_exists($form, 'getName')) {
-                return;
-            }
-
-            $formName = $form->getName();
-            // Only alter the plugin configuration form (com_plugins)
-            if (strpos((string) $formName, 'com_plugins') === false) {
-                return;
-            }
-
-            $diagnostics = $this->getDiagnosticsStatus();
-            $logEntries = $this->getLogEntries();
-
-            // Set the value into the params group if the field exists
-            if (method_exists($form, 'getField') && $form->getField('diagnostics_status', 'params')) {
-                // setValue(name, group, value)
-                $form->setValue('diagnostics_status', 'params', $diagnostics);
-            }
-            
-            if (method_exists($form, 'getField') && $form->getField('log_entries', 'params')) {
-                $form->setValue('log_entries', 'params', $logEntries);
-            }
-        } catch (\Throwable $e) {
-            // Swallow errors to avoid breaking the admin UI
-        }
+        PluginFormHelper::prepareForm($form, $data, $this);
     }
 
     /**
@@ -434,27 +116,7 @@ class PlgSystemSagutidloader extends CMSPlugin
      */
     public function onContentPrepareData($context, $data = null): void
     {
-        try {
-            $app = Factory::getApplication();
-            if (!$app->isClient('administrator')) {
-                return;
-            }
-
-            if (strpos((string) $context, 'com_plugins') === false) {
-                return;
-            }
-
-            // If $data is an object (form data), ensure params contains current saved params
-            if (is_object($data)) {
-                if (empty($data->params)) {
-                    if (property_exists($this, 'params') && isset($this->params) && method_exists($this->params, 'toArray')) {
-                        $data->params = $this->params->toArray();
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            // Swallow to avoid breaking admin UI
-        }
+        PluginFormHelper::prepareData($context, $data, $this);
     }
 
     /**
@@ -468,37 +130,6 @@ class PlgSystemSagutidloader extends CMSPlugin
      */
     public function onExtensionBeforeSave($context, $table, $isNew): void
     {
-        try {
-            if (strpos((string) $context, 'com_plugins') === false) {
-                return;
-            }
-
-
-            $posted = [];
-            if (!empty($_POST['jform']['params']) && is_array($_POST['jform']['params'])) {
-                $posted = $_POST['jform']['params'];
-                // Convert boolean values to '1'/'0' strings for Joomla compatibility
-                foreach ($posted as $k => $v) {
-                    if ($v === true || $v === false) {
-                        $posted[$k] = $v ? '1' : '0';
-                    }
-                }
-            }
-
-            // If params were posted, serialize them onto the extension table so Joomla saves them
-            if (!empty($posted) && is_object($table) && property_exists($table, 'params')) {
-                $table->params = json_encode($posted);
-            }
-
-            // Write a debug file to tmp so admins can inspect what was posted
-            $tmpDir = defined('JPATH_ROOT') ? JPATH_ROOT . '/tmp' : __DIR__ . '/tmp';
-            if (!is_dir($tmpDir)) {
-                @mkdir($tmpDir, 0755, true);
-            }
-            $debugFile = $tmpDir . '/sagutid_posted_params.json';
-            @file_put_contents($debugFile, json_encode($posted, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-        } catch (\Throwable $e) {
-            // ignore
-        }
+        PluginFormHelper::beforeSave($context, $table, $this);
     }
 }

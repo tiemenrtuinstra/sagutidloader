@@ -1,0 +1,20 @@
+# Beveilig tests folder - alleen localhost toegang
+Order Deny,Allow
+Deny from all
+Allow from 127.0.0.1
+Allow from ::1
+Allow from localhost
+
+# Optioneel: Allow van specifieke IP adressen
+# Allow from 192.168.1.100
+
+# Prevent access to README and other sensitive files in production
+<Files "README.md">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "*.log">
+    Order Allow,Deny
+    Deny from all
+</Files>
